@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TSG EX Dashboard — Compliance_AML</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans TC','Microsoft JhengHei',sans-serif;background:#0b1020;color:#e5e7eb;font-size:14px;line-height:1.45}
+
+.rb-label{font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;letter-spacing:.9px;white-space:nowrap;margin-right:2px}
+.rb{
+  padding:7px 16px;border-radius:999px;
+  border:1.5px solid rgba(148,163,184,.18);
+  background:#0f172a;color:#94a3b8;
+  font-size:12px;font-weight:700;cursor:pointer;line-height:1.35;
+  transition:border-color .15s,color .15s,background .15s,box-shadow .15s;
+  white-space:nowrap
+}
+.rb:hover{border-color:rgba(148,163,184,.38);color:#e5e7eb}
+.rb.active{color:#111827;border-color:transparent;box-shadow:0 4px 14px rgba(0,0,0,.28)}
+.rb[data-role=admin].active    {background:linear-gradient(135deg,#f59e0b,#fbbf24)}
+.rb[data-role=compliance].active{background:linear-gradient(135deg,#8b5cf6,#a78bfa)}
+.rb[data-role=finance].active  {background:linear-gradient(135deg,#22c55e,#4ade80)}
+.rb[data-role=cs].active       {background:linear-gradient(135deg,#38bdf8,#7dd3fc)}
+.rb[data-role=ops].active      {background:linear-gradient(135deg,#94a3b8,#cbd5e1)}
+
+/* ── Layout ───────────────────────────────────── */
+.layout{display:flex;min-height:100vh}
+.sidebar{width:238px;background:#0f172a;border-right:1px solid rgba(148,163,184,.16);flex-shrink:0}
+.sb-logo{padding:18px 20px;border-bottom:1px solid rgba(148,163,184,.13);display:flex;align-items:center;gap:11px}
+.logo-m{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#111827;width:36px;height:36px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:12px;flex-shrink:0}
+.sb-logo span{color:#f8fafc;font-size:17px;font-weight:800}
+.sb-logo small{display:block;color:#94a3b8;font-size:10px;margin-top:1px}
+.sb-badge{margin:9px 14px;padding:9px 12px;border-radius:11px;display:flex;align-items:center;gap:9px;transition:all .22s}
+.sbb-icon{font-size:17px;flex-shrink:0}
+.sbb-name{font-size:12px;font-weight:900}
+.sbb-desc{font-size:10px;color:#94a3b8;margin-top:1px}
+.sidebar nav a{display:flex;align-items:center;gap:8px;padding:9px 20px;color:#94a3b8;font-size:12.5px;text-decoration:none;border-left:3px solid transparent;transition:all .12s}
+.sidebar nav a.active{background:rgba(245,158,11,.1);color:#fbbf24;border-left-color:#f59e0b}
+.sidebar nav a:hover{background:rgba(255,255,255,.04);color:#f8fafc}
+.sb-sec{padding:10px 20px 3px;font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:.9px}
+
+/* ── Main / Topbar ────────────────────────────── */
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+.topbar{
+  height:58px;background:#111827;
+  border-bottom:1px solid rgba(148,163,184,.13);
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 24px;position:sticky;top:0;z-index:5
+}
+.topbar h1{font-size:16px;font-weight:800}
+.live{background:rgba(34,197,94,.12);border:1px solid rgba(34,197,94,.28);color:#22c55e;font-size:10px;padding:3px 8px;border-radius:999px;font-weight:800}
+.tb-right{display:flex;align-items:center;gap:10px;font-size:12px;color:#94a3b8}
+.tb-refresh{background:#1f2937;border:1px solid rgba(148,163,184,.13);padding:5px 10px;border-radius:7px;color:#e5e7eb}
+.role-chip{font-size:11px;font-weight:800;padding:4px 11px;border-radius:999px;transition:all .22s}
+
+/* ── Content ──────────────────────────────────── */
+.content{padding:20px 24px 44px}
+
+/* ── Section blocks ───────────────────────────── */
+.s-block{margin-top:22px}
+.s-block:first-child{margin-top:0}
+.sec-title{
+  font-size:11px;font-weight:900;color:#94a3b8;
+  text-transform:uppercase;letter-spacing:.9px;
+  margin-bottom:12px;
+  display:flex;align-items:center;justify-content:space-between
+}
+.sec-hint{font-size:10px;color:#64748b;font-weight:500;text-transform:none;letter-spacing:0}
+
+/* ── Grids — columns set entirely by JS ──────────
+   CSS only provides gap; JS writes grid-template-columns
+   so there are never empty tracks when cards are hidden.  */
+.g-flex{display:grid;gap:14px}          /* KPI, KYC, VASP, wallet */
+.g-flex-sm{display:grid;gap:12px}       /* sys, quick */
+.g-trading{display:grid;gap:14px;transition:grid-template-columns .18s}
+
+/* ── Cards ────────────────────────────────────── */
+.card,.panel,.kyc-card{
+  background:#111827;
+  border:1px solid rgba(148,163,184,.15);
+  border-radius:16px;
+  box-shadow:0 16px 40px rgba(0,0,0,.14)
+}
+.card{padding:16px}
+.kpi-card{position:relative;overflow:hidden;min-height:118px}
+.kpi-card::after{content:'';position:absolute;right:-20px;top:-26px;width:82px;height:82px;border-radius:50%;background:rgba(59,130,246,.07)}
+.ci{font-size:18px;width:32px;height:32px;border-radius:9px;display:flex;align-items:center;justify-content:center;background:rgba(148,163,184,.09);margin-bottom:11px}
+.ct{font-size:11px;color:#94a3b8;font-weight:700}
+.cv{font-size:24px;font-weight:900;color:#f8fafc;letter-spacing:-.7px;margin-top:4px}
+.cv small{font-size:12px;color:#94a3b8;font-weight:500}
+.cd,.cs{font-size:11px;color:#94a3b8;margin-top:6px}
+.up{color:#22c55e}.dng{color:#ef4444}.wrn{color:#f59e0b}.ntl{color:#94a3b8}
+.spark{height:22px;margin-top:9px;display:flex;align-items:flex-end;gap:3px}
+.spark span{flex:1;border-radius:3px 3px 0 0;background:linear-gradient(180deg,#38bdf8,#2563eb);opacity:.85}
+
+/* ── Panels ───────────────────────────────────── */
+.panel{overflow:hidden}
+.ph{padding:13px 17px;border-bottom:1px solid rgba(148,163,184,.1);display:flex;align-items:center;justify-content:space-between}
+.pt{font-size:13px;font-weight:900;color:#f8fafc}
+.pb{padding:14px 17px}
+.tabs{display:flex;gap:6px}
+.tab{font-size:11px;padding:4px 10px;border-radius:999px;background:#0b1020;color:#94a3b8;border:1px solid rgba(148,163,184,.13)}
+.tab.on{background:#f59e0b;color:#111827;border-color:#f59e0b;font-weight:900}
+
+/* ── Chart ────────────────────────────────────── */
+.cw{height:230px;border-radius:13px;background:linear-gradient(180deg,#0f172a,#0b1020);border:1px solid rgba(148,163,184,.08);padding:17px;position:relative;overflow:hidden}
+.cg{position:absolute;inset:17px;background:linear-gradient(rgba(148,163,184,.07) 1px,transparent 1px);background-size:100% 46px}
+.bars{position:absolute;left:17px;right:17px;bottom:17px;height:174px;display:flex;align-items:flex-end;gap:8px}
+.bar{flex:1;border-radius:7px 7px 0 0;background:linear-gradient(180deg,#38bdf8,#2563eb)}
+.clabel{position:absolute;right:17px;bottom:13px;font-size:10px;color:#64748b}
+.legend{display:flex;gap:11px;font-size:11px;color:#94a3b8;flex-wrap:wrap;margin-top:11px}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:4px}
+.db{background:#3b82f6}.dg{background:#22c55e}.do{background:#f59e0b}.dp{background:#a855f7}
+
+/* ── TX / Risk rows ───────────────────────────── */
+.tr,.rr,.robo{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid rgba(148,163,184,.07)}
+.tr:last-child,.rr:last-child,.robo:last-child{border-bottom:none}
+.tl,.rl{color:#cbd5e1;font-size:12px;display:flex;align-items:center;gap:7px}
+.tv,.rv{font-size:13px;font-weight:900;color:#f8fafc;text-align:right}
+.tc{font-size:10px;color:#64748b;text-align:right;margin-top:1px}
+
+/* ── Badges ───────────────────────────────────── */
+.badge{font-size:10px;padding:3px 8px;border-radius:999px;font-weight:900;display:inline-flex;align-items:center;gap:3px}
+.b-red   {background:rgba(239,68,68,.12);color:#fca5a5}
+.b-orange{background:rgba(245,158,11,.12);color:#fcd34d}
+.b-green {background:rgba(34,197,94,.12);color:#86efac}
+.b-blue  {background:rgba(59,130,246,.12);color:#93c5fd}
+.b-gray  {background:rgba(148,163,184,.1);color:#cbd5e1}
+
+/* ── KYC cards ────────────────────────────────── */
+.kyc-card{overflow:hidden}
+.kh{padding:13px 15px;font-size:13px;font-weight:900;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(148,163,184,.1)}
+.kr-wrap{padding:6px 14px}
+.kr{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid rgba(148,163,184,.07)}
+.kr:last-child{border-bottom:none}
+.krl{font-size:12px;color:#cbd5e1}
+.krc{font-size:19px;font-weight:900;color:#f8fafc;min-width:40px;text-align:right}
+.krm{display:flex;align-items:center;gap:7px}
+
+/* ── Risk / Summary ───────────────────────────── */
+.sbox{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:13px}
+.rtile{text-align:center;background:#0b1020;border:1px solid rgba(148,163,184,.08);border-radius:11px;padding:13px}
+.rtile strong{display:block;font-size:23px;margin-bottom:2px}
+.rtile span{font-size:11px;color:#94a3b8}
+.tl-wrap{margin-top:11px;background:#0b1020;border-radius:12px;padding:11px 13px;border:1px solid rgba(148,163,184,.08)}
+.tli{display:grid;grid-template-columns:48px 1fr auto;gap:8px;padding:8px 0;border-bottom:1px solid rgba(148,163,184,.06);font-size:12px;color:#cbd5e1}
+.tli:last-child{border-bottom:none}
+.tlt{color:#64748b}.tlm{font-weight:800}.tlb{font-size:10px;color:#fcd34d}
+
+/* ── Wallet ───────────────────────────────────── */
+.wr{padding:10px 0;border-bottom:1px solid rgba(148,163,184,.07)}
+.wr:last-child{border-bottom:none}
+.wt{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.wc{font-size:13px;font-weight:900}
+.prog{height:6px;background:#0b1020;border-radius:999px;overflow:hidden;border:1px solid rgba(148,163,184,.06)}
+.pf{height:100%;border-radius:999px}
+.ps{background:linear-gradient(90deg,#16a34a,#22c55e)}
+.pw{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+.pd{background:linear-gradient(90deg,#dc2626,#fb7185)}
+.wn{display:flex;justify-content:space-between;font-size:10px;color:#64748b;margin-top:4px}
+.donut{width:134px;height:134px;border-radius:50%;background:conic-gradient(#22c55e 0 72%,#f59e0b 72% 92%,#ef4444 92% 100%);margin:4px auto 13px;position:relative}
+.donut::after{content:'水位';position:absolute;inset:24px;background:#111827;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#94a3b8;font-weight:900;font-size:12px}
+
+/* ── Robot ────────────────────────────────────── */
+.rp{font-size:13px;font-weight:900}.rm{font-size:11px;color:#64748b}
+.sd{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:5px}
+.sd-on{background:#22c55e}.sd-off{background:#ef4444}
+
+/* ── System cards ─────────────────────────────── */
+.sysc{background:#0b1020;border:1px solid rgba(148,163,184,.08);border-radius:12px;padding:12px}
+.sysn{font-size:12px;color:#cbd5e1;font-weight:800}
+.sysm{font-size:10px;color:#64748b;margin-top:5px}
+
+/* ── Log rows ─────────────────────────────────── */
+.lr{display:grid;grid-template-columns:50px 1fr 46px;gap:8px;padding:8px 0;border-bottom:1px solid rgba(148,163,184,.06)}
+.lr:last-child{border-bottom:none}
+.ll{font-size:10px;font-weight:900;padding:2px 5px;border-radius:5px;text-align:center;align-self:start;margin-top:1px}
+.lm{font-size:12px;color:#cbd5e1}.lt{font-size:10px;color:#64748b;text-align:right}
+
+/* ── Quick links ──────────────────────────────── */
+.ql{background:#111827;border:1px solid rgba(148,163,184,.13);border-radius:12px;padding:12px;display:flex;align-items:center;gap:9px}
+.qi{width:32px;height:32px;border-radius:9px;background:#0b1020;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:15px}
+.qt{font-size:12px;font-weight:900}.qs{font-size:10px;color:#64748b;margin-top:1px}
+
+/* ── Alerts ───────────────────────────────────── */
+.alerts{display:grid;gap:12px}
+.al{background:linear-gradient(90deg,rgba(245,158,11,.15),rgba(245,158,11,.04));border:1px solid rgba(245,158,11,.3);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:10px;color:#fde68a;font-size:13px}
+.al.crit{background:linear-gradient(90deg,rgba(239,68,68,.15),rgba(239,68,68,.03));border-color:rgba(239,68,68,.32);color:#fecaca}
+.al-act{margin-left:auto;font-size:11px;font-weight:800;color:#fff;white-space:nowrap}
+
+/* ── Data note ────────────────────────────────── */
+.dn{font-size:11px;color:#64748b;text-align:right;margin-top:9px}
+.dn a{color:#93c5fd;text-decoration:none}
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- ══ SIDEBAR ══════════════════════════════════ -->
+  <aside class="sidebar">
+    <div class="sb-logo">
+      <div class="logo-m">TSG</div>
+      <div><span>TSG EX</span><small>交易所管理後台</small></div>
+    </div>
+    <div class="sb-badge" id="sbb">
+      <span class="sbb-icon" id="sbb-i">👑</span>
+      <div>
+        <div class="sbb-name" id="sbb-n">Admin</div>
+        <div class="sbb-desc" id="sbb-d">全權限存取</div>
+      </div>
+    </div>
+    <nav id="sb-nav"></nav>
+  </aside>
+
+  <!-- ══ MAIN ══════════════════════════════════════ -->
+  <main class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:9px">
+        <h1>首頁 Dashboard｜交易所營運總覽</h1>
+        <span class="live">● LIVE</span>
+      </div>
+      <div class="tb-right">
+        <span>🕐 2026-05-21 10:42</span>
+        <span class="tb-refresh">⟳ 重新整理</span>
+        <span class="role-chip" id="tb-chip">👑 Admin</span>
+        <span>👤 Wayne</span>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ── ALERTS ──────────────────────────── -->
+      <div class="s-block" id="b-alerts">
+        <div class="alerts" id="g-alerts">
+          <div class="al crit" data-alert="kyc">
+            <span>🚨</span>
+            <div>自然人 EDD 審核有 <b>3 件逾期</b> 未處理，建議優先派工主管覆核。</div>
+            <span class="al-act">查看案件 →</span>
+          </div>
+          <div class="al" data-alert="ops">
+            <span>⚠️</span>
+            <div>OTP 簡訊服務目前延遲，三竹備援待設定。</div>
+            <span class="al-act">查看服務 →</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── KPI ────────────────────────────── -->
+      <div class="s-block" id="b-kpi">
+        <div class="sec-title">📌 平台關鍵指標</div>
+        <div class="g-flex" id="g-kpi">
+
+          <div class="card kpi-card" data-kpi="total-users">
+            <div class="ci">👥</div><div class="ct">總用戶數</div>
+            <div class="cv">1,248</div>
+            <div class="cd up">▲ 今日新增 12 人</div>
+            <div class="spark"><span style="height:35%"></span><span style="height:45%"></span><span style="height:38%"></span><span style="height:58%"></span><span style="height:70%"></span><span style="height:62%"></span></div>
+          </div>
+
+          <div class="card kpi-card" data-kpi="kyc-natural">
+            <div class="ci">✅</div><div class="ct">KYC 已驗證（自然人）</div>
+            <div class="cv">876 <small>/ 1,248</small></div>
+            <div class="cs">驗證率 70.2%</div>
+            <div class="prog" style="margin-top:9px"><div class="pf ps" style="width:70%"></div></div>
+          </div>
+
+          <div class="card kpi-card" data-kpi="kyc-corp">
+            <div class="ci">🏢</div><div class="ct">法人已驗證</div>
+            <div class="cv">34</div>
+            <div class="cd up">▲ 本週新增 3 家</div>
+            <div class="spark"><span style="height:20%"></span><span style="height:30%"></span><span style="height:35%"></span><span style="height:40%"></span><span style="height:50%"></span></div>
+          </div>
+
+          <div class="card kpi-card" data-kpi="blacklist">
+            <div class="ci">🚫</div><div class="ct">黑名單用戶</div>
+            <div class="cv dng">5</div>
+            <div class="cs">自然人 4 ／ 法人 1</div>
+            <span class="badge b-red" style="margin-top:9px">需定期覆核</span>
+          </div>
+
+          <div class="card kpi-card" data-kpi="trading-vol">
+            <div class="ci">💹</div><div class="ct">今日成交量</div>
+            <div class="cv">234.5K <small>USDT</small></div>
+            <div class="cd up">▲ 較昨日 +8.6%</div>
+            <div class="spark"><span style="height:35%"></span><span style="height:50%"></span><span style="height:42%"></span><span style="height:75%"></span><span style="height:66%"></span></div>
+          </div>
+
+          <div class="card kpi-card" data-kpi="risk">
+            <div class="ci">🛡️</div><div class="ct">風控待處理</div>
+            <div class="cv wrn">13</div>
+            <div class="cs">高風險 2 ／ 待確認 11</div>
+            <span class="badge b-orange" style="margin-top:9px">建議優先處理</span>
+          </div>
+
+          <div class="card kpi-card" data-kpi="withdrawal">
+            <div class="ci">💸</div><div class="ct">提領待審核</div>
+            <div class="cv wrn">18</div>
+            <div class="cs">今日新增 4 筆</div>
+            <span class="badge b-orange" style="margin-top:9px">需財務審核</span>
+          </div>
+
+          <div class="card kpi-card" data-kpi="cs-ticket">
+            <div class="ci">🎧</div><div class="ct">客服待回覆</div>
+            <div class="cv">6</div>
+            <div class="cs">今日新增 2 票</div>
+            <span class="badge b-blue" style="margin-top:9px">待客服處理</span>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── KYC / AML ───────────────────────── -->
+      <div class="s-block" id="b-kyc">
+        <div class="sec-title">🪪 KYC／AML 審核待辦</div>
+        <div class="g-flex" id="g-kyc">
+
+          <div class="kyc-card" data-kyc="natural">
+            <div class="kh"><span>🪪 自然人實名認證審核</span><span class="badge b-blue">自然人</span></div>
+            <div class="kr-wrap">
+              <div class="kr"><span class="krl">CDD 待審核</span><div class="krm"><span class="badge b-orange">待處理</span><span class="krc">7</span></div></div>
+              <div class="kr"><span class="krl">EDD 待審核</span><div class="krm"><span class="badge b-red">逾期</span><span class="krc dng">3</span></div></div>
+              <div class="kr"><span class="krl">主管待審核</span><div class="krm"><span class="badge b-orange">待處理</span><span class="krc">2</span></div></div>
+              <div class="kr"><span class="krl">本月已通過</span><div class="krm"><span class="badge b-green">通過</span><span class="krc">142</span></div></div>
+            </div>
+          </div>
+
+          <div class="kyc-card" data-kyc="corporate">
+            <div class="kh"><span>🏢 法人實名驗證審核</span><span class="badge b-green">法人</span></div>
+            <div class="kr-wrap">
+              <div class="kr"><span class="krl">新申請案件</span><div class="krm"><span class="badge b-orange">待審</span><span class="krc">2</span></div></div>
+              <div class="kr"><span class="krl">CDD 待審核</span><div class="krm"><span class="badge b-orange">待處理</span><span class="krc">1</span></div></div>
+              <div class="kr"><span class="krl">EDD 待審核</span><div class="krm"><span class="badge b-gray">無</span><span class="krc">0</span></div></div>
+              <div class="kr"><span class="krl">本月已通過</span><div class="krm"><span class="badge b-green">通過</span><span class="krc">8</span></div></div>
+            </div>
+          </div>
+
+          <div class="kyc-card" data-kyc="vasp">
+            <div class="kh"><span>🔍 VASP 風控管理</span><span class="badge b-orange">AML</span></div>
+            <div class="kr-wrap">
+              <div class="kr"><span class="krl">姓名檢核待審件</span><div class="krm"><span class="badge b-orange">待確認</span><span class="krc">4</span></div></div>
+              <div class="kr"><span class="krl">命中名單數</span><div class="krm"><span class="badge b-red">高風險</span><span class="krc dng">2</span></div></div>
+              <div class="kr"><span class="krl">STR 調查案件</span><div class="krm"><span class="badge b-orange">處理中</span><span class="krc">1</span></div></div>
+              <div class="kr"><span class="krl">交易監控異常</span><div class="krm"><span class="badge b-orange">待確認</span><span class="krc">3</span></div></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── TRADING ─────────────────────────── -->
+      <div class="s-block" id="b-trading">
+        <div class="sec-title">💹 今日交易概況</div>
+        <div class="g-trading" id="g-trading">
+
+          <div class="panel" data-panel="trade-chart">
+            <div class="ph">
+              <div class="pt">📊 交易量趨勢</div>
+              <div class="tabs"><span class="tab on">今日</span><span class="tab">本週</span><span class="tab">本月</span></div>
+            </div>
+            <div class="pb">
+              <div class="cw">
+                <div class="cg"></div>
+                <div class="bars">
+                  <div class="bar" style="height:55%"></div><div class="bar" style="height:70%"></div>
+                  <div class="bar" style="height:45%"></div><div class="bar" style="height:80%"></div>
+                  <div class="bar" style="height:62%"></div><div class="bar" style="height:90%"></div>
+                  <div class="bar" style="height:75%"></div><div class="bar" style="height:68%"></div>
+                  <div class="bar" style="height:82%"></div><div class="bar" style="height:74%"></div>
+                  <div class="bar" style="height:59%"></div><div class="bar" style="height:78%"></div>
+                </div>
+                <div class="clabel">過去 12 小時成交量（USDT）</div>
+              </div>
+              <div class="legend">
+                <span><i class="dot db"></i>成交量</span>
+                <span><i class="dot dg"></i>成交筆數</span>
+                <span><i class="dot do"></i>閃兌</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel" data-panel="trade-detail">
+            <div class="ph"><div class="pt">📋 交易類型摘要</div></div>
+            <div class="pb">
+              <div class="tr"><div class="tl"><i class="dot db"></i>撮合限價單成交</div><div><div class="tv">124,500 USDT</div><div class="tc">48 筆</div></div></div>
+              <div class="tr"><div class="tl"><i class="dot dg"></i>撮合市價單成交</div><div><div class="tv">87,200 USDT</div><div class="tc">31 筆</div></div></div>
+              <div class="tr"><div class="tl"><i class="dot do"></i>閃兌成交</div><div><div class="tv">22,800 USDT</div><div class="tc">15 筆</div></div></div>
+              <div class="tr"><div class="tl"><i class="dot dp"></i>新台幣轉入（入金）</div><div><div class="tv">345,000 TWD</div><div class="tc">12 筆</div></div></div>
+              <div class="tr"><div class="tl"><i class="dot do"></i>新台幣轉出（出金）</div><div><div class="tv">210,000 TWD</div><div class="tc">9 筆</div></div></div>
+              <div class="dn"><a href="https://mgmt-tsg.baasid.com.tw/order/orderList" target="_blank">查看完整交易紀錄 →</a></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── VASP RISK & PLATFORM STATS ──────── -->
+      <div class="s-block" id="b-vasp">
+        <div class="sec-title">🛡 VASP 風控 &amp; 平台統計</div>
+        <div class="g-flex" id="g-vasp">
+
+          <div class="panel" data-panel="vasp-risk">
+            <div class="ph"><div class="pt">⚖️ 用戶風險等級分佈</div></div>
+            <div class="pb">
+              <div class="sbox">
+                <div class="rtile"><strong class="dng">12</strong><span>高風險</span></div>
+                <div class="rtile"><strong class="wrn">87</strong><span>中風險</span></div>
+                <div class="rtile"><strong class="up">777</strong><span>低風險</span></div>
+              </div>
+              <div class="rr"><span class="rl">🔍 姓名檢核命中名單</span><span class="rv dng">2 件</span></div>
+              <div class="rr"><span class="rl">📋 STR 可疑交易報告</span><span class="rv wrn">1 件處理中</span></div>
+              <div class="rr"><span class="rl">🔔 交易監控異常觸發</span><span class="rv wrn">3 件待確認</span></div>
+              <div class="rr"><span class="rl">🌐 IP 異常登入紀錄</span><span class="rv ntl">今日 0 件</span></div>
+              <div class="tl-wrap">
+                <div class="tli"><span class="tlt">10:42</span><span class="tlm">大額提領觸發風控</span><span class="tlb">高</span></div>
+                <div class="tli"><span class="tlt">10:31</span><span class="tlm">IP 登入地異常</span><span class="tlb">中</span></div>
+                <div class="tli"><span class="tlt">10:20</span><span class="tlm">Travel Rule 資料不一致</span><span class="tlb">中</span></div>
+              </div>
+              <div class="dn"><a href="https://mgmt-tsg.baasid.com.tw/vasp/screening" target="_blank">前往 VASP 風控管理 →</a></div>
+            </div>
+          </div>
+
+          <div class="panel" data-panel="platform-stats">
+            <div class="ph"><div class="pt">📈 平台統計摘要（本月）</div></div>
+            <div class="pb">
+              <div class="rr"><span class="rl">👤 本月新增用戶</span><span class="rv">+234 人</span></div>
+              <div class="rr"><span class="rl">✅ 本月 KYC 完成</span><span class="rv">+150 人</span></div>
+              <div class="rr" data-stat="fin"><span class="rl">💹 本月總交易量</span><span class="rv">4.2M USDT</span></div>
+              <div class="rr" data-stat="fin"><span class="rl">🏦 本月轉入筆數</span><span class="rv">312 筆</span></div>
+              <div class="rr" data-stat="fin"><span class="rl">🏃 本月轉出筆數</span><span class="rv">278 筆</span></div>
+              <div class="rr" data-stat="revenue"><span class="rl">💰 本月平台收入</span><span class="rv">42,800 TWD</span></div>
+              <div class="cw" style="height:108px;margin-top:10px" data-stat="revenue">
+                <div class="bars" style="height:70px">
+                  <div class="bar" style="height:45%;background:linear-gradient(180deg,#a855f7,#7c3aed)"></div>
+                  <div class="bar" style="height:60%;background:linear-gradient(180deg,#a855f7,#7c3aed)"></div>
+                  <div class="bar" style="height:72%;background:linear-gradient(180deg,#a855f7,#7c3aed)"></div>
+                  <div class="bar" style="height:58%;background:linear-gradient(180deg,#a855f7,#7c3aed)"></div>
+                  <div class="bar" style="height:84%;background:linear-gradient(180deg,#a855f7,#7c3aed)"></div>
+                </div>
+                <div class="clabel">收入趨勢</div>
+              </div>
+              <div class="dn"><a href="https://mgmt-tsg.baasid.com.tw/statistics/signUp" target="_blank">查看完整報表統計 →</a></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── WALLET / ROBOT / SYSLOG ──────────── -->
+      <div class="s-block" id="b-wallet">
+        <div class="sec-title">👛 錢包與機器人狀態</div>
+        <div class="g-flex" id="g-wallet">
+
+          <div class="panel" data-panel="wallet">
+            <div class="ph"><div class="pt">👛 錢包安全水位</div></div>
+            <div class="pb">
+              <div class="donut"></div>
+              <div class="wr">
+                <div class="wt"><span class="wc">USDT 熱錢包</span><span class="wrn">84%</span></div>
+                <div class="prog"><div class="pf pw" style="width:84%"></div></div>
+                <div class="wn"><span>安全水位 60%</span><span>需補冷/熱調度</span></div>
+              </div>
+              <div class="wr">
+                <div class="wt"><span class="wc">BTC 熱錢包</span><span class="up">62%</span></div>
+                <div class="prog"><div class="pf ps" style="width:62%"></div></div>
+              </div>
+              <div class="wr">
+                <div class="wt"><span class="wc">ETH 熱錢包</span><span class="dng">91%</span></div>
+                <div class="prog"><div class="pf pd" style="width:91%"></div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel" data-panel="robot">
+            <div class="ph"><div class="pt">🤖 機器人運行狀態</div></div>
+            <div class="pb">
+              <div class="robo"><div><div class="rp">BTC / USDT</div><div class="rm">價差監控 / 做市</div></div><span class="badge b-green"><i class="sd sd-on"></i>運行中</span></div>
+              <div class="robo"><div><div class="rp">ETH / USDT</div><div class="rm">流動性監控</div></div><span class="badge b-green"><i class="sd sd-on"></i>運行中</span></div>
+              <div class="robo"><div><div class="rp">SOL / USDT</div><div class="rm">套利監控</div></div><span class="badge b-red"><i class="sd sd-off"></i>已停止</span></div>
+              <div class="robo"><div><div class="rp">XRP / USDT</div><div class="rm">價差監控</div></div><span class="badge b-green"><i class="sd sd-on"></i>運行中</span></div>
+            </div>
+          </div>
+
+          <div class="panel" data-panel="syslog">
+            <div class="ph"><div class="pt">🧾 系統事件紀錄</div></div>
+            <div class="pb">
+              <div class="lr"><span class="ll b-orange">WARN</span><span class="lm">AWS SNS 簡訊延遲，已切換備援</span><span class="lt">10:41</span></div>
+              <div class="lr"><span class="ll b-blue">INFO</span><span class="lm">KYC 服務批次同步完成</span><span class="lt">10:32</span></div>
+              <div class="lr"><span class="ll b-red">ERROR</span><span class="lm">SOL/USDT 機器人停止，需人工確認</span><span class="lt">10:18</span></div>
+              <div class="lr"><span class="ll b-blue">INFO</span><span class="lm">銀行 API 交易傳送正常</span><span class="lt">10:03</span></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ── SYSTEM STATUS ──────────────────── -->
+      <div class="s-block" id="b-system">
+        <div class="sec-title">⚙️ 系統連線狀態 <span class="sec-hint">所有角色可見</span></div>
+        <div class="panel">
+          <div class="ph"><div class="pt">🔌 外部系統連線狀態</div></div>
+          <div class="pb">
+            <div class="g-flex-sm" id="g-sys">
+              <div class="sysc"><div class="sysn">🏦 凱基銀行｜法幣資產傳送</div><div class="badge b-green" style="margin-top:7px">● 正常</div><div class="sysm">延遲 102ms</div></div>
+              <div class="sysc"><div class="sysn">💳 凱基銀行｜法幣交易傳送</div><div class="badge b-green" style="margin-top:7px">● 正常</div><div class="sysm">延遲 118ms</div></div>
+              <div class="sysc"><div class="sysn">📧 AWS SES｜Email 驗證</div><div class="badge b-green" style="margin-top:7px">● 正常</div><div class="sysm">成功率 99.9%</div></div>
+              <div class="sysc"><div class="sysn">📱 AWS SNS｜簡訊驗證</div><div class="badge b-orange" style="margin-top:7px">● 備援模式</div><div class="sysm">平均延遲 2.1s</div></div>
+              <div class="sysc"><div class="sysn">📡 三竹簡訊｜備援</div><div class="badge b-blue" style="margin-top:7px">● 待設定</div><div class="sysm">尚未啟用</div></div>
+            </div>
+            <div class="dn"><a href="#">查看連線詳細狀態 →</a></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── QUICK LINKS ────────────────────── -->
+      <div class="s-block" id="b-quick">
+        <div class="sec-title">⚡ 快速入口</div>
+        <div class="g-flex-sm" id="g-quick"></div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- ══ ROLE CONFIG & REFLOW LOGIC ════════════════ -->
+<script>
+/* ── Role definitions ──────────────────────────────
+   kpi      : which data-kpi cards to show
+   kyc      : which data-kyc cards to show
+   panels   : which data-panel panels to show
+   stats    : which data-stat rows to show ('fin','revenue')
+   alerts   : which data-alert items to show ('kyc','ops')
+   maxKpi   : max columns for KPI row (prevents oversized cards)
+──────────────────────────────────────────────────── */
+const CFG = {
+  admin: {
+    label:'Admin', full:'系統管理員', desc:'全權限存取', icon:'👑',
+    chip:'background:rgba(245,158,11,.15);color:#fbbf24',
+    badge:'background:rgba(245,158,11,.1);color:#fbbf24;border:1px solid rgba(245,158,11,.2)',
+    kpi   :['total-users','kyc-natural','kyc-corp','blacklist','trading-vol','risk'],
+    maxKpi: 6,
+    kyc   :['natural','corporate','vasp'],
+    panels:['trade-chart','trade-detail','vasp-risk','platform-stats','wallet','robot','syslog'],
+    stats :['fin','revenue'],
+    alerts:['kyc','ops'],
+    quick :[
+      {i:'🪪',t:'KYC 待審',s:'12 件'},
+      {i:'💸',t:'提領審核',s:'18 筆'},
+      {i:'🔍',t:'VASP 風控',s:'13 件'},
+      {i:'👛',t:'錢包管理',s:'3 幣別注意'},
+      {i:'📊',t:'報表統計',s:'本月摘要'},
+    ],
+    nav:[
+      {S:'主選單'},
+      {i:'🏠',l:'首頁 Dashboard',a:1},{i:'🛡',l:'管理者管理'},
+      {i:'₿',l:'幣種與等級設定'},{i:'📋',l:'交易紀錄'},{i:'👥',l:'用戶管理'},
+      {i:'🪪',l:'自然人 KYC 審核'},{i:'🏢',l:'法人 KYC 審核'},{i:'🏦',l:'銀行帳戶管理'},
+      {S:'財務'},
+      {i:'💰',l:'財務管理'},{i:'🧾',l:'發票管理'},{i:'💸',l:'提領審核'},
+      {S:'風控 & 系統'},
+      {i:'🔒',l:'風險管理'},{i:'🔍',l:'VASP 風控管理'},
+      {i:'🤖',l:'機器人'},{i:'👛',l:'錢包管理'},
+      {i:'📊',l:'報表統計'},{i:'⚙️',l:'營運管理'},{i:'🧾',l:'系統事件紀錄'},
+    ],
+  },
+  compliance: {
+    label:'Compliance', full:'Compliance / AML', desc:'風控・KYC・STR 存取', icon:'🛡',
+    chip:'background:rgba(139,92,246,.15);color:#c4b5fd',
+    badge:'background:rgba(139,92,246,.1);color:#c4b5fd;border:1px solid rgba(139,92,246,.2)',
+    kpi   :['total-users','kyc-natural','kyc-corp','blacklist','risk'],
+    maxKpi: 5,
+    kyc   :['natural','corporate','vasp'],
+    panels:['vasp-risk','platform-stats'],
+    stats :[],          /* no revenue / finance rows */
+    alerts:['kyc','ops'],
+    quick :[
+      {i:'🪪',t:'KYC 待審',s:'12 件'},
+      {i:'🔍',t:'VASP 風控',s:'13 件'},
+      {i:'📋',t:'STR 報告',s:'1 件處理中'},
+    ],
+    nav:[
+      {S:'主選單'},
+      {i:'🏠',l:'首頁 Dashboard',a:1},{i:'👥',l:'用戶管理'},
+      {i:'🪪',l:'自然人 KYC 審核'},{i:'🏢',l:'法人 KYC 審核'},
+      {S:'合規 & 風控'},
+      {i:'🔒',l:'風險管理'},{i:'🔍',l:'VASP 風控管理'},{i:'📊',l:'報表統計'},
+    ],
+  },
+  finance: {
+    label:'Finance', full:'財務部門', desc:'財務・資產・提領', icon:'💰',
+    chip:'background:rgba(34,197,94,.15);color:#86efac',
+    badge:'background:rgba(34,197,94,.1);color:#86efac;border:1px solid rgba(34,197,94,.2)',
+    kpi   :['total-users','trading-vol','withdrawal'],
+    maxKpi: 3,
+    kyc   :[],
+    panels:['trade-chart','trade-detail','platform-stats','wallet'],
+    stats :['fin','revenue'],
+    alerts:['ops'],
+    quick :[
+      {i:'💸',t:'提領審核',s:'18 筆待審'},
+      {i:'👛',t:'錢包管理',s:'3 幣別注意'},
+      {i:'📊',t:'報表統計',s:'本月摘要'},
+      {i:'🧾',t:'發票管理',s:'本月發票'},
+    ],
+    nav:[
+      {S:'主選單'},{i:'🏠',l:'首頁 Dashboard',a:1},{i:'📋',l:'交易紀錄'},
+      {S:'財務'},
+      {i:'💰',l:'財務管理'},{i:'🧾',l:'發票管理'},
+      {i:'💸',l:'提領審核'},{i:'👛',l:'錢包管理'},{i:'📊',l:'報表統計'},
+    ],
+  },
+  cs: {
+    label:'CS', full:'客服部門', desc:'用戶服務・KYC 查詢', icon:'🎧',
+    chip:'background:rgba(56,189,248,.15);color:#7dd3fc',
+    badge:'background:rgba(56,189,248,.1);color:#7dd3fc;border:1px solid rgba(56,189,248,.2)',
+    kpi   :['total-users','kyc-natural','kyc-corp','cs-ticket'],
+    maxKpi: 4,
+    kyc   :['natural','corporate'],
+    panels:[],
+    stats :[],
+    alerts:['ops'],
+    quick :[
+      {i:'🪪',t:'KYC 待審',s:'12 件'},
+      {i:'👥',t:'用戶管理',s:'查詢用戶'},
+    ],
+    nav:[
+      {S:'主選單'},{i:'🏠',l:'首頁 Dashboard',a:1},
+      {i:'👥',l:'用戶管理'},{i:'🪪',l:'自然人 KYC 審核'},
+      {i:'🏢',l:'法人 KYC 審核'},{i:'🏦',l:'銀行帳戶管理'},
+    ],
+  },
+  ops: {
+    label:'一般營運', full:'一般營運人員', desc:'基礎營運・KYC・機器人', icon:'⚙️',
+    chip:'background:rgba(148,163,184,.15);color:#cbd5e1',
+    badge:'background:rgba(148,163,184,.1);color:#cbd5e1;border:1px solid rgba(148,163,184,.2)',
+    kpi   :['total-users','kyc-natural','kyc-corp'],
+    maxKpi: 3,
+    kyc   :['natural','corporate'],
+    panels:['robot'],
+    stats :[],
+    alerts:['kyc','ops'],
+    quick :[
+      {i:'🪪',t:'KYC 待審',s:'12 件'},
+      {i:'📊',t:'報表統計',s:'本月摘要'},
+      {i:'🤖',t:'機器人',s:'1 台停止'},
+      {i:'⚙️',t:'營運管理',s:'設定'},
+    ],
+    nav:[
+      {S:'主選單'},{i:'🏠',l:'首頁 Dashboard',a:1},
+      {i:'👥',l:'用戶管理'},{i:'🪪',l:'自然人 KYC 審核'},
+      {i:'🏢',l:'法人 KYC 審核'},{i:'📋',l:'交易紀錄'},
+      {i:'📊',l:'報表統計'},{i:'⚙️',l:'營運管理'},{i:'🤖',l:'機器人'},
+    ],
+  },
+};
+
+/* ── rebalanceGrid ─────────────────────────────────
+   Counts visible direct children of the grid,
+   sets grid-template-columns to exactly that many 1fr columns
+   (capped at maxCols to prevent over-wide cards),
+   and hides the parent s-block if nothing is visible.
+   Returns the visible count.
+──────────────────────────────────────────────────── */
+function rebalanceGrid(gridId, blockId, maxCols) {
+  const grid  = document.getElementById(gridId);
+  const block = document.getElementById(blockId);
+  if (!grid) return 0;
+
+  const vis = Array.from(grid.children)
+    .filter(c => c.style.display !== 'none').length;
+
+  if (block) block.style.display = vis === 0 ? 'none' : '';
+
+  if (vis > 0) {
+    const cols = maxCols ? Math.min(vis, maxCols) : vis;
+    grid.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+  }
+  return vis;
+}
+
+/* ── Trading grid: asymmetric columns ─────────────── */
+function rebalanceTrading(cfg) {
+  const grid  = document.getElementById('g-trading');
+  const block = document.getElementById('b-trading');
+  const vis   = Array.from(grid.querySelectorAll('[data-panel]'))
+    .filter(p => p.style.display !== 'none').length;
+  block.style.display = vis === 0 ? 'none' : '';
+  if (vis >= 2) grid.style.gridTemplateColumns = '1.45fr .9fr';
+  else if (vis === 1) grid.style.gridTemplateColumns = '1fr';
+}
+
+/* ── System status grid: always 5 cards, fixed ───── */
+function initSysGrid() {
+  const g = document.getElementById('g-sys');
+  if (g) g.style.gridTemplateColumns = 'repeat(5,1fr)';
+}
+
+/* ── Apply role ──────────────────────────────────── */
+function applyRole(key) {
+  const r = CFG[key];
+  if (!r) return;
+
+  /* ── role switcher buttons ── */
+  document.querySelectorAll('.rb').forEach(b => b.classList.toggle('active', b.dataset.role === key));
+
+  /* ── topbar chip ── */
+  const chip = document.getElementById('tb-chip');
+  chip.textContent = r.icon + ' ' + r.label;
+  chip.style.cssText = r.chip;
+
+  /* ── sidebar badge ── */
+  document.getElementById('sbb').style.cssText =
+    r.badge + ';margin:9px 14px;padding:9px 12px;border-radius:11px;display:flex;align-items:center;gap:9px;transition:all .22s';
+  document.getElementById('sbb-i').textContent = r.icon;
+  document.getElementById('sbb-n').textContent = r.full;
+  document.getElementById('sbb-d').textContent = r.desc;
+
+  /* ── sidebar nav ── */
+  document.getElementById('sb-nav').innerHTML = r.nav.map(n =>
+    n.S ? `<div class="sb-sec">${n.S}</div>`
+        : `<a href="#"${n.a?' class="active"':''}>${n.i} ${n.l}</a>`
+  ).join('');
+
+  /* ── KPI cards ── */
+  document.querySelectorAll('[data-kpi]').forEach(el => {
+    el.style.display = r.kpi.includes(el.dataset.kpi) ? '' : 'none';
+  });
+  rebalanceGrid('g-kpi', 'b-kpi', r.maxKpi);
+
+  /* ── KYC cards ── */
+  document.querySelectorAll('[data-kyc]').forEach(el => {
+    el.style.display = r.kyc.includes(el.dataset.kyc) ? '' : 'none';
+  });
+  rebalanceGrid('g-kyc', 'b-kyc', 3);
+
+  /* ── Trading panels ── */
+  document.querySelectorAll('[data-panel]').forEach(el => {
+    el.style.display = r.panels.includes(el.dataset.panel) ? '' : 'none';
+  });
+  rebalanceTrading(r);
+
+  /* ── VASP & platform-stats panels ── */
+  rebalanceGrid('g-vasp', 'b-vasp', 2);
+
+  /* ── Platform stat rows ── */
+  document.querySelectorAll('[data-stat]').forEach(el => {
+    el.style.display = r.stats.includes(el.dataset.stat) ? '' : 'none';
+  });
+
+  /* ── Wallet / robot / syslog panels ── */
+  rebalanceGrid('g-wallet', 'b-wallet', 3);
+
+  /* ── Alerts ── */
+  document.querySelectorAll('[data-alert]').forEach(el => {
+    el.style.display = r.alerts.includes(el.dataset.alert) ? '' : 'none';
+  });
+  /* reflow alerts grid to 1 or 2 columns */
+  const alVis = Array.from(document.querySelectorAll('[data-alert]'))
+    .filter(el => el.style.display !== 'none').length;
+  document.getElementById('g-alerts').style.gridTemplateColumns =
+    alVis >= 2 ? 'repeat(2,1fr)' : '1fr';
+
+  /* ── Quick links ── */
+  const qg = document.getElementById('g-quick');
+  qg.innerHTML = r.quick.map(q =>
+    `<div class="ql"><div class="qi">${q.i}</div><div><div class="qt">${q.t}</div><div class="qs">${q.s}</div></div></div>`
+  ).join('');
+  qg.style.gridTemplateColumns = `repeat(${r.quick.length}, 1fr)`;
+}
+
+/* ── Wire buttons & init ─────────────────────────── */
+document.querySelectorAll('.rb').forEach(b => {
+  b.addEventListener('click', () => applyRole(b.dataset.role));
+});
+initSysGrid();
+applyRole('compliance');
+</script>
+</body>
+</html>

@@ -1,0 +1,1952 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>用戶詳細資料 — 優化設計稿（User ID: 1012）</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Noto Sans TC', 'Microsoft JhengHei', sans-serif; background: #f0f2f5; color: #2c3e50; font-size: 14px; }
+
+/* ── Layout ── */
+.layout { display: flex; min-height: 100vh; }
+.sidebar { width: 220px; background: #1a1a2e; color: #ccc; flex-shrink: 0; font-size: 13px; }
+.sidebar-logo { padding: 16px; border-bottom: 1px solid #2d2d4e; display: flex; align-items: center; gap: 8px; }
+.sidebar-logo .logo-box { background: #e8a838; color: #fff; width: 32px; height: 32px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; }
+.sidebar-logo .logo-text { color: #e8a838; font-size: 16px; font-weight: 700; }
+.sidebar-logo small { color: #888; font-size: 10px; display: block; }
+.sidebar nav a { display: block; padding: 10px 18px; color: #99a; font-size: 12px; text-decoration: none; border-left: 3px solid transparent; }
+.sidebar nav a.active { background: rgba(232,168,56,0.12); color: #e8a838; border-left-color: #e8a838; }
+.sidebar nav a:hover { background: rgba(255,255,255,0.05); color: #fff; }
+.sidebar-section { padding: 10px 18px 3px; font-size: 9px; color: #555; text-transform: uppercase; letter-spacing: 1px; }
+
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.topbar { background: #fff; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e8ecf0; position: sticky; top: 0; z-index: 100; }
+.breadcrumb { font-size: 12px; color: #aaa; display: flex; align-items: center; gap: 6px; }
+.breadcrumb a { color: #aaa; text-decoration: none; }
+.breadcrumb span { color: #555; font-weight: 600; }
+.topbar-right { display: flex; align-items: center; gap: 12px; font-size: 12px; color: #666; }
+.btn { padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 5px; }
+.btn-outline { background: #fff; border: 1px solid #d0d7de; color: #555; }
+.btn-primary { background: #1a1a2e; color: #fff; }
+.btn-danger { background: #fdecea; color: #e74c3c; border: 1px solid #f5c6c2; }
+
+.content { flex: 1; padding: 20px 24px; overflow-y: auto; }
+
+/* ── User Header Card ── */
+.user-header { background: #fff; border-radius: 12px; padding: 22px 24px; margin-bottom: 18px; border: 1px solid #eef0f3; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+.user-header-top { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 16px; }
+.user-avatar { width: 48px; height: 48px; border-radius: 10px; background: #e8ecf0; display: flex; align-items: center; justify-content: center; color: #555; font-size: 18px; font-weight: 700; flex-shrink: 0; }
+.user-header-info { flex: 1; }
+.user-id-row { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+.user-id-label { font-size: 18px; font-weight: 800; color: #1a1a2e; }
+.user-type-badge { font-size: 11px; padding: 2px 8px; border-radius: 4px; font-weight: 600; background: #f0f2f5; color: #555; }
+.user-sub-info { font-size: 12px; color: #888; display: flex; gap: 16px; flex-wrap: wrap; }
+.user-sub-info span { display: flex; align-items: center; gap: 4px; }
+/* alert strip — 只在有異常時出現 */
+.user-alert-strip { display: flex; gap: 8px; flex-wrap: wrap; padding: 10px 12px; background: #fafbfc; border-radius: 7px; border: 1px solid #eef0f3; margin-bottom: 16px; }
+.alert-tag { font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 4px; display: flex; align-items: center; gap: 4px; }
+.alert-tag-red { background: #fdecea; color: #c0392b; }
+.alert-tag-orange { background: #fef3e0; color: #c0710a; }
+.alert-tag-gray { background: #f0f2f5; color: #666; }
+/* meta grid */
+.user-meta-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; border-top: 1px solid #f0f2f5; }
+.meta-item { padding: 12px 16px; border-right: 1px solid #f0f2f5; }
+.meta-item:last-child { border-right: none; }
+.meta-label { font-size: 10px; color: #bbb; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+.meta-value { font-size: 13px; font-weight: 600; color: #2c3e50; }
+.meta-value-alert { font-size: 13px; font-weight: 700; }
+.meta-alert-red { color: #c0392b; }
+.meta-alert-orange { color: #c0710a; }
+.meta-label { font-size: 10px; color: #bbb; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
+.meta-value { font-size: 13px; font-weight: 600; color: #2c3e50; }
+
+/* ── Tabs ── */
+.tabs-bar { display: flex; gap: 2px; margin-bottom: 18px; background: #fff; padding: 6px; border-radius: 10px; border: 1px solid #eef0f3; box-shadow: 0 1px 3px rgba(0,0,0,0.04); overflow-x: auto; }
+.tab { padding: 8px 14px; border-radius: 7px; font-size: 12px; font-weight: 600; cursor: pointer; white-space: nowrap; color: #888; transition: all 0.15s; display: flex; align-items: center; gap: 5px; }
+.tab.active { background: #1a1a2e; color: #fff; }
+.tab:hover:not(.active) { background: #f5f6f8; color: #2c3e50; }
+.tab-badge { font-size: 10px; padding: 1px 5px; border-radius: 8px; font-weight: 700; }
+.tab-badge-red { background: rgba(231,76,60,0.15); color: #e74c3c; }
+.tab-badge-active { background: rgba(255,255,255,0.25); color: #fff; }
+.tab-badge-orange { background: rgba(230,126,34,0.15); color: #e67e22; }
+
+/* ── Tab Content Panels ── */
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ── Section headers ── */
+.section-card { background: #fff; border-radius: 10px; border: 1px solid #eef0f3; box-shadow: 0 1px 4px rgba(0,0,0,0.05); margin-bottom: 16px; overflow: hidden; }
+.section-header { padding: 14px 18px; border-bottom: 1px solid #f0f2f5; display: flex; align-items: center; justify-content: space-between; }
+.section-title { font-size: 13px; font-weight: 700; color: #2c3e50; display: flex; align-items: center; gap: 7px; }
+.section-body { padding: 0; }
+
+/* ── Key-Value table ── */
+.kv-table { width: 100%; }
+.kv-row { display: flex; border-bottom: 1px solid #f5f6f8; }
+.kv-row:last-child { border-bottom: none; }
+.kv-label { width: 170px; flex-shrink: 0; padding: 11px 18px; font-size: 12px; color: #888; background: #fafbfc; font-weight: 500; }
+.kv-value { flex: 1; padding: 11px 18px; font-size: 13px; color: #2c3e50; display: flex; align-items: center; gap: 8px; }
+.kv-edit { font-size: 11px; color: #bbb; cursor: pointer; }
+.kv-edit:hover { color: #555; }
+.kv-group-header { padding: 8px 18px; background: #f5f6f8; border-bottom: 1px solid #eef0f3; font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* ── Status Pills ── */
+.pill { font-size: 11px; padding: 3px 10px; border-radius: 10px; font-weight: 600; }
+.pill-green { background: #eafaf1; color: #1e8449; }
+.pill-red { background: #fdecea; color: #c0392b; }
+.pill-orange { background: #fef9e7; color: #9a7d0a; }
+.pill-gray { background: #f0f2f5; color: #777; }
+.pill-blue { background: #e3f0ff; color: #2471a3; }
+
+/* ── Timeline ── */
+.timeline { padding: 16px 18px; }
+.timeline-item { display: flex; gap: 14px; margin-bottom: 16px; }
+.timeline-item:last-child { margin-bottom: 0; }
+.timeline-dot-col { display: flex; flex-direction: column; align-items: center; }
+.timeline-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; }
+.dot-green { background: #27ae60; }
+.dot-orange { background: #e67e22; }
+.dot-red { background: #e74c3c; }
+.dot-blue { background: #3498db; }
+.dot-gray { background: #bdc3c7; }
+.timeline-line { width: 1px; background: #eef0f3; flex: 1; margin-top: 4px; }
+.timeline-content { flex: 1; padding-bottom: 16px; }
+.timeline-title { font-size: 13px; font-weight: 600; color: #2c3e50; margin-bottom: 3px; }
+.timeline-desc { font-size: 12px; color: #777; line-height: 1.5; }
+.timeline-time { font-size: 11px; color: #bbb; margin-top: 4px; }
+.timeline-badge { font-size: 10px; padding: 1px 7px; border-radius: 8px; font-weight: 700; display: inline-block; margin-left: 6px; }
+
+/* ── Data Table ── */
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th { background: #fafbfc; padding: 10px 14px; font-size: 11px; color: #888; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; text-align: left; border-bottom: 1px solid #eef0f3; }
+.data-table td { padding: 11px 14px; font-size: 12px; color: #2c3e50; border-bottom: 1px solid #f5f6f8; }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover td { background: #fafbfc; }
+.mono { font-family: 'Menlo', 'Courier New', monospace; font-size: 11px; color: #555; }
+
+/* ── Risk level indicators ── */
+.risk-high { color: #e74c3c; font-weight: 700; }
+.risk-mid { color: #e67e22; font-weight: 700; }
+.risk-low { color: #27ae60; font-weight: 700; }
+
+/* ── Grid layouts ── */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+
+/* ── Stat mini cards ── */
+.stat-card { background: #fff; border: 1px solid #eef0f3; border-radius: 8px; padding: 14px; text-align: center; }
+.stat-val { font-size: 22px; font-weight: 800; color: #1a1a2e; }
+.stat-label { font-size: 11px; color: #aaa; margin-top: 3px; }
+
+/* ── Alert box ── */
+.alert-box { border-radius: 8px; padding: 10px 14px; display: flex; align-items: flex-start; gap: 10px; margin-bottom: 12px; }
+.alert-box.danger { background: #fdecea; border: 1px solid #f5b7b1; }
+.alert-box.warn { background: #fef9e7; border: 1px solid #f9e79f; }
+.alert-box.info { background: #e3f0ff; border: 1px solid #aed6f1; }
+.alert-text { font-size: 12px; line-height: 1.6; }
+.alert-text.danger { color: #922b21; }
+.alert-text.warn { color: #7d6608; }
+.alert-text.info { color: #1a5276; }
+
+/* ── Empty state ── */
+.empty-state { text-align: center; padding: 40px; color: #bbb; font-size: 13px; }
+
+/* ── Log rows ── */
+.log-level-tag { font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 4px; }
+.log-login { background: #e3f0ff; color: #2c3e50; }
+.log-kyc { background: #eafaf1; color: #2c3e50; }
+.log-bank { background: #fef9e7; color: #2c3e50; }
+.log-risk { background: #fdecea; color: #2c3e50; }
+.log-trade { background: #f4ecff; color: #2c3e50; }
+.log-asset { background: #fef5e7; color: #2c3e50; }
+.log-setting { background: #f0f2f5; color: #2c3e50; }
+
+/* ── Log Filter Bar ── */
+.filter-bar { padding: 14px 18px; background: #fafbfc; border-bottom: 1px solid #eef0f3; display: flex; flex-direction: column; gap: 10px; }
+.filter-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+.filter-item { display: flex; flex-direction: column; gap: 4px; }
+.filter-item.grow { flex: 1; min-width: 120px; }
+.filter-label { font-size: 10px; color: #999; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.filter-input { height: 30px; padding: 0 10px; border: 1px solid #dde0e5; border-radius: 6px; font-size: 12px; color: #2c3e50; background: #fff; outline: none; min-width: 0; }
+.filter-input:focus { border-color: #1a1a2e; }
+.filter-select { height: 30px; padding: 0 8px; border: 1px solid #dde0e5; border-radius: 6px; font-size: 12px; color: #2c3e50; background: #fff; cursor: pointer; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23aaa' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; padding-right: 24px; outline: none; min-width: 110px; }
+.filter-select:focus { border-color: #1a1a2e; }
+.filter-actions { display: flex; gap: 6px; align-items: flex-end; padding-bottom: 0; }
+.filter-divider { width: 1px; background: #e8ecf0; margin: 0 4px; }
+.filter-tag-hint { font-size: 10px; color: #bbb; align-self: flex-end; padding-bottom: 8px; }
+
+/* ── Table Footer Pagination ── */
+.table-footer { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-top: 1px solid #f0f2f5; background: #fafbfc; font-size: 12px; color: #666; flex-wrap: wrap; gap: 8px; }
+.tf-left { display: flex; align-items: center; gap: 8px; }
+.tf-label { color: #999; font-size: 12px; }
+.tf-per-page { height: 26px; padding: 0 22px 0 8px; border: 1px solid #dde0e5; border-radius: 6px; font-size: 12px; color: #2c3e50; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'%3E%3Cpath d='M1 1l3 3 3-3' stroke='%23aaa' stroke-width='1.2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 7px center; -webkit-appearance: none; cursor: pointer; outline: none; }
+.tf-info { color: #888; font-size: 12px; }
+.tf-pagination { display: flex; align-items: center; gap: 2px; }
+.tf-btn { width: 28px; height: 28px; border: 1px solid #dde0e5; border-radius: 6px; background: #fff; color: #555; font-size: 13px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.12s; padding: 0; line-height: 1; }
+.tf-btn:hover:not(:disabled) { background: #f0f2f5; border-color: #c5ccd5; color: #1a1a2e; }
+.tf-btn:disabled { color: #ccc; border-color: #eef0f3; cursor: default; background: #fafbfc; }
+
+/* ── Sort toggle ── */
+th.sortable { cursor: pointer; user-select: none; white-space: nowrap; }
+th.sortable:hover { color: #1a1a2e; }
+.sort-arrow { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; margin-left: 4px; border-radius: 3px; background: #e8ecf0; color: #1a1a2e; font-size: 10px; font-weight: 700; vertical-align: middle; transition: background 0.15s; }
+th.sortable:hover .sort-arrow { background: #d0d7de; }
+
+/* scrollbar */
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #ddd; border-radius: 3px; }
+
+/* ── Export Modal ── */
+.export-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 9000;
+  align-items: center;
+  justify-content: center;
+}
+.export-overlay.open { display: flex; }
+.export-modal {
+  background: #fff;
+  border-radius: 14px;
+  width: 380px;
+  max-width: 95vw;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.export-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid #eef0f3;
+}
+.export-modal-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1a2e;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.export-modal-close {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: #f0f2f5;
+  color: #666;
+  font-size: 15px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  line-height: 1;
+  transition: background 0.15s;
+}
+.export-modal-close:hover { background: #e0e4ea; color: #333; }
+.export-modal-body { padding: 16px 20px; }
+.export-select-all-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid #eef0f3;
+}
+.export-select-all-row label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a1a2e;
+  cursor: pointer;
+  user-select: none;
+}
+.export-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+.export-check-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.export-check-row label {
+  font-size: 13px;
+  color: #333;
+  cursor: pointer;
+  user-select: none;
+}
+.export-check-row input[type=checkbox],
+.export-select-all-row input[type=checkbox] {
+  width: 16px; height: 16px;
+  accent-color: #1a1a2e;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.export-modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 20px 18px;
+  border-top: 1px solid #eef0f3;
+}
+.btn-export-cancel {
+  background: #fff;
+  border: 1px solid #d0d7de;
+  color: #555;
+  padding: 7px 18px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-export-cancel:hover { background: #f5f5f5; }
+.btn-export-confirm {
+  background: #1a1a2e;
+  color: #fff;
+  border: none;
+  padding: 7px 18px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.btn-export-confirm:hover { background: #2d2d4e; }
+.btn-export { background: #fff; border: 1px solid #1a1a2e; color: #1a1a2e; padding: 5px 13px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
+.btn-export:hover { background: #f0f2fa; }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-box">TSG</div>
+      <div><div class="logo-text">TSG EX</div><small>管理後台</small></div>
+    </div>
+    <nav>
+      <div class="sidebar-section">主選單</div>
+      <a href="#">🏠 首頁</a>
+      <a href="#">🛡 管理者管理</a>
+      <a href="#">₿ 幣種與等級設定</a>
+      <a href="#">📋 交易紀錄</a>
+      <a href="#" class="active">👥 用戶管理</a>
+      <a href="#">🪪 自然人 KYC 審核</a>
+      <a href="#">🏢 法人 KYC 審核</a>
+      <a href="#">🏦 銀行帳戶管理</a>
+      <a href="#">💰 財務管理</a>
+      <a href="#">🧾 發票管理</a>
+      <a href="#">⚙️ 營運管理</a>
+      <a href="#">📊 報表統計</a>
+      <a href="#">🔒 風險管理</a>
+      <a href="#">🤖 機器人</a>
+      <a href="#">👛 錢包管理</a>
+      <a href="#">🔍 VASP 風控管理</a>
+    </nav>
+  </div>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <div class="breadcrumb">
+        <a href="#">首頁</a> › <a href="#">用戶管理</a> › <a href="#">用戶列表</a> › <span>用戶詳細資料</span>
+      </div>
+      <div class="topbar-right">
+        <button class="btn btn-outline">← 返回列表</button>
+        <span style="color:#bbb;">|</span>
+        <button class="btn btn-outline">✏️ 編輯帳號</button>
+        <button class="btn btn-danger">🔒 凍結帳號</button>
+        <span style="color:#bbb;">|</span>
+        <span>👤 baasid</span>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ── User Header ── -->
+      <div class="user-header">
+
+        <!-- 第一列：頭像 + 基本識別資料 -->
+        <div class="user-header-top">
+          <div class="user-avatar">R</div>
+          <div class="user-header-info">
+            <div class="user-id-row" style="justify-content:space-between;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span class="user-id-label">用戶 #1012</span>
+                <span class="user-type-badge">自然人</span>
+              </div>
+              <button class="btn-export" onclick="openExportModal()">⬇ 匯出用戶資料</button>
+            </div>
+            <div class="user-sub-info">
+              <span>✉ rainbow1994@gmail.com</span>
+              <span>📱 093****830</span>
+              <span>等級：Level 1</span>
+              <span>GA：已綁定</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 第二列：異常警示（凍結 / 風控 / 審核中，才需要特別標示） -->
+        <div class="user-alert-strip">
+          <span class="alert-tag alert-tag-red">交易 凍結</span>
+          <span class="alert-tag alert-tag-red">新台幣轉入 凍結</span>
+          <span class="alert-tag alert-tag-red">虛擬資產轉入 凍結</span>
+          <span class="alert-tag alert-tag-red">新台幣轉出 凍結</span>
+          <span class="alert-tag alert-tag-red">虛擬資產轉出 凍結</span>
+          <span class="alert-tag alert-tag-orange">KYC 審核中</span>
+        </div>
+
+        <!-- 第三列：關鍵數據 -->
+        <div class="user-meta-grid">
+          <div class="meta-item">
+            <div class="meta-label">註冊時間</div>
+            <div class="meta-value">2026-04-08 14:58</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">最後登入</div>
+            <div class="meta-value">2026-04-10 08:57</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">VASP 風險等級</div>
+            <div class="meta-value-alert meta-alert-orange">⚠ 中風險</div>
+          </div>
+          <div class="meta-item">
+            <div class="meta-label">姓名檢核</div>
+            <div class="meta-value-alert meta-alert-red">🚨 命中 1 筆</div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ── Tab Bar ── -->
+      <div class="tabs-bar">
+        <div class="tab active" onclick="switchTab('basic')">📋 帳號基本資料</div>
+        <div class="tab" onclick="switchTab('dd')">🔎 盡職調查資料</div>
+        <div class="tab" onclick="switchTab('kyc')">🪪 KYC 驗證紀錄 <span class="tab-badge tab-badge-orange">審核中</span></div>
+        <div class="tab" onclick="switchTab('risk')">⚖️ 風險等級紀錄</div>
+        <div class="tab" onclick="switchTab('bank')">🏦 銀行帳戶</div>
+        <div class="tab" onclick="switchTab('assets')">💰 資產總覽</div>
+        <div class="tab" onclick="switchTab('trade')">💹 買賣交易紀錄</div>
+        <div class="tab" onclick="switchTab('finance')">💸 轉入轉出紀錄</div>
+        <div class="tab" onclick="switchTab('wallet')">👛 錢包地址</div>
+        <div class="tab" onclick="switchTab('vasp')">🔍 VASP 風控紀錄 <span class="tab-badge tab-badge-red">2</span></div>
+        <div class="tab" onclick="switchTab('log')">📝 操作日誌</div>
+      </div>
+
+      <!-- ══════════════════════════════════════
+           TAB 1：帳號基本資料
+      ══════════════════════════════════════ -->
+      <div class="tab-panel active" id="tab-basic">
+
+          <!-- 用戶資料 -->
+          <div class="section-card">
+            <div class="section-header">
+              <div class="section-title">👤 用戶資料</div>
+            </div>
+            <div class="section-body">
+              <div class="kv-table">
+
+                <!-- 帳號基本 -->
+                <div class="kv-group-header">帳號資訊</div>
+                <div class="kv-row"><div class="kv-label">用戶類型</div><div class="kv-value">自然人</div></div>
+                <div class="kv-row"><div class="kv-label">用戶 ID</div><div class="kv-value mono">1012</div></div>
+                <div class="kv-row"><div class="kv-label">用戶名稱</div><div class="kv-value">rainbow1994@gmail.com</div></div>
+                <div class="kv-row"><div class="kv-label">電子信箱</div><div class="kv-value">rainbow1994@gmail.com</div></div>
+                <div class="kv-row"><div class="kv-label">手機</div><div class="kv-value">093****830</div></div>
+                <div class="kv-row"><div class="kv-label">註冊時間</div><div class="kv-value">2026-04-08 14:58:44</div></div>
+                <div class="kv-row"><div class="kv-label">最後登入時間</div><div class="kv-value">2026-04-10 08:57:18</div></div>
+                <div class="kv-row"><div class="kv-label">用戶等級</div><div class="kv-value">Level 1</div></div>
+
+                <!-- 身分資料（依圖片欄位順序） -->
+                <div class="kv-group-header">身分資料</div>
+                <div class="kv-row"><div class="kv-label">真實姓名</div><div class="kv-value" style="color:#ccc;">（未填寫）</div></div>
+                <div class="kv-row"><div class="kv-label">身分證字號</div><div class="kv-value mono" style="color:#ccc;">（未填寫）</div></div>
+                <div class="kv-row"><div class="kv-label">出生日期</div><div class="kv-value" style="color:#ccc;">（未填寫）</div></div>
+                <div class="kv-row"><div class="kv-label">發證日期</div><div class="kv-value" style="color:#ccc;">（未填寫）</div></div>
+                <div class="kv-row"><div class="kv-label">發證地點</div><div class="kv-value" style="color:#ccc;">（未填寫）</div></div>
+                <div class="kv-row"><div class="kv-label">發證類別</div><div class="kv-value" style="color:#ccc;">（未填寫）</div></div>
+                <div class="kv-row"><div class="kv-label">戶籍地址</div><div class="kv-value" style="color:#ccc;">（未填寫）</div></div>
+                <div class="kv-row"><div class="kv-label">國家</div><div class="kv-value" style="color:#ccc;">（未填寫）</div></div>
+                <div class="kv-row"><div class="kv-label">性別</div><div class="kv-value" style="color:#ccc;">（未填寫）</div></div>
+
+                <!-- KYC / 銀行綁定 -->
+                <div class="kv-group-header">KYC 與銀行綁定</div>
+                <div class="kv-row"><div class="kv-label">完成 KYC 日期</div><div class="kv-value" style="color:#ccc;">（尚未完成）<span style="font-size:11px;color:#bbb;margin-left:8px;">Lv0 升級 Lv1 的時間</span></div></div>
+                <div class="kv-row"><div class="kv-label">完成銀行綁定日期</div><div class="kv-value">2026-04-09 10:00:00 <span style="font-size:11px;color:#bbb;margin-left:8px;">綁定成功時間</span></div></div>
+                <div class="kv-row"><div class="kv-label">綁定銀行帳號</div><div class="kv-value mono">010-****4521 <span style="font-size:11px;color:#bbb;margin-left:4px;">銀行代碼 + 帳號</span></div></div>
+                <div class="kv-row"><div class="kv-label">分行代碼</div><div class="kv-value mono">354</div></div>
+                <div class="kv-row"><div class="kv-label">綁定銀行名稱</div><div class="kv-value">凱基銀行</div></div>
+                <div class="kv-row"><div class="kv-label">虛擬帳號</div><div class="kv-value" style="color:#ccc;">（未設定）<span style="font-size:11px;color:#bbb;margin-left:8px;">銀行代碼 + 帳號</span></div></div>
+
+              </div>
+            </div>
+          </div>
+
+          <!-- 帳號狀態 -->
+          <div class="section-card">
+            <div class="section-header">
+              <div class="section-title">🛡 帳號狀態</div>
+              <span style="font-size:11px;color:#aaa;">調整權限請至「用戶權限管理」</span>
+            </div>
+            <div class="section-body">
+              <div class="kv-table">
+                <div class="kv-row"><div class="kv-label">帳號狀態</div><div class="kv-value"><span class="pill pill-green">正常</span></div></div>
+                <div class="kv-row"><div class="kv-label">GA 狀態</div><div class="kv-value"><span class="pill pill-green">已綁定</span></div></div>
+                <div class="kv-row"><div class="kv-label">交易狀態</div><div class="kv-value"><span class="pill pill-red">凍結</span></div></div>
+                <div class="kv-row"><div class="kv-label">新台幣轉入</div><div class="kv-value"><span class="pill pill-red">凍結</span></div></div>
+                <div class="kv-row"><div class="kv-label">虛擬資產轉入</div><div class="kv-value"><span class="pill pill-red">凍結</span></div></div>
+                <div class="kv-row"><div class="kv-label">新台幣轉出</div><div class="kv-value"><span class="pill pill-red">凍結</span></div></div>
+                <div class="kv-row"><div class="kv-label">虛擬資產轉出</div><div class="kv-value"><span class="pill pill-red">凍結</span></div></div>
+                <div class="kv-row"><div class="kv-label">特殊註記</div><div class="kv-value" style="color:#ccc;">（無）</div></div>
+                <div class="kv-row"><div class="kv-label">註銷帳戶</div><div class="kv-value"><span class="pill pill-gray">未註銷</span></div></div>
+              </div>
+            </div>
+          </div>
+
+
+      </div>
+
+      <!-- ══════════════════════════════════════
+           TAB 2：盡職調查
+      ══════════════════════════════════════ -->
+      <div class="tab-panel" id="tab-dd">
+
+        <!-- CDD 問卷 -->
+        <div class="section-card">
+          <div class="section-header">
+            <div class="section-title">📋 CDD 問卷</div>
+            <span class="pill pill-green">已完成</span>
+          </div>
+          <div class="section-body">
+            <div class="kv-table">
+
+              <!-- 行業及職位 -->
+              <div class="kv-group-header">行業及職位</div>
+              <div class="kv-row">
+                <div class="kv-label">行業</div>
+                <div class="kv-value" style="flex-direction:column;align-items:flex-start;gap:3px;">
+                  <span>金融及保險業</span>
+                  <span style="font-size:11px;color:#aaa;">▸ 證券業、證券金融公司</span>
+                </div>
+              </div>
+              <div class="kv-row"><div class="kv-label">職位</div><div class="kv-value">職員、雇員</div></div>
+
+              <!-- 年收入級距 -->
+              <div class="kv-group-header">年收入級距</div>
+              <div class="kv-row"><div class="kv-label">年收入級距</div><div class="kv-value">101 萬－200 萬</div></div>
+
+              <!-- 開戶目的 -->
+              <div class="kv-group-header">開戶目的</div>
+              <div class="kv-row"><div class="kv-label">開戶目的</div><div class="kv-value">投資</div></div>
+
+              <!-- 身份評估 -->
+              <div class="kv-group-header">身份評估</div>
+              <div class="kv-row"><div class="kv-label">特殊身份</div><div class="kv-value"><span class="pill pill-gray">均無</span></div></div>
+
+            </div>
+          </div>
+        </div>
+
+        <!-- 風險計分 -->
+        <div class="section-card">
+          <div class="section-header">
+            <div class="section-title">📊 CDD 風險計分結果</div>
+            <span style="font-size:11px;padding:3px 9px;background:#fff7e6;border:1px solid #ffe0a0;border-radius:6px;color:#9a6000;">🔒 金防部以外角色僅顯示加權風險分數</span>
+          </div>
+          <div class="section-body">
+            <div class="kv-table">
+              <div class="kv-row">
+                <div class="kv-label">加權風險分數</div>
+                <div class="kv-value" style="gap:12px;flex:1;justify-content:space-between;">
+                  <div style="display:flex;gap:12px;align-items:center;">
+                    <span style="font-size:16px;font-weight:800;color:#1a1a2e;">650</span>
+                    <span class="pill pill-orange">中風險</span>
+                  </div>
+                  <!-- 僅金防部可見展開箭頭 -->
+                  <button id="risk-score-toggle" onclick="toggleRiskDetail()" title="展開計分明細（金防部限定）"
+                    style="background:#f0f2f5;border:1px solid #d8dce2;border-radius:6px;padding:3px 10px;cursor:pointer;display:flex;align-items:center;gap:4px;font-size:12px;color:#555;white-space:nowrap;">
+                    計分明細 <span id="risk-toggle-arrow" style="font-size:11px;transition:transform 0.2s;">▼</span>
+                  </button>
+                </div>
+              </div>
+              <!-- 計分明細（預設收合，僅金防部可見） -->
+              <div id="risk-score-detail" style="display:none;">
+                <div class="kv-row">
+                  <div class="kv-label" style="width:170px;">客戶背景 (A+B+C)×50%</div>
+                  <div class="kv-value" style="flex-direction:column;align-items:flex-start;gap:4px;padding-top:12px;padding-bottom:12px;">
+                    <div style="display:flex;gap:24px;font-size:12px;">
+                      <span>A 行業風險：<strong>400</strong></span>
+                      <span>B 職位風險：<strong>100</strong></span>
+                      <span>C 收入風險：<strong>100</strong></span>
+                    </div>
+                    <span style="font-size:11px;color:#aaa;">(400+100+100) × 50% = 300</span>
+                  </div>
+                </div>
+                <div class="kv-row">
+                  <div class="kv-label">地域風險 (D)×15%</div>
+                  <div class="kv-value" style="flex-direction:column;align-items:flex-start;gap:4px;">
+                    <span style="font-size:12px;">D 國籍（台灣）：<strong>100</strong></span>
+                    <span style="font-size:11px;color:#aaa;">100 × 15% = 15</span>
+                  </div>
+                </div>
+                <div class="kv-row">
+                  <div class="kv-label">產品服務 (E)×20%</div>
+                  <div class="kv-value" style="flex-direction:column;align-items:flex-start;gap:4px;">
+                    <span style="font-size:12px;">E 開戶目的（投資）：<strong>450</strong></span>
+                    <span style="font-size:11px;color:#aaa;">450 × 20% = 90</span>
+                  </div>
+                </div>
+                <div class="kv-row">
+                  <div class="kv-label">交易管道 (Q+R)×15%</div>
+                  <div class="kv-value" style="flex-direction:column;align-items:flex-start;gap:4px;">
+                    <div style="display:flex;gap:24px;font-size:12px;">
+                      <span>Q 業務建立管道（非面對面）：<strong>400</strong></span>
+                      <span>R 交易管道（匯款）：<strong>200</strong></span>
+                    </div>
+                    <span style="font-size:11px;color:#aaa;">(400+200) × 15% = 90</span>
+                  </div>
+                </div>
+                <div class="kv-row">
+                  <div class="kv-label">計分說明</div>
+                  <div class="kv-value" style="font-size:11px;color:#888;">300 (客戶) + 15 (地域) + 90 (產品) + 90 (管道) = <strong>495</strong> → 尚未達中風險門檻；因 EDD 審查後人工調整為中風險</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- EDD 問卷 -->
+        <div class="section-card">
+          <div class="section-header">
+            <div class="section-title">📋 EDD 問卷</div>
+            <span class="pill pill-orange">審核中</span>
+          </div>
+          <div class="section-body">
+            <div class="kv-table">
+
+              <!-- 基本資料 -->
+              <div class="kv-group-header">基本資料</div>
+              <div class="kv-row"><div class="kv-label">現任職公司／機構</div><div class="kv-value">○○證券股份有限公司</div></div>
+              <div class="kv-row"><div class="kv-label">職稱</div><div class="kv-value">業務專員</div></div>
+              <div class="kv-row">
+                <div class="kv-label">在職證明文件</div>
+                <div class="kv-value" style="flex-direction:column;align-items:flex-start;gap:5px;">
+                  <span style="font-size:12px;padding:3px 10px;background:#e3f0ff;border-radius:6px;color:#2471a3;cursor:pointer;">📄 在職證明書.pdf</span>
+                  <span style="font-size:11px;color:#9a6000;background:#fff7e6;border:1px solid #ffe0a0;border-radius:5px;padding:2px 8px;">🔒 僅金融犯罪防制部可查看 / 下載</span>
+                </div>
+              </div>
+              <div class="kv-row"><div class="kv-label">任職年數</div><div class="kv-value">3－5 年</div></div>
+              <div class="kv-row"><div class="kv-label">任職公司類型</div><div class="kv-value">民營企業</div></div>
+
+              <!-- 帳號用途 -->
+              <div class="kv-group-header">帳號用途</div>
+              <div class="kv-row"><div class="kv-label">帳號實際用途</div><div class="kv-value">資產增值與配置</div></div>
+
+              <!-- 資產評估 -->
+              <div class="kv-group-header">資產評估</div>
+              <div class="kv-row">
+                <div class="kv-label">實際資金來源</div>
+                <div class="kv-value" style="gap:6px;flex-wrap:wrap;">
+                  <span class="pill pill-blue">薪資</span>
+                  <span class="pill pill-blue">儲蓄</span>
+                  <span class="pill pill-blue">投資收益</span>
+                </div>
+              </div>
+              <div class="kv-row">
+                <div class="kv-label">資金來源證明文件</div>
+                <div class="kv-value" style="flex-direction:column;align-items:flex-start;gap:5px;">
+                  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <span style="font-size:12px;padding:3px 10px;background:#e3f0ff;border-radius:6px;color:#2471a3;cursor:pointer;">📄 近6個月薪資明細.pdf</span>
+                    <span style="font-size:12px;padding:3px 10px;background:#e3f0ff;border-radius:6px;color:#2471a3;cursor:pointer;">📄 勞健保投保明細.pdf</span>
+                  </div>
+                  <span style="font-size:11px;color:#9a6000;background:#fff7e6;border:1px solid #ffe0a0;border-radius:5px;padding:2px 8px;">🔒 僅金融犯罪防制部可查看 / 下載</span>
+                </div>
+              </div>
+              <div class="kv-row"><div class="kv-label">個人總資產</div><div class="kv-value">501 萬－1,000 萬元</div></div>
+
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ══════════════════════════════════════
+           TAB 3：KYC 驗證紀錄
+      ══════════════════════════════════════ -->
+      <div class="tab-panel" id="tab-kyc">
+
+        <div class="alert-box warn">
+          <span>⚠️</span>
+          <div class="alert-text warn">此用戶目前有 EDD 審核案件尚未完成，案件 ID：KYC-2026-0082，已送交主管審核，等待中。</div>
+        </div>
+
+
+          <!-- KYC 當前狀態 -->
+          <div class="section-card">
+            <div class="section-header"><div class="section-title">🪪 自然人 KYC 當前狀態</div></div>
+            <div class="section-body">
+              <div class="kv-table">
+                <div class="kv-row"><div class="kv-label">KYC 整體狀態</div><div class="kv-value"><span class="pill pill-orange">審核中</span></div></div>
+                <div class="kv-row"><div class="kv-label">CDD 審核</div><div class="kv-value"><span class="pill pill-green">通過</span> <span style="font-size:11px;color:#aaa;">2026-04-09</span></div></div>
+                <div class="kv-row"><div class="kv-label">EDD 審核</div><div class="kv-value"><span class="pill pill-orange">主管審核中</span></div></div>
+                <div class="kv-row"><div class="kv-label">黑名單狀態</div><div class="kv-value"><span class="pill pill-gray">未列入</span></div></div>
+                <div class="kv-row"><div class="kv-label">案件 ID</div><div class="kv-value mono">KYC-2026-0082</div></div>
+                <div class="kv-row"><div class="kv-label">初次申請時間</div><div class="kv-value">2026-04-08 15:10:00</div></div>
+                <div class="kv-row"><div class="kv-label">最後更新時間</div><div class="kv-value">2026-04-10 09:00:00</div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- KYC 審核歷程 -->
+          <div class="section-card">
+            <div class="section-header"><div class="section-title">📜 KYC 審核歷程</div></div>
+            <div class="section-body">
+              <div class="timeline" style="padding:16px;">
+                <div class="timeline-item">
+                  <div class="timeline-dot-col"><div class="timeline-dot dot-orange"></div><div class="timeline-line"></div></div>
+                  <div class="timeline-content">
+                    <div class="timeline-title">EDD 主管審核中<span class="timeline-badge" style="background:#fef9e7;color:#9a7d0a;">待完成</span></div>
+                    <div class="timeline-desc">案件已通過 EDD 初審，送交主管最終確認</div>
+                    <div class="timeline-time">2026-04-10 09:00</div>
+                  </div>
+                </div>
+                <div class="timeline-item">
+                  <div class="timeline-dot-col"><div class="timeline-dot dot-blue"></div><div class="timeline-line"></div></div>
+                  <div class="timeline-content">
+                    <div class="timeline-title">EDD 審核啟動</div>
+                    <div class="timeline-desc">由系統觸發 EDD 加強審查流程。審核人：admin_chen</div>
+                    <div class="timeline-time">2026-04-09 14:30</div>
+                  </div>
+                </div>
+                <div class="timeline-item">
+                  <div class="timeline-dot-col"><div class="timeline-dot dot-green"></div><div class="timeline-line"></div></div>
+                  <div class="timeline-content">
+                    <div class="timeline-title">CDD 審核通過<span class="timeline-badge" style="background:#eafaf1;color:#1e8449;">通過</span></div>
+                    <div class="timeline-desc">身分證件與自拍照審核通過。審核人：admin_wang</div>
+                    <div class="timeline-time">2026-04-09 10:15</div>
+                  </div>
+                </div>
+                <div class="timeline-item">
+                  <div class="timeline-dot-col"><div class="timeline-dot dot-gray"></div></div>
+                  <div class="timeline-content">
+                    <div class="timeline-title">用戶送出 KYC 申請</div>
+                    <div class="timeline-desc">用戶上傳身分證正反面、自拍照</div>
+                    <div class="timeline-time">2026-04-08 15:10</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+      </div>
+
+      <!-- ══════════════════════════════════════
+           TAB：風險等級紀錄
+      ══════════════════════════════════════ -->
+      <div class="tab-panel" id="tab-risk">
+
+        <!-- 風險等級評估 -->
+        <div class="section-card">
+          <div class="section-header"><div class="section-title">⚖️ 風險等級評估</div></div>
+          <div class="section-body">
+            <div class="kv-table">
+              <div class="kv-row"><div class="kv-label">當前風險等級</div><div class="kv-value"><span class="risk-high">🔴 高風險</span></div></div>
+              <div class="kv-row"><div class="kv-label">風險分數</div><div class="kv-value" style="font-size:15px;font-weight:800;color:#1a1a2e;">650</div></div>
+              <div class="kv-row"><div class="kv-label">上次調整時間</div><div class="kv-value">2026-04-15 10:30</div></div>
+              <div class="kv-row"><div class="kv-label">操作人員</div><div class="kv-value">Novia_wu</div></div>
+              <div class="kv-row"><div class="kv-label">下次複評期限</div><div class="kv-value" style="color:#e67e22;">2026-07-15（3 個月後）</div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 風險等級歷程（表格形式） -->
+        <div class="section-card">
+          <div class="section-header"><div class="section-title">📊 風險等級歷程</div></div>
+          <div class="section-body">
+            <table class="data-table" style="width:100%;">
+              <thead>
+                <tr>
+                  <th>風險等級</th>
+                  <th>風險分數</th>
+                  <th>原因</th>
+                  <th>操作人員</th>
+                  <th>日期</th>
+                  <th>備註</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="risk-high">高風險</span></td>
+                  <td style="font-weight:700;">650</td>
+                  <td>人工調整風險等級</td>
+                  <td>Novia_wu</td>
+                  <td>2026/4/15 10:30</td>
+                  <td class="mono" style="color:#aaa;">XXXXXXXXXX</td>
+                </tr>
+                <tr>
+                  <td><span class="risk-mid">中風險</span></td>
+                  <td style="font-weight:700;">650</td>
+                  <td>KYC 通過</td>
+                  <td>系統</td>
+                  <td>2026/4/11 10:49</td>
+                  <td style="color:#888;">用戶 KYC 通過時的風險計分</td>
+                </tr>
+                <tr>
+                  <td><span class="risk-mid">中風險</span></td>
+                  <td style="font-weight:700;">650</td>
+                  <td>調整用戶基本資料</td>
+                  <td>系統</td>
+                  <td>2026/4/10 14:42</td>
+                  <td style="color:#888;">調整用戶基本資料後重新計分</td>
+                </tr>
+                <tr>
+                  <td><span class="risk-low">低風險</span></td>
+                  <td style="font-weight:700;">525</td>
+                  <td>初始算分</td>
+                  <td>系統</td>
+                  <td>2026/4/09 10:15</td>
+                  <td style="color:#888;">用戶填完 CDD 資料的風險計分</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="table-footer">
+            <div class="tf-left">
+              <span class="tf-label">每頁項目：</span>
+              <select class="tf-per-page"><option>10</option><option>25</option><option>50</option></select>
+            </div>
+            <div class="tf-info">4 條中的 1～4 條</div>
+            <div class="tf-pagination">
+              <button class="tf-btn" disabled title="首頁">«</button>
+              <button class="tf-btn" disabled title="上一頁">‹</button>
+              <button class="tf-btn" disabled title="下一頁">›</button>
+              <button class="tf-btn" disabled title="末頁">»</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 風險等級紀錄（人工填寫區） -->
+        <div class="section-card">
+          <div class="section-header">
+            <div class="section-title">📝 風險等級紀錄</div>
+            <span style="font-size:11px;color:#aaa;">金融犯罪防制部主管可手動調整風險等級</span>
+          </div>
+          <div class="section-body">
+            <table class="data-table" style="width:100%;">
+              <thead>
+                <tr>
+                  <th style="width:200px;">欄位</th>
+                  <th>內容</th>
+                  <th style="width:260px;">備註</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="color:#888;font-weight:500;">風險分數</td>
+                  <td style="color:#ccc;">（系統自動計算，不可調整）</td>
+                  <td style="color:#aaa;font-size:11px;">依 CDD 問卷加權計算</td>
+                </tr>
+                <tr>
+                  <td style="color:#888;font-weight:500;">風險等級</td>
+                  <td>
+                    <div style="display:flex;gap:8px;align-items:center;">
+                      <span class="pill pill-green" style="cursor:pointer;">低風險</span>
+                      <span class="pill pill-orange" style="cursor:pointer;">中風險</span>
+                      <span class="pill pill-red" style="cursor:pointer;">高風險</span>
+                      <span style="font-size:11px;color:#aaa;">↑ 主管手動選擇</span>
+                    </div>
+                  </td>
+                  <td style="color:#aaa;font-size:11px;">若客戶被人工調整為「高風險」，後續重新計分仍維持高風險</td>
+                </tr>
+                <tr>
+                  <td style="color:#888;font-weight:500;">備註說明</td>
+                  <td style="color:#ccc;">（輸入備註）</td>
+                  <td style="color:#aaa;font-size:11px;">純文字</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ══════════════════════════════════════
+           TAB：銀行帳戶
+      ══════════════════════════════════════ -->
+      <div class="tab-panel" id="tab-bank">
+        <div class="section-card">
+          <div class="section-header">
+            <div class="section-title">🏦 銀行帳戶綁定紀錄</div>
+            <span style="font-size:11px;color:#aaa;">共 2 筆</span>
+          </div>
+          <div class="section-body">
+            <table class="data-table" style="width:100%;">
+              <thead>
+                <tr>
+                  <th>狀態</th>
+                  <th>失敗原因</th>
+                  <th>銀行</th>
+                  <th>分行代碼</th>
+                  <th>帳號（遮罩）</th>
+                  <th>備註</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="pill pill-green">綁定成功</span></td>
+                  <td>—</td>
+                  <td>凱基銀行</td>
+                  <td class="mono">354</td>
+                  <td class="mono">****-****-****-4521</td>
+                  <td>—</td>
+                </tr>
+                <tr>
+                  <td><span class="pill pill-blue">申請綁定</span></td>
+                  <td>—</td>
+                  <td>凱基銀行</td>
+                  <td class="mono">354</td>
+                  <td class="mono">****-****-****-4521</td>
+                  <td>拋送給銀行的時間</td>
+                </tr>
+                <tr>
+                  <td><span class="pill pill-gray">填寫資料</span></td>
+                  <td>—</td>
+                  <td>凱基銀行</td>
+                  <td class="mono">354</td>
+                  <td class="mono">****-****-****-4521</td>
+                  <td>—</td>
+                </tr>
+                <tr>
+                  <td><span class="pill pill-red">綁定失敗</span></td>
+                  <td>帳號資料不符</td>
+                  <td>國泰世華</td>
+                  <td class="mono">014</td>
+                  <td class="mono">****-****-****-8833</td>
+                  <td>—</td>
+                </tr>
+                <tr>
+                  <td><span class="pill pill-blue">申請綁定</span></td>
+                  <td>—</td>
+                  <td>國泰世華</td>
+                  <td class="mono">014</td>
+                  <td class="mono">****-****-****-8833</td>
+                  <td>—</td>
+                </tr>
+                <tr>
+                  <td><span class="pill pill-gray">填寫資料</span></td>
+                  <td>—</td>
+                  <td>國泰世華</td>
+                  <td class="mono">014</td>
+                  <td class="mono">****-****-****-8833</td>
+                  <td>—</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="table-footer">
+            <div class="tf-left">
+              <span class="tf-label">每頁項目：</span>
+              <select class="tf-per-page"><option>10</option><option>25</option><option>50</option></select>
+            </div>
+            <div class="tf-info">6 條中的 1～6 條</div>
+            <div class="tf-pagination">
+              <button class="tf-btn" disabled title="首頁">«</button>
+              <button class="tf-btn" disabled title="上一頁">‹</button>
+              <button class="tf-btn" disabled title="下一頁">›</button>
+              <button class="tf-btn" disabled title="末頁">»</button>
+            </div>
+          </div>
+        </div>
+        <div class="section-card">
+          <div class="section-header"><div class="section-title">📡 法幣數據傳送紀錄</div></div>
+          <div class="section-body">
+            <table class="data-table" style="width:100%;">
+              <thead><tr><th>傳送類型</th><th>時間</th><th>狀態</th><th>備註</th></tr></thead>
+              <tbody>
+                <tr><td>法幣資產數據</td><td>2026-04-10 08:00</td><td><span class="pill pill-green">成功</span></td><td>送至凱基銀行</td></tr>
+                <tr><td>法幣交易數據</td><td>2026-04-10 08:00</td><td><span class="pill pill-green">成功</span></td><td>送至凱基銀行</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="table-footer">
+            <div class="tf-left">
+              <span class="tf-label">每頁項目：</span>
+              <select class="tf-per-page"><option>10</option><option>25</option><option>50</option></select>
+            </div>
+            <div class="tf-info">2 條中的 1～2 條</div>
+            <div class="tf-pagination">
+              <button class="tf-btn" disabled title="首頁">«</button>
+              <button class="tf-btn" disabled title="上一頁">‹</button>
+              <button class="tf-btn" disabled title="下一頁">›</button>
+              <button class="tf-btn" disabled title="末頁">»</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════
+           TAB 4：資產總覽
+      ══════════════════════════════════════ -->
+      <div class="tab-panel" id="tab-assets">
+
+        <!-- 匯總指標 -->
+        <div class="grid-4" style="margin-bottom:16px;">
+          <div class="stat-card"><div class="stat-val">0.024</div><div class="stat-label">BTC 餘額</div></div>
+          <div class="stat-card"><div class="stat-val">1.82</div><div class="stat-label">ETH 餘額</div></div>
+          <div class="stat-card"><div class="stat-val">24,500</div><div class="stat-label">USDT 餘額</div></div>
+          <div class="stat-card"><div class="stat-val">85,000</div><div class="stat-label">TWD 餘額</div></div>
+        </div>
+
+        <!-- 銀行帳戶資訊 -->
+        <div class="section-card">
+          <div class="section-header"><div class="section-title">🏦 銀行帳戶</div></div>
+          <div class="section-body">
+            <table class="data-table" style="width:100%;">
+              <thead>
+                <tr>
+                  <th style="width:240px;">欄位</th>
+                  <th>內容</th>
+                  <th style="width:220px;">備註</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="color:#888;font-weight:500;">所有資產台幣總價值</td>
+                  <td style="font-weight:600;">TWD $20,900</td>
+                  <td></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 各幣種資產明細 -->
+        <div class="section-card">
+          <div class="section-header">
+            <div class="section-title">📊 各幣種資產明細</div>
+            <span style="font-size:12px;color:#aaa;">🕐 查詢時間：10:00</span>
+          </div>
+          <div class="section-body">
+            <table class="data-table" style="width:100%;">
+              <thead>
+                <tr>
+                  <th>幣種</th>
+                  <th>鏈種</th>
+                  <th>可用餘額</th>
+                  <th>凍結餘額</th>
+                  <th>總計餘額</th>
+                  <th>當前匯率<br><span style="font-weight:400;font-size:10px;">兌台幣</span></th>
+                  <th>當前台幣價值<br><span style="font-weight:400;font-size:10px;">當下顆數×匯率</span></th>
+                  <th>所有資產台幣總價值</th>
+                  <th>最小轉出數量</th>
+                  <th>最後更新</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><td>BTC</td><td>Bitcoin (BTC)</td><td>0.0240</td><td>0.0000</td><td>0.0240</td><td>2,600,625</td><td>TWD $62,415</td><td rowspan="7" style="font-weight:700;vertical-align:middle;text-align:center;">TWD $20,900</td><td>0.0001</td><td>2026-04-10 10:00</td></tr>
+                <tr><td>ETH</td><td>Ethereum (ERC20)</td><td>1.8200</td><td>0.0000</td><td>1.8200</td><td>99,692</td><td>TWD $181,440</td><td>0.001</td><td>2026-04-10 10:00</td></tr>
+                <tr><td>BNB</td><td>Binance Smart Chain (BEP20)</td><td>0.0000</td><td>0.0000</td><td>0.0000</td><td>—</td><td>TWD $0</td><td>0.001</td><td>2026-04-10 10:00</td></tr>
+                <tr><td>USDC</td><td>Ethereum (ERC20)</td><td>0.0000</td><td>0.0000</td><td>0.0000</td><td>31.5</td><td>TWD $0</td><td>5</td><td>2026-04-10 10:00</td></tr>
+                <tr><td rowspan="3">USDT</td><td>Tron (TRC20)</td><td>10,000</td><td>0</td><td>10,000</td><td>31.5</td><td>TWD $315,000</td><td>5</td><td>2026-04-10 10:00</td></tr>
+                <tr><td>Ethereum (ERC20)</td><td>10,000</td><td>4,500</td><td>14,500</td><td>31.5</td><td>TWD $456,750</td><td>5</td><td>2026-04-10 10:00</td></tr>
+                <tr><td>Binance Smart Chain (BEP20)</td><td>0.0000</td><td>0.0000</td><td>0.0000</td><td>31.5</td><td>TWD $0</td><td>5</td><td>2026-04-10 10:00</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="table-footer">
+            <div class="tf-left">
+              <span class="tf-label">每頁項目：</span>
+              <select class="tf-per-page"><option>10</option><option>25</option><option>50</option></select>
+            </div>
+            <div class="tf-info">7 條中的 1～7 條</div>
+            <div class="tf-pagination">
+              <button class="tf-btn" disabled title="首頁">«</button>
+              <button class="tf-btn" disabled title="上一頁">‹</button>
+              <button class="tf-btn" disabled title="下一頁">›</button>
+              <button class="tf-btn" disabled title="末頁">»</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════
+           TAB 5：交易紀錄
+      ══════════════════════════════════════ -->
+      <div class="tab-panel" id="tab-trade">
+        <div class="grid-3" style="margin-bottom:16px;">
+          <div class="stat-card"><div class="stat-val">23</div><div class="stat-label">撮合限價單</div></div>
+          <div class="stat-card"><div class="stat-val">8</div><div class="stat-label">撮合市價單</div></div>
+          <div class="stat-card"><div class="stat-val">4</div><div class="stat-label">閃兌紀錄</div></div>
+        </div>
+        <div class="section-card">
+          <div class="section-header">
+            <div class="section-title">📋 買賣交易紀錄（最近 10 筆）</div>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <span style="font-size:11px;padding:3px 10px;background:#f0f2f5;border-radius:12px;cursor:pointer;color:#555;">全部</span>
+              <span style="font-size:11px;padding:3px 10px;background:#f0f2f5;border-radius:12px;cursor:pointer;color:#555;">限價單</span>
+              <span style="font-size:11px;padding:3px 10px;background:#f0f2f5;border-radius:12px;cursor:pointer;color:#555;">市價單</span>
+              <span style="font-size:11px;padding:3px 10px;background:#f0f2f5;border-radius:12px;cursor:pointer;color:#555;">閃兌</span>
+            </div>
+          </div>
+          <div class="section-body">
+            <table class="data-table" style="width:100%;">
+              <thead>
+                <tr>
+                  <th>交易編號</th>
+                  <th>目標交易幣種</th>
+                  <th>目標幣種數量</th>
+                  <th>標價幣種</th>
+                  <th>標價幣種數量</th>
+                  <th>最終交易匯率<br><span style="font-weight:400;">(目標/標價)</span></th>
+                  <th>標價幣種對<br><span style="font-weight:400;">新台幣匯率</span></th>
+                  <th>成交金額<br><span style="font-weight:400;">(新台幣)</span></th>
+                  <th>手續費<br><span style="font-weight:400;">(標價幣種)</span></th>
+                  <th>手續費<br><span style="font-weight:400;">(新台幣含稅)</span></th>
+                  <th>IP 地址</th>
+                  <th>IP 國家</th>
+                  <th>IP 城市</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="mono">TXN-20260410-0031</td>
+                  <td>BTC</td>
+                  <td>0.0100</td>
+                  <td>USDT</td>
+                  <td>820</td>
+                  <td>82,000</td>
+                  <td>31.5</td>
+                  <td>25,830</td>
+                  <td>0.82</td>
+                  <td>26</td>
+                  <td>1.34.136.22</td>
+                  <td>台灣</td>
+                  <td>台北</td>
+                </tr>
+                <tr>
+                  <td class="mono">TXN-20260409-0654</td>
+                  <td>ETH</td>
+                  <td>0.5000</td>
+                  <td>USDT</td>
+                  <td>1,600</td>
+                  <td>3,200</td>
+                  <td>31.5</td>
+                  <td>50,400</td>
+                  <td>1.60</td>
+                  <td>51</td>
+                  <td>1.34.136.22</td>
+                  <td>台灣</td>
+                  <td>台北</td>
+                </tr>
+                <tr>
+                  <td class="mono">TXN-20260409-0412</td>
+                  <td>BTC</td>
+                  <td>0.0050</td>
+                  <td>USDT</td>
+                  <td>412.5</td>
+                  <td>82,500</td>
+                  <td>31.5</td>
+                  <td>12,994</td>
+                  <td>0.41</td>
+                  <td>13</td>
+                  <td>1.34.136.22</td>
+                  <td>台灣</td>
+                  <td>台北</td>
+                </tr>
+                <tr>
+                  <td class="mono">TXN-20260409-0321</td>
+                  <td>ETH</td>
+                  <td>1.0000</td>
+                  <td>USDT</td>
+                  <td>3,150</td>
+                  <td>3,150</td>
+                  <td>31.5</td>
+                  <td style="color:#aaa;">（已取消）</td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td>1.34.136.22</td>
+                  <td>台灣</td>
+                  <td>台北</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="table-footer">
+            <div class="tf-left">
+              <span class="tf-label">每頁項目：</span>
+              <select class="tf-per-page"><option>10</option><option>25</option><option>50</option></select>
+            </div>
+            <div class="tf-info">35 條中的 1～10 條</div>
+            <div class="tf-pagination">
+              <button class="tf-btn" disabled title="首頁">«</button>
+              <button class="tf-btn" disabled title="上一頁">‹</button>
+              <button class="tf-btn" title="下一頁">›</button>
+              <button class="tf-btn" title="末頁">»</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════
+           TAB 6：轉入轉出紀錄
+      ══════════════════════════════════════ -->
+      <div class="tab-panel" id="tab-finance">
+        <div class="grid-4" style="margin-bottom:16px;">
+          <div class="stat-card"><div class="stat-val">5</div><div class="stat-label">新台幣轉入</div></div>
+          <div class="stat-card"><div class="stat-val">3</div><div class="stat-label">新台幣轉出</div></div>
+          <div class="stat-card"><div class="stat-val">8</div><div class="stat-label">虛擬資產轉入</div></div>
+          <div class="stat-card"><div class="stat-val">4</div><div class="stat-label">虛擬資產轉出</div></div>
+        </div>
+        <div class="section-card">
+          <div class="section-header">
+            <div class="section-title">💸 轉入轉出紀錄（最近 10 筆）</div>
+            <span style="font-size:11px;color:#aaa;">含虛擬資產（含內轉）、新台幣</span>
+          </div>
+          <div class="section-body">
+            <table class="data-table" style="width:100%;">
+              <thead>
+                <tr>
+                  <th>交易編號</th>
+                  <th>交易類型</th>
+                  <th>轉出地址</th>
+                  <th>轉入地址</th>
+                  <th>Tx ID / Hash ID</th>
+                  <th>地址風險分數<br><span style="font-weight:400;font-size:10px;">Elliptic</span></th>
+                  <th>數量</th>
+                  <th>幣種</th>
+                  <th>Gas fee</th>
+                  <th>Gas fee<br><span style="font-weight:400;">(新台幣)</span></th>
+                  <th>手續費</th>
+                  <th>手續費<br><span style="font-weight:400;">(新台幣含稅)</span></th>
+                  <th>虛擬帳號</th>
+                  <th>綁定銀行</th>
+                  <th>IP 地址</th>
+                  <th>IP 國家</th>
+                  <th>IP 城市</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td class="mono">FIN-20260410-0088</td>
+                  <td>新台幣轉入</td>
+                  <td class="mono">—</td>
+                  <td class="mono">—</td>
+                  <td class="mono">—</td>
+                  <td>—</td>
+                  <td>50,000</td>
+                  <td>TWD</td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td class="mono">010-****4521</td>
+                  <td>凱基銀行</td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td>—</td>
+                </tr>
+                <tr>
+                  <td class="mono">FIN-20260409-0055</td>
+                  <td>虛擬資產轉入</td>
+                  <td class="mono">0xABCD...1234</td>
+                  <td class="mono">0x25aa...FF<br><span style="font-size:10px;color:#aaa;">（本平台）</span></td>
+                  <td class="mono">0x1a2b...3c4d</td>
+                  <td>12</td>
+                  <td>2.0</td>
+                  <td>ETH</td>
+                  <td>0.0021</td>
+                  <td>66</td>
+                  <td>0.002</td>
+                  <td>2</td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td>1.34.136.22</td>
+                  <td>台灣</td>
+                  <td>台北</td>
+                </tr>
+                <tr>
+                  <td class="mono">FIN-20260410-0251</td>
+                  <td>新台幣轉出</td>
+                  <td class="mono">—</td>
+                  <td class="mono">—</td>
+                  <td class="mono">—</td>
+                  <td>—</td>
+                  <td>30,000</td>
+                  <td>TWD</td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td class="mono">010-****4521</td>
+                  <td>凱基銀行</td>
+                  <td>1.34.136.22</td>
+                  <td>台灣</td>
+                  <td>台北</td>
+                </tr>
+                <tr>
+                  <td class="mono">FIN-20260409-0182</td>
+                  <td>虛擬資產轉出</td>
+                  <td class="mono">0x25aa...FF<br><span style="font-size:10px;color:#aaa;">（本平台）</span></td>
+                  <td class="mono">0xDEF9...8899</td>
+                  <td class="mono">0xabc1...def2</td>
+                  <td>5</td>
+                  <td>5,000</td>
+                  <td>USDT</td>
+                  <td>0.0018</td>
+                  <td>57</td>
+                  <td>5</td>
+                  <td>158</td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td>1.34.136.22</td>
+                  <td>台灣</td>
+                  <td>台北</td>
+                </tr>
+                <tr>
+                  <td class="mono">FIN-20260409-0071</td>
+                  <td>內部轉帳</td>
+                  <td class="mono">0x25aa...FF</td>
+                  <td class="mono">0x9bcc...AA<br><span style="font-size:10px;color:#aaa;">內部轉帳（接收人 UID: 1008）</span></td>
+                  <td class="mono">—</td>
+                  <td>—</td>
+                  <td>1,000</td>
+                  <td>USDT</td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td>1.34.136.22</td>
+                  <td>台灣</td>
+                  <td>台北</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="table-footer">
+            <div class="tf-left">
+              <span class="tf-label">每頁項目：</span>
+              <select class="tf-per-page"><option>10</option><option>25</option><option>50</option></select>
+            </div>
+            <div class="tf-info">20 條中的 1～10 條</div>
+            <div class="tf-pagination">
+              <button class="tf-btn" disabled title="首頁">«</button>
+              <button class="tf-btn" disabled title="上一頁">‹</button>
+              <button class="tf-btn" title="下一頁">›</button>
+              <button class="tf-btn" title="末頁">»</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════
+           TAB 7：錢包地址
+      ══════════════════════════════════════ -->
+      <div class="tab-panel" id="tab-wallet">
+        <div class="section-card">
+          <div class="section-header">
+            <div class="section-title">👛 用戶錢包地址列表</div>
+            <span style="font-size:11px;color:#aaa;">共 8 個地址</span>
+          </div>
+          <div class="section-body">
+            <table class="data-table" style="width:100%;">
+              <thead><tr><th>幣種</th><th>鏈種</th><th>地址</th><th>歸集狀態</th><th>啟用狀態</th><th>建立時間</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td>ETH</td>
+                  <td>Ethereum (ERC-20)</td>
+                  <td class="mono">0x25aa132aFF...</td>
+                  <td><span class="pill pill-green">已歸集</span></td>
+                  <td><span class="pill pill-green">啟用</span></td>
+                  <td>2026-04-08 15:00</td>
+                </tr>
+                <tr>
+                  <td>BTC</td>
+                  <td>Bitcoin</td>
+                  <td class="mono">bc1qxy2kgdyg...</td>
+                  <td><span class="pill pill-orange">待歸集</span></td>
+                  <td><span class="pill pill-green">啟用</span></td>
+                  <td>2026-04-08 15:00</td>
+                </tr>
+                <tr>
+                  <td>USDT</td>
+                  <td>TRC-20 (Tron)</td>
+                  <td class="mono">TQn9Y2khEsLJW1ChVWFMSMeRDow5...</td>
+                  <td><span class="pill pill-green">已歸集</span></td>
+                  <td><span class="pill pill-green">啟用</span></td>
+                  <td>2026-04-08 15:00</td>
+                </tr>
+                <tr>
+                  <td>USDT</td>
+                  <td>ERC-20 (Ethereum)</td>
+                  <td class="mono">0x25aa132aFF...</td>
+                  <td><span class="pill pill-green">已歸集</span></td>
+                  <td><span class="pill pill-green">啟用</span></td>
+                  <td>2026-04-08 15:00</td>
+                </tr>
+                <tr>
+                  <td>USDT</td>
+                  <td>BEP-20 (BSC)</td>
+                  <td class="mono">0x7dB3C3e4E6...</td>
+                  <td><span class="pill pill-orange">待歸集</span></td>
+                  <td><span class="pill pill-green">啟用</span></td>
+                  <td>2026-04-08 15:00</td>
+                </tr>
+                <tr>
+                  <td>USDC</td>
+                  <td>ERC-20 (Ethereum)</td>
+                  <td class="mono">0x8fC2B1aD3e...</td>
+                  <td><span class="pill pill-green">已歸集</span></td>
+                  <td><span class="pill pill-green">啟用</span></td>
+                  <td>2026-04-08 15:00</td>
+                </tr>
+                <tr>
+                  <td>BNB</td>
+                  <td>BEP-20 (BSC)</td>
+                  <td class="mono">0x7dB3C3e4E6...</td>
+                  <td><span class="pill pill-orange">待歸集</span></td>
+                  <td><span class="pill pill-green">啟用</span></td>
+                  <td>2026-04-08 15:00</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="table-footer">
+            <div class="tf-left">
+              <span class="tf-label">每頁項目：</span>
+              <select class="tf-per-page"><option>10</option><option>25</option><option>50</option></select>
+            </div>
+            <div class="tf-info">7 條中的 1～7 條</div>
+            <div class="tf-pagination">
+              <button class="tf-btn" disabled title="首頁">«</button>
+              <button class="tf-btn" disabled title="上一頁">‹</button>
+              <button class="tf-btn" disabled title="下一頁">›</button>
+              <button class="tf-btn" disabled title="末頁">»</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════
+           TAB 8：VASP 風控紀錄
+      ══════════════════════════════════════ -->
+      <div class="tab-panel" id="tab-vasp">
+
+        <div class="alert-box danger">
+          <span>🚨</span>
+          <div class="alert-text danger">此用戶有 1 筆姓名檢核命中紀錄（高風險名單），需優先確認並決定是否列入黑名單或暫停服務。</div>
+        </div>
+
+        <!-- 姓名檢核 -->
+        <div class="section-card" style="margin-bottom:16px;">
+          <div class="section-header">
+            <div class="section-title">🔍 姓名檢核紀錄</div>
+            <span class="pill pill-red">1 筆命中</span>
+          </div>
+          <div class="section-body">
+            <table class="data-table" style="width:100%;">
+              <thead><tr><th>掃描時間</th><th>資料庫來源</th><th>結果</th><th>命中名單類型<br><span style="font-weight:400;font-size:10px;">SAN / PEP / RCA / 負面新聞</span></th><th>RC值</th><th>處理狀態</th><th>處理人</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td>2026-04-10 07:30</td>
+                  <td>UN 制裁名單</td>
+                  <td><span class="pill pill-red">命中</span></td>
+                  <td>SAN</td>
+                  <td>RC ≥ 91（82%）</td>
+                  <td><span class="pill pill-orange">確認中</span></td>
+                  <td>admin_chen</td>
+                </tr>
+                <tr>
+                  <td>2026-04-09 07:30</td>
+                  <td>PEP 名單</td>
+                  <td><span class="pill pill-green">未命中</span></td>
+                  <td>—</td>
+                  <td>RC = 0</td>
+                  <td><span class="pill pill-green">已確認（無異狀）</span></td>
+                  <td>admin_wang</td>
+                </tr>
+                <tr>
+                  <td>2026-04-08 07:30</td>
+                  <td>UN 制裁名單</td>
+                  <td><span class="pill pill-green">未命中</span></td>
+                  <td>—</td>
+                  <td>RC = 0</td>
+                  <td><span class="pill pill-green">已確認（無異狀）</span></td>
+                  <td>—</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 交易監控觸發 -->
+        <div class="section-card" style="margin-bottom:16px;">
+          <div class="section-header">
+            <div class="section-title">🚨 交易監控規則觸發紀錄</div>
+            <span class="pill pill-orange">2 筆待確認</span>
+          </div>
+          <div class="section-body">
+            <table class="data-table" style="width:100%;">
+              <thead><tr><th>觸發時間</th><th>規則名稱</th><th>觸發原因</th><th>關聯交易</th><th>處理狀態</th><th>處理人</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td>2026-04-10 09:00</td>
+                  <td>規則 #005：大額轉出</td>
+                  <td>單筆轉出超過 50,000 TWD</td>
+                  <td class="mono">TXN-20260410-0882</td>
+                  <td><span class="pill pill-orange">待確認</span></td>
+                  <td>—</td>
+                </tr>
+                <tr>
+                  <td>2026-04-09 16:20</td>
+                  <td>規則 #012：高頻交易</td>
+                  <td>1 小時內交易超過 10 筆</td>
+                  <td class="mono">TXN-20260409-0654</td>
+                  <td><span class="pill pill-orange">待確認</span></td>
+                  <td>—</td>
+                </tr>
+                <tr>
+                  <td>2026-04-09 10:00</td>
+                  <td>規則 #003：新帳號大額</td>
+                  <td>註冊 24 小時內轉入超過 30,000 TWD</td>
+                  <td class="mono">TXN-20260409-0321</td>
+                  <td><span class="pill pill-green">確認（正常）</span></td>
+                  <td>admin_wang</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- STR 案件 -->
+        <div class="section-card">
+          <div class="section-header"><div class="section-title">📋 STR 可疑交易報告</div></div>
+          <div class="section-body">
+            <table class="data-table" style="width:100%;">
+              <thead><tr><th>案件 ID</th><th>建立時間</th><th>類別<br><span style="font-weight:400;font-size:10px;">身分類 / 交易類 / 資恐及武擴類</span></th><th>涉及態樣代碼</th><th>狀態</th><th>描述摘要</th><th>負責人</th><th>預計完成</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td class="mono">STR-2026-0041</td>
+                  <td>2026-04-10 09:30</td>
+                  <td>交易類</td>
+                  <td class="mono" style="font-size:11px;color:#555;">S21 / S28</td>
+                  <td><span class="pill pill-orange">調查中</span></td>
+                  <td>大額轉出合併姓名檢核命中，需 STR 申報評估</td>
+                  <td>admin_chen</td>
+                  <td>2026-04-17</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══════════════════════════════════════
+           TAB 9：操作日誌
+      ══════════════════════════════════════ -->
+      <div class="tab-panel" id="tab-log">
+        <div class="section-card">
+          <div class="section-header">
+            <div class="section-title">📝 用戶完整操作日誌</div>
+            <button class="btn btn-outline" style="font-size:11px;padding:4px 10px;">↓ 匯出 Excel</button>
+          </div>
+
+          <!-- ── 篩選欄 ── -->
+          <div class="filter-bar">
+
+            <!-- 第一列：Log ID、日期區間、時間區間 -->
+            <div class="filter-row">
+              <div class="filter-item" style="width:100px;">
+                <div class="filter-label">Log ID</div>
+                <input class="filter-input" type="text" placeholder="e.g. 7251">
+              </div>
+              <div class="filter-divider"></div>
+              <div class="filter-item" style="width:140px;">
+                <div class="filter-label">起始日期</div>
+                <input class="filter-input" type="date" style="width:140px;">
+              </div>
+              <div class="filter-item" style="width:140px;">
+                <div class="filter-label">結束日期</div>
+                <input class="filter-input" type="date" style="width:140px;">
+              </div>
+              <div class="filter-divider"></div>
+              <div class="filter-item" style="width:120px;">
+                <div class="filter-label">起始時間</div>
+                <input class="filter-input" type="time" style="width:120px;">
+              </div>
+              <div class="filter-item" style="width:120px;">
+                <div class="filter-label">結束時間</div>
+                <input class="filter-input" type="time" style="width:120px;">
+              </div>
+            </div>
+
+            <!-- 第二列：類型、IP/裝置、操作者、查詢/重置 -->
+            <div class="filter-row">
+              <div class="filter-item">
+                <div class="filter-label">類型</div>
+                <select class="filter-select">
+                  <option value="">全部類型</option>
+                  <option>登入</option>
+                  <option>KYC</option>
+                  <option>銀行帳戶</option>
+                  <option>交易</option>
+                  <option>財務</option>
+                  <option>VASP 風控</option>
+                  <option>帳號設定</option>
+                </select>
+              </div>
+              <div class="filter-item grow">
+                <div class="filter-label">IP / 裝置</div>
+                <input class="filter-input" type="text" placeholder="輸入 IP 或裝置關鍵字" style="width:100%;">
+              </div>
+              <div class="filter-item">
+                <div class="filter-label">IP 國家</div>
+                <input class="filter-input" type="text" placeholder="國家" style="width:100px;">
+              </div>
+              <div class="filter-item">
+                <div class="filter-label">IP 城市</div>
+                <input class="filter-input" type="text" placeholder="城市" style="width:100px;">
+              </div>
+              <div class="filter-item">
+                <div class="filter-label">操作者</div>
+                <select class="filter-select" style="min-width:130px;">
+                  <option value="">全部操作者</option>
+                  <option>用戶</option>
+                  <option>系統</option>
+                  <option>admin_chen</option>
+                  <option>admin_wang</option>
+                  <option>admin_lee</option>
+                </select>
+              </div>
+              <div class="filter-actions">
+                <button class="btn btn-primary" style="height:30px;font-size:12px;padding:0 14px;">🔍 查詢</button>
+                <button class="btn btn-outline" style="height:30px;font-size:12px;padding:0 12px;">重置</button>
+              </div>
+            </div>
+
+          </div><!-- /filter-bar -->
+          <div class="section-body">
+            <table class="data-table" style="width:100%;">
+              <thead><tr><th>Log ID</th><th class="sortable" onclick="sortLogByTime(this)">時間 <span class="sort-arrow" id="log-sort-arrow">↓</span></th><th>類型</th><th>操作內容</th><th>IP / 裝置</th><th>IP 國家</th><th>IP 城市</th><th>操作者</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td class="mono">7251</td>
+                  <td>2026-04-10 10:30</td>
+                  <td><span class="log-level-tag log-asset">財務</span></td>
+                  <td>發起 TWD 轉出申請，金額：30,000</td>
+                  <td>1.34.136.22</td>
+                  <td>台灣</td>
+                  <td>台北</td>
+                  <td>用戶</td>
+                </tr>
+                <tr>
+                  <td class="mono">7250</td>
+                  <td>2026-04-10 09:30</td>
+                  <td><span class="log-level-tag log-trade">交易</span></td>
+                  <td>成立 BTC/USDT 限價買單，0.01 BTC @ 82,000</td>
+                  <td>1.34.136.22</td>
+                  <td>台灣</td>
+                  <td>台北</td>
+                  <td>用戶</td>
+                </tr>
+                <tr>
+                  <td class="mono">7249</td>
+                  <td>2026-04-10 09:10</td>
+                  <td><span class="log-level-tag log-risk">VASP</span></td>
+                  <td>姓名檢核排程掃描：UN 名單命中，相似度 82%</td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td>系統</td>
+                </tr>
+                <tr>
+                  <td class="mono">7248</td>
+                  <td>2026-04-10 09:00</td>
+                  <td><span class="log-level-tag log-risk">VASP</span></td>
+                  <td>風險等級由「低風險」升為「中風險」，觸發 EDD</td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td>admin_chen</td>
+                </tr>
+                <tr>
+                  <td class="mono">7244</td>
+                  <td>2026-04-10 09:00</td>
+                  <td><span class="log-level-tag log-asset">財務</span></td>
+                  <td>TWD 轉入成功，金額：50,000</td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td>系統</td>
+                </tr>
+                <tr>
+                  <td class="mono">7242</td>
+                  <td>2026-04-10 08:57</td>
+                  <td><span class="log-level-tag log-login">登入</span></td>
+                  <td>登入成功，IP: 1.34.136.22</td>
+                  <td>1.34.136.22 / iPhone 15</td>
+                  <td>台灣</td>
+                  <td>台北</td>
+                  <td>用戶</td>
+                </tr>
+                <tr>
+                  <td class="mono">7241</td>
+                  <td>2026-04-10 08:54</td>
+                  <td><span class="log-level-tag log-login">登入</span></td>
+                  <td>嘗試登入失敗，型號: Google Pixel 7a CP1A.260305.018</td>
+                  <td>未知裝置</td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td>用戶</td>
+                </tr>
+                <tr>
+                  <td class="mono">7240</td>
+                  <td>2026-04-10 08:50</td>
+                  <td><span class="log-level-tag log-setting">帳號</span></td>
+                  <td>GA 綁定成功</td>
+                  <td>1.34.136.22</td>
+                  <td>台灣</td>
+                  <td>台北</td>
+                  <td>用戶</td>
+                </tr>
+                <tr>
+                  <td class="mono">7239</td>
+                  <td>2026-04-10 08:49</td>
+                  <td><span class="log-level-tag log-setting">帳號</span></td>
+                  <td>手機號碼變更成功</td>
+                  <td>1.34.136.22</td>
+                  <td>台灣</td>
+                  <td>台北</td>
+                  <td>用戶</td>
+                </tr>
+                <tr>
+                  <td class="mono">7220</td>
+                  <td>2026-04-09 10:15</td>
+                  <td><span class="log-level-tag log-kyc">KYC</span></td>
+                  <td>CDD 審核通過，審核人：admin_wang</td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td>admin_wang</td>
+                </tr>
+                <tr>
+                  <td class="mono">7210</td>
+                  <td>2026-04-09 10:00</td>
+                  <td><span class="log-level-tag log-bank">銀行</span></td>
+                  <td>凱基銀行帳戶 ****4521 綁定成功</td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td>—</td>
+                  <td>系統</td>
+                </tr>
+                <tr>
+                  <td class="mono">7198</td>
+                  <td>2026-04-08 16:00</td>
+                  <td><span class="log-level-tag log-bank">銀行</span></td>
+                  <td>申請綁定凱基銀行帳戶 ****4521</td>
+                  <td>2.22.88.10</td>
+                  <td>台灣</td>
+                  <td>新竹</td>
+                  <td>用戶</td>
+                </tr>
+                <tr>
+                  <td class="mono">7195</td>
+                  <td>2026-04-08 15:10</td>
+                  <td><span class="log-level-tag log-kyc">KYC</span></td>
+                  <td>送出自然人 KYC 申請（上傳身分證、自拍照）</td>
+                  <td>2.22.88.10</td>
+                  <td>台灣</td>
+                  <td>新竹</td>
+                  <td>用戶</td>
+                </tr>
+                <tr>
+                  <td class="mono">7190</td>
+                  <td>2026-04-08 14:58</td>
+                  <td><span class="log-level-tag log-login">登入</span></td>
+                  <td>帳號註冊完成並首次登入</td>
+                  <td>2.22.88.10 / Chrome</td>
+                  <td>台灣</td>
+                  <td>新竹</td>
+                  <td>用戶</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="table-footer">
+            <div class="tf-left">
+              <span class="tf-label">每頁項目：</span>
+              <select class="tf-per-page"><option>10</option><option>25</option><option>50</option><option>100</option></select>
+            </div>
+            <div class="tf-info">56 條中的 1～10 條</div>
+            <div class="tf-pagination">
+              <button class="tf-btn" disabled title="首頁">«</button>
+              <button class="tf-btn" disabled title="上一頁">‹</button>
+              <button class="tf-btn" title="下一頁">›</button>
+              <button class="tf-btn" title="末頁">»</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /main -->
+</div><!-- /layout -->
+
+<!-- ── Export Modal ── -->
+<div class="export-overlay" id="exportOverlay" onclick="handleOverlayClick(event)">
+  <div class="export-modal" id="exportModal">
+    <div class="export-modal-header">
+      <div class="export-modal-title">⬇ 匯出用戶資料</div>
+      <button class="export-modal-close" onclick="closeExportModal()" title="關閉">✕</button>
+    </div>
+    <div class="export-modal-body">
+      <div class="export-select-all-row">
+        <input type="checkbox" id="exportSelectAll" onchange="toggleSelectAll(this)">
+        <label for="exportSelectAll">一鍵全選</label>
+      </div>
+      <div class="export-checklist">
+        <div class="export-check-row">
+          <input type="checkbox" id="exp-basic" class="export-item" onchange="syncSelectAll()">
+          <label for="exp-basic">📋 帳號基本資料</label>
+        </div>
+        <div class="export-check-row">
+          <input type="checkbox" id="exp-dd" class="export-item" onchange="syncSelectAll()">
+          <label for="exp-dd">🔎 盡職調查資料</label>
+        </div>
+        <div class="export-check-row">
+          <input type="checkbox" id="exp-kyc" class="export-item" onchange="syncSelectAll()">
+          <label for="exp-kyc">🪪 KYC 驗證紀錄</label>
+        </div>
+        <div class="export-check-row">
+          <input type="checkbox" id="exp-risk" class="export-item" onchange="syncSelectAll()">
+          <label for="exp-risk">⚖️ 風險等級紀錄</label>
+        </div>
+        <div class="export-check-row">
+          <input type="checkbox" id="exp-bank" class="export-item" onchange="syncSelectAll()">
+          <label for="exp-bank">🏦 銀行帳戶</label>
+        </div>
+        <div class="export-check-row">
+          <input type="checkbox" id="exp-assets" class="export-item" onchange="syncSelectAll()">
+          <label for="exp-assets">💰 資產總覽</label>
+        </div>
+        <div class="export-check-row">
+          <input type="checkbox" id="exp-trade" class="export-item" onchange="syncSelectAll()">
+          <label for="exp-trade">💹 買賣交易紀錄</label>
+        </div>
+        <div class="export-check-row">
+          <input type="checkbox" id="exp-finance" class="export-item" onchange="syncSelectAll()">
+          <label for="exp-finance">💸 轉入轉出紀錄</label>
+        </div>
+        <div class="export-check-row">
+          <input type="checkbox" id="exp-wallet" class="export-item" onchange="syncSelectAll()">
+          <label for="exp-wallet">👛 錢包地址</label>
+        </div>
+        <div class="export-check-row">
+          <input type="checkbox" id="exp-vasp" class="export-item" onchange="syncSelectAll()">
+          <label for="exp-vasp">🔍 VASP 風控紀錄</label>
+        </div>
+        <div class="export-check-row">
+          <input type="checkbox" id="exp-log" class="export-item" onchange="syncSelectAll()">
+          <label for="exp-log">📝 操作日誌</label>
+        </div>
+      </div>
+    </div>
+    <div class="export-modal-footer">
+      <button class="btn-export-cancel" onclick="closeExportModal()">取消</button>
+      <button class="btn-export-confirm" onclick="confirmExport()">✔ 確定匯出</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function switchTab(name) {
+  // Update tabs
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  // Update panels
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+}
+
+// 操作日誌時間排序（預設 ↓ 由近至遠）
+let logSortDesc = true;
+
+function sortLogByTime(th) {
+  logSortDesc = !logSortDesc;
+
+  const arrow = document.getElementById('log-sort-arrow');
+  arrow.textContent = logSortDesc ? '↓' : '↑';
+
+  const tbody = document.querySelector('#tab-log .data-table tbody');
+  const rows = Array.from(tbody.querySelectorAll('tr'));
+
+  rows.sort((a, b) => {
+    const tA = a.cells[1].textContent.trim();
+    const tB = b.cells[1].textContent.trim();
+    return logSortDesc
+      ? tB.localeCompare(tA)
+      : tA.localeCompare(tB);
+  });
+
+  rows.forEach(row => tbody.appendChild(row));
+}
+
+// ── CDD 計分明細展開（金防部限定） ──
+// 模擬角色：true = 金防部，false = 其他角色
+const IS_JFBU_ROLE = true;
+(function initRiskToggle() {
+  const btn = document.getElementById('risk-score-toggle');
+  if (!IS_JFBU_ROLE && btn) btn.style.display = 'none';
+})();
+function toggleRiskDetail() {
+  if (!IS_JFBU_ROLE) return;
+  const detail = document.getElementById('risk-score-detail');
+  const arrow  = document.getElementById('risk-toggle-arrow');
+  const open   = detail.style.display === 'block';
+  detail.style.display = open ? 'none' : 'block';
+  arrow.style.transform = open ? 'rotate(0deg)' : 'rotate(180deg)';
+}
+
+// ── Export Modal ──
+function openExportModal() {
+  document.getElementById('exportOverlay').classList.add('open');
+}
+function closeExportModal() {
+  document.getElementById('exportOverlay').classList.remove('open');
+}
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('exportOverlay')) closeExportModal();
+}
+function toggleSelectAll(cb) {
+  document.querySelectorAll('.export-item').forEach(item => item.checked = cb.checked);
+}
+function syncSelectAll() {
+  const items = document.querySelectorAll('.export-item');
+  const allChecked = Array.from(items).every(i => i.checked);
+  const someChecked = Array.from(items).some(i => i.checked);
+  const sa = document.getElementById('exportSelectAll');
+  sa.checked = allChecked;
+  sa.indeterminate = someChecked && !allChecked;
+}
+function confirmExport() {
+  const selected = Array.from(document.querySelectorAll('.export-item:checked'))
+    .map(i => i.nextElementSibling.textContent.trim());
+  if (selected.length === 0) {
+    alert('請至少勾選一個資料項目');
+    return;
+  }
+  alert('即將匯出以下資料：\n\n' + selected.join('\n'));
+  closeExportModal();
+}
+</script>
+</body>
+</html>

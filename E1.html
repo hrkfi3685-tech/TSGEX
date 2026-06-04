@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>用戶權限管理 – TSG EX</title>
+<style>
+:root{color-scheme:light;font-family:'Segoe UI',Arial,sans-serif;font-size:13px;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:#f0f2f5;display:flex;height:100vh;overflow:hidden;}
+
+/* ── Sidebar ── */
+.sb{width:150px;min-width:150px;background:#1e2a3a;display:flex;flex-direction:column;color:#cdd6e0;}
+.sb-logo{padding:16px 12px 12px;border-bottom:1px solid #2e3f52;}
+.sb-logo .brand{font-size:15px;font-weight:700;color:#fff;letter-spacing:1px;}
+.sb-logo .sub{font-size:10px;color:#7a9ab8;margin-top:2px;}
+.sb-user{padding:10px 12px;font-size:10px;color:#7a9ab8;border-bottom:1px solid #2e3f52;word-break:break-all;}
+.sb-menu{flex:1;padding:8px 0;overflow-y:auto;}
+.sb-group{font-size:10px;color:#5a7a96;padding:10px 12px 4px;text-transform:uppercase;letter-spacing:.5px;}
+.sb-item{display:flex;align-items:center;gap:7px;padding:8px 12px;cursor:pointer;color:#9db8d2;font-size:12px;transition:background .15s;}
+.sb-item:hover{background:#263447;color:#fff;}
+.sb-item.active{background:#1a3a5c;color:#fff;border-left:3px solid #1890ff;}
+.sb-item svg{flex-shrink:0;opacity:.7;}
+
+/* ── Main ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.topbar{background:#fff;padding:8px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #e8e8e8;min-height:44px;}
+.breadcrumb{color:#8c8c8c;font-size:12px;}
+.breadcrumb span{color:#1890ff;cursor:pointer;}
+.topbar-right{display:flex;align-items:center;gap:12px;font-size:12px;color:#595959;}
+.topbar-right .avatar{width:28px;height:28px;border-radius:50%;background:#1890ff;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;}
+
+.content{flex:1;overflow-y:auto;padding:16px 20px;}
+.page-title{font-size:16px;font-weight:600;color:#1e2a3a;margin-bottom:14px;}
+
+/* ── Status Cards ── */
+.cards{display:flex;gap:12px;margin-bottom:16px;}
+.card{
+  flex:1;background:#fff;border-radius:8px;padding:16px 18px;
+  display:flex;align-items:center;
+  box-shadow:0 1px 4px rgba(0,0,0,.06);
+  cursor:pointer;border:2px solid transparent;
+  transition:box-shadow .18s,border-color .18s,transform .15s;
+  user-select:none;
+}
+.card:hover{box-shadow:0 4px 16px rgba(0,0,0,.13);transform:translateY(-2px);}
+.card.selected{border-color:var(--ac);box-shadow:0 4px 16px rgba(0,0,0,.13);}
+.card-left{display:flex;align-items:center;gap:10px;flex:1;}
+.card-icon{width:46px;height:46px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;transition:transform .15s;}
+.card:hover .card-icon{transform:scale(1.1);}
+.card-label{font-size:16px;font-weight:600;color:#222;}
+.card-num{font-size:32px;font-weight:800;color:#222;line-height:1;margin-left:auto;transition:color .15s;}
+.c-ok{--ac:#00b96b;} .c-ok .card-icon{background:#e6f9f0;} .c-ok.selected .card-num{color:#00b96b;}
+.c-bl{--ac:#e84040;} .c-bl .card-icon{background:#fdeaea;} .c-bl.selected .card-num{color:#e84040;}
+.c-gr{--ac:#d48806;} .c-gr .card-icon{background:#fef5df;} .c-gr.selected .card-num{color:#d48806;}
+.c-fz{--ac:#1890ff;} .c-fz .card-icon{background:#e6f2ff;} .c-fz.selected .card-num{color:#1890ff;}
+.c-cc{--ac:#888;}    .c-cc .card-icon{background:#f0f0f0;} .c-cc.selected .card-num{color:#888;}
+
+/* ── Filter ── */
+.filter-wrap{background:#fff;border-radius:8px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:hidden;}
+.filter-head{padding:10px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;border-bottom:1px solid #f0f0f0;}
+.filter-head-left{font-size:13px;font-weight:600;color:#1e2a3a;display:flex;align-items:center;gap:6px;}
+.filter-body{padding:14px 16px;display:grid;grid-template-columns:repeat(4,1fr);gap:10px;}
+.filter-body.hidden{display:none;}
+.fl label{font-size:11px;color:#8c8c8c;margin-bottom:4px;display:block;}
+.fl input,.fl select{width:100%;border:1px solid #d9d9d9;border-radius:4px;padding:5px 8px;font-size:12px;color:#333;outline:none;}
+.fl input:focus,.fl select:focus{border-color:#1890ff;}
+.filter-btns{grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end;margin-top:4px;}
+.btn{padding:5px 16px;border-radius:4px;font-size:12px;border:none;cursor:pointer;transition:opacity .15s;}
+.btn-primary{background:#1890ff;color:#fff;} .btn-primary:hover{opacity:.85;}
+.btn-ghost{background:#fff;color:#595959;border:1px solid #d9d9d9;} .btn-ghost:hover{background:#f5f5f5;}
+.btn-danger{background:#ff4d4f;color:#fff;} .btn-danger:hover{opacity:.85;}
+
+/* ── Table ── */
+.table-wrap{background:#fff;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:hidden;}
+.table-header{padding:10px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f0f0f0;}
+.table-header h3{font-size:13px;font-weight:600;color:#1e2a3a;}
+.table-filter-tag{display:inline-flex;align-items:center;gap:5px;background:#e6f4ff;color:#1890ff;border-radius:12px;padding:2px 10px;font-size:11px;margin-left:8px;cursor:pointer;}
+.table-filter-tag:hover{background:#bae0ff;}
+.table-actions{display:flex;gap:8px;}
+
+/* 水平捲動 + 固定最後一欄 */
+.table-scroll{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;min-width:760px;}
+thead th{background:#fafafa;padding:9px 10px;font-size:12px;font-weight:600;color:#595959;text-align:left;border-bottom:1px solid #f0f0f0;white-space:nowrap;}
+tbody tr{border-bottom:1px solid #f5f5f5;transition:background .1s;}
+tbody tr:hover{background:#f8fbff;}
+tbody td{padding:8px 10px;font-size:12px;color:#333;white-space:nowrap;}
+/* 固定功能欄 */
+thead th.col-fn,tbody td.col-fn{
+  position:sticky;right:0;
+  background:#fafafa;
+  box-shadow:-2px 0 6px rgba(0,0,0,.06);
+  z-index:2;
+}
+tbody tr:hover td.col-fn{background:#f8fbff;}
+.no-data{text-align:center;padding:32px 0;color:#aaa;font-size:13px;}
+
+/* 姓名遮罩 */
+.name-mask{letter-spacing:.05em;}
+
+/* Status badges */
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500;}
+.badge-ok{background:#e6f9f0;color:#00b96b;}
+.badge-bl{background:#fdeaea;color:#e84040;}
+.badge-gr{background:#fef5df;color:#d48806;}
+.badge-fz{background:#e6f2ff;color:#1890ff;}
+.badge-cc{background:#f0f0f0;color:#888;}
+.badge-review{background:#e6f4ff;color:#1890ff;}
+.badge-cert-ok{background:#e6f9f0;color:#00b96b;}
+.badge-cert-rv{background:#fff7e6;color:#d46b08;}
+
+/* Function column */
+.fn-col{display:flex;align-items:center;}
+.fdot{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s;background:#f5f5f5;border:1px solid #e0e0e0;}
+.fdot:hover{background:#e6f4ff;border-color:#1890ff;}
+.fdot svg{width:14px;height:14px;}
+
+/* ── Overlay / Modal ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:1000;}
+.overlay.hidden{display:none;}
+.modal{background:#fff;border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.18);width:460px;max-height:90vh;overflow-y:auto;}
+.modal-sm{width:360px;}
+.modal-perm{width:fit-content;min-width:0;}
+.modal-head{padding:16px 20px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-between;}
+.modal-head h4{font-size:14px;font-weight:600;color:#1e2a3a;}
+.modal-close{background:none;border:none;font-size:18px;color:#aaa;cursor:pointer;line-height:1;padding:0 4px;}
+.modal-close:hover{color:#333;}
+.modal-body{padding:18px 20px;}
+.modal-foot{padding:12px 20px;border-top:1px solid #f0f0f0;display:flex;justify-content:flex-end;gap:8px;}
+
+.perm-opts{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
+.perm-opts.nowrap{flex-wrap:nowrap;}
+.perm-opt{display:flex;align-items:center;gap:6px;padding:7px 14px;border:2px solid #e8e8e8;border-radius:20px;cursor:pointer;transition:border-color .15s,background .15s;user-select:none;white-space:nowrap;}
+.perm-opt input{display:none;}
+.perm-opt.sel-fz{border-color:#1890ff;background:#e6f2ff;color:#1890ff;}
+.perm-opt.sel-bl{border-color:#e84040;background:#fdeaea;color:#e84040;}
+.perm-opt.sel-gr{border-color:#d48806;background:#fef5df;color:#d48806;}
+.perm-opt.sel-cc{border-color:#888;background:#f0f0f0;color:#555;}
+.perm-opt.sel-ok{border-color:#00b96b;background:#e6f9f0;color:#00b96b;}
+.perm-opt:hover:not(.sel-fz):not(.sel-bl):not(.sel-gr):not(.sel-cc):not(.sel-ok){border-color:#aaa;}
+.field-label{font-size:12px;color:#8c8c8c;margin-bottom:5px;}
+textarea.reason{width:100%;border:1px solid #d9d9d9;border-radius:4px;padding:7px 10px;font-size:12px;resize:vertical;outline:none;min-height:70px;}
+textarea.reason:focus{border-color:#1890ff;}
+
+/* Pagination */
+.pagination{padding:10px 16px;display:flex;align-items:center;justify-content:flex-end;gap:6px;border-top:1px solid #f0f0f0;}
+.pg-btn{padding:3px 8px;border:1px solid #d9d9d9;border-radius:4px;background:#fff;cursor:pointer;font-size:12px;color:#333;}
+.pg-btn.active{background:#1890ff;color:#fff;border-color:#1890ff;}
+.pg-btn:hover:not(.active){background:#f5f5f5;}
+.pg-total{font-size:12px;color:#8c8c8c;margin-right:auto;}
+
+/* ── 頁面切換 ── */
+.page{display:none;flex:1;flex-direction:column;overflow:hidden;}
+.page.active{display:flex;}
+
+/* ── 會員等級權益管理 ── */
+.limit-desc{font-size:12px;color:#8c8c8c;margin-bottom:16px;line-height:1.7;background:#fff;padding:12px 16px;border-radius:8px;border-left:4px solid #1890ff;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+.limit-table-wrap{background:#fff;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.06);overflow:hidden;}
+.limit-table-wrap table{width:100%;border-collapse:collapse;}
+.limit-table-wrap thead th{background:#fafafa;padding:10px 12px;font-size:12px;font-weight:600;color:#595959;text-align:center;border-bottom:1px solid #f0f0f0;white-space:nowrap;}
+.limit-table-wrap thead th:first-child{text-align:left;}
+.limit-table-wrap tbody td{padding:10px 12px;font-size:12px;color:#333;border-bottom:1px solid #f5f5f5;vertical-align:top;text-align:center;}
+.limit-table-wrap tbody td:first-child{text-align:center;font-weight:600;}
+.limit-table-wrap tbody tr:last-child td{border-bottom:none;}
+.limit-table-wrap tbody tr:hover{background:#f8fbff;}
+.limit-group-sep td{border-top:2px solid #e8e8e8!important;}
+.limit-cell{display:flex;flex-direction:column;gap:2px;align-items:center;}
+.limit-line{font-size:11px;color:#595959;}
+.limit-line span{color:#1e2a3a;font-weight:500;}
+.limit-none{color:#bbb;font-size:12px;}
+.identity-cell{background:#fafbfc;font-weight:700;font-size:13px;color:#1e2a3a;border-right:1px solid #f0f0f0;}
+.tag-nature{display:inline-block;background:#e6f4ff;color:#1890ff;border-radius:4px;padding:2px 8px;font-size:11px;font-weight:600;}
+.tag-corp{display:inline-block;background:#fff7e6;color:#d46b08;border-radius:4px;padding:2px 8px;font-size:11px;font-weight:600;}
+.level-badge{display:inline-block;background:#f0f0f0;color:#333;border-radius:4px;padding:2px 10px;font-size:11px;font-weight:600;}
+
+/* limit edit modal fields */
+.limit-fields{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.lf{display:flex;flex-direction:column;gap:4px;}
+.lf label{font-size:11px;color:#8c8c8c;}
+.lf input{border:1px solid #d9d9d9;border-radius:4px;padding:5px 8px;font-size:12px;outline:none;}
+.lf input:focus{border-color:#1890ff;}
+.lf-full{grid-column:1/-1;}
+.modal-section{font-size:12px;font-weight:600;color:#1e2a3a;margin:14px 0 8px;padding-bottom:4px;border-bottom:1px solid #f0f0f0;}
+
+/* 權限說明框 */
+.perm-desc{display:none;padding:8px 12px;border-radius:6px;font-size:12px;line-height:1.6;margin-bottom:0;border-left:3px solid;}
+.perm-desc.show{display:block;}
+.perm-desc.desc-fz{background:#e6f2ff;border-color:#1890ff;color:#0958d9;}
+.perm-desc.desc-bl{background:#fdeaea;border-color:#e84040;color:#cf1322;}
+.perm-desc.desc-gr{background:#fef5df;border-color:#d48806;color:#874d00;}
+.perm-desc.desc-cc{background:#f5f5f5;border-color:#888;color:#555;}
+
+/* 主管角色切換 */
+.role-toggle{display:flex;align-items:center;gap:6px;font-size:12px;background:#f5f5f5;border-radius:16px;padding:3px 5px;}
+.role-btn{padding:3px 12px;border-radius:12px;border:none;cursor:pointer;font-size:11px;font-weight:500;transition:all .15s;background:transparent;color:#888;}
+.role-btn.active{background:#1890ff;color:#fff;box-shadow:0 1px 4px rgba(24,144,255,.4);}
+.role-label{font-size:11px;color:#8c8c8c;white-space:nowrap;}
+
+/* 禁用的權限選項 */
+.perm-opt.disabled{opacity:.45;cursor:not-allowed;background:#f5f5f5;border-color:#e0e0e0;color:#bbb;position:relative;}
+.perm-opt.disabled:hover{border-color:#e0e0e0!important;}
+.perm-opt-lock{font-size:10px;margin-left:2px;}
+
+/* 二次確認彈窗 */
+.modal-confirm{width:360px;}
+.confirm-icon{text-align:center;font-size:36px;margin-bottom:10px;}
+.confirm-msg{text-align:center;font-size:14px;font-weight:600;color:#1e2a3a;margin-bottom:6px;}
+.confirm-sub{text-align:center;font-size:12px;color:#8c8c8c;line-height:1.6;}
+.confirm-badge{display:inline-block;background:#fff7e6;color:#d48806;border:1px solid #ffd591;border-radius:4px;font-size:11px;padding:2px 8px;margin:4px 0;}
+
+/* 批量匯入 Modal */
+.import-tabs{display:flex;border-bottom:1px solid #f0f0f0;margin-bottom:14px;}
+.import-tab{padding:7px 16px;font-size:12px;cursor:pointer;border-bottom:2px solid transparent;color:#8c8c8c;transition:all .15s;}
+.import-tab.active{border-bottom-color:#1890ff;color:#1890ff;font-weight:600;}
+.import-panel{display:none;}
+.import-panel.active{display:block;}
+.import-hint{font-size:11px;color:#8c8c8c;background:#f8f8f8;border-radius:4px;padding:8px 10px;margin-bottom:10px;line-height:1.7;}
+.import-hint code{background:#e8e8e8;padding:1px 4px;border-radius:3px;font-family:monospace;font-size:11px;}
+.file-drop{border:2px dashed #d9d9d9;border-radius:8px;padding:24px;text-align:center;cursor:pointer;transition:border-color .15s;}
+.file-drop:hover,.file-drop.drag{border-color:#1890ff;background:#f0f7ff;}
+.file-drop-icon{font-size:28px;margin-bottom:6px;}
+.file-drop-text{font-size:12px;color:#8c8c8c;}
+.file-drop input[type=file]{display:none;}
+.import-result{margin-top:10px;font-size:12px;border-radius:4px;padding:8px 10px;display:none;}
+.import-result.ok{background:#e6f9f0;color:#00b96b;display:block;}
+.import-result.err{background:#fdeaea;color:#e84040;display:block;}
+</style>
+</head>
+<body>
+
+<!-- ── Sidebar ── -->
+<div class="sb">
+  <div class="sb-logo">
+    <div class="brand">TSG EX</div>
+    <div class="sub">管理後台</div>
+  </div>
+  <div class="sb-user">tsgtwt001@gm.la</div>
+  <div class="sb-menu">
+    <div class="sb-group">主選單</div>
+    <div class="sb-item" onclick="switchPage('perm')">
+      <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M2 3h12v2H2zm0 4h12v2H2zm0 4h8v2H2z"/></svg>
+      概述
+    </div>
+    <div class="sb-group">用戶管理</div>
+    <div class="sb-item" onclick="switchPage('perm')">
+      <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><circle cx="8" cy="5" r="3"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6H2z"/></svg>
+      用戶列表
+    </div>
+    <div class="sb-item active" data-page="perm" onclick="switchPage('perm')">
+      <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M8 1l2 4 4.5.7-3.25 3.17.77 4.5L8 11.1l-4.02 2.27.77-4.5L1.5 5.7 6 5z"/></svg>
+      用戶權限管理
+    </div>
+    <div class="sb-group">幣種與限額設定</div>
+    <div class="sb-item" data-page="limit" onclick="switchPage('limit')">
+      <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M1 3h14v2H1zm2 4h10v2H3zm2 4h6v2H5z"/></svg>
+      會員等級權益管理
+    </div>
+    <div class="sb-group">系統設定</div>
+    <div class="sb-item" onclick="switchPage('perm')">
+      <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M6.5 1h3v1.5c.6.2 1.1.5 1.6.9l1.3-.75 2.12 2.12-.75 1.3c.4.5.7 1 .9 1.6H16v3h-1.5c-.2.6-.5 1.1-.9 1.6l.75 1.3-2.12 2.12-1.3-.75c-.5.4-1 .7-1.6.9V16h-3v-1.5c-.6-.2-1.1-.5-1.6-.9l-1.3.75L1.38 12.23l.75-1.3C1.73 10.43 1.4 9.9 1.2 9.3H0v-3h1.5c.2-.6.5-1.1.9-1.6l-.75-1.3L3.77 1.28l1.3.75c.5-.4 1-.7 1.6-.9V1zM8 5.5a2.5 2.5 0 100 5 2.5 2.5 0 000-5z"/></svg>
+      系統設定
+    </div>
+    <div class="sb-item" onclick="switchPage('perm')">
+      <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M2 2h12v1H2zm0 3h8v1H2zm0 3h10v1H2zm0 3h6v1H2z"/></svg>
+      操作日誌
+    </div>
+  </div>
+</div>
+
+<!-- ── Main ── -->
+<div class="main">
+  <div class="topbar">
+    <div class="breadcrumb" id="breadcrumb">概述 › 用戶管理 › <span>用戶權限管理</span></div>
+    <div class="topbar-right">
+      <span class="role-label">角色：</span>
+      <div class="role-toggle">
+        <button class="role-btn" id="roleGeneral" onclick="setRole('general')">一般人員</button>
+        <button class="role-btn active" id="roleSupervisor" onclick="setRole('supervisor')">主管</button>
+      </div>
+      <div>we.todream@gmail.com</div>
+      <div class="avatar">W</div>
+    </div>
+  </div>
+
+  <!-- ── Page 1: 用戶權限管理 ── -->
+  <div class="page active" id="page-perm">
+  <div class="content">
+    <div class="page-title">用戶權限管理</div>
+
+    <!-- Status Cards -->
+    <div class="cards">
+      <div class="card c-ok" data-filter="正常" onclick="filterByCard(this,'正常')">
+        <div class="card-left"><div class="card-icon">✅</div><div class="card-label">正常</div></div>
+        <div class="card-num" id="cnt-ok">2</div>
+      </div>
+      <div class="card c-bl" data-filter="黑名單" onclick="filterByCard(this,'黑名單')">
+        <div class="card-left"><div class="card-icon">⛔</div><div class="card-label">黑名單</div></div>
+        <div class="card-num" id="cnt-bl">1</div>
+      </div>
+      <div class="card c-gr" data-filter="灰名單" onclick="filterByCard(this,'灰名單')">
+        <div class="card-left"><div class="card-icon">⚠️</div><div class="card-label">灰名單</div></div>
+        <div class="card-num" id="cnt-gr">1</div>
+      </div>
+      <div class="card c-fz" data-filter="凍結" onclick="filterByCard(this,'凍結')">
+        <div class="card-left"><div class="card-icon">🔒</div><div class="card-label">已凍結</div></div>
+        <div class="card-num" id="cnt-fz">1</div>
+      </div>
+      <div class="card c-cc" data-filter="註銷" onclick="filterByCard(this,'註銷')">
+        <div class="card-left"><div class="card-icon">🗑</div><div class="card-label">已註銷</div></div>
+        <div class="card-num" id="cnt-cc">0</div>
+      </div>
+    </div>
+
+    <!-- Filter -->
+    <div class="filter-wrap">
+      <div class="filter-head">
+        <div class="filter-head-left">用戶篩選</div>
+      </div>
+      <div class="filter-body" id="filterBody">
+        <div class="fl"><label>用戶ID</label><input id="fId" type="text" placeholder="輸入用戶ID"/></div>
+        <div class="fl"><label>電子郵件</label><input id="fEmail" type="text" placeholder="輸入電子郵件"/></div>
+        <div class="fl"><label>用戶狀態</label>
+          <select id="fStatus">
+            <option value="">全部</option>
+            <option value="正常">正常</option>
+            <option value="凍結">凍結</option>
+            <option value="黑名單">黑名單</option>
+            <option value="灰名單">灰名單</option>
+            <option value="註銷">註銷</option>
+          </select>
+        </div>
+        <div class="fl"><label>認證狀態</label>
+          <select id="fCert">
+            <option value="">全部</option>
+            <option value="使用中">使用中</option>
+            <option value="審查中">審查中</option>
+          </select>
+        </div>
+        <div class="filter-btns">
+          <button class="btn btn-ghost" id="resetBtn">重置</button>
+          <button class="btn btn-primary" id="searchBtn">篩選</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrap">
+      <div class="table-header">
+        <h3>
+          用戶列表
+          <span class="table-filter-tag" id="activeTag" onclick="clearCardFilter()">全部</span>
+        </h3>
+        <div class="table-actions">
+          <button class="btn btn-ghost" onclick="openImport()" style="display:flex;align-items:center;gap:5px;">
+            <svg viewBox="0 0 16 16" width="13" height="13" fill="currentColor"><path d="M8 1v8M5 6l3 3 3-3M2 12h12v2H2z"/></svg>
+            批量匯入名單
+          </button>
+          <button class="btn btn-primary">匯出</button>
+        </div>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th>用戶類別</th>
+              <th>用戶ID</th>
+              <th>用戶姓名</th>
+              <th>電子郵件</th>
+              <th>手機號碼</th>
+              <th>等級</th>
+              <th>狀態</th>
+              <th>認證狀態</th>
+              <th>最後登入</th>
+              <th class="col-fn">功能</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+      <div class="pagination">
+        <span class="pg-total" id="pgTotal">共 5 筆</span>
+        <button class="pg-btn">«</button>
+        <button class="pg-btn active">1</button>
+        <button class="pg-btn">»</button>
+      </div>
+    </div>
+  </div>
+  </div><!-- /page-perm -->
+
+  <!-- ── Page 2: 會員等級權益管理 ── -->
+  <div class="page" id="page-limit">
+  <div class="content">
+    <div class="page-title">會員等級權益管理</div>
+    <div class="limit-desc">
+      此頁面用於配置用戶提領與充值限額。您可以依據身分類型（自然人／法人）與用戶等級，設定虛擬通貨與法幣的入金、出金限額（單筆、單日、單月），用於風險控管與合規要求。
+    </div>
+    <div class="limit-table-wrap">
+      <table id="limitTable">
+        <thead>
+          <tr>
+            <th>身分</th>
+            <th>用戶等級</th>
+            <th>虛擬通貨入金限額</th>
+            <th>虛擬通貨提幣限額（折合USD）</th>
+            <th>法幣入金限額（USD）</th>
+            <th>法幣出金限額（USD）</th>
+            <th>功能</th>
+          </tr>
+        </thead>
+        <tbody id="limitBody"></tbody>
+      </table>
+    </div>
+  </div>
+  </div><!-- /page-limit -->
+
+</div><!-- /main -->
+
+<!-- ── Permission Modal ── -->
+<div class="overlay hidden" id="permOverlay">
+  <div class="modal modal-perm">
+    <div class="modal-head">
+      <h4>✏️ 設定用戶權限</h4>
+      <button class="modal-close" onclick="closeAll()">✕</button>
+    </div>
+    <div class="modal-body">
+      <!-- inline-flex 欄讓 textarea 自動對齊選項右側邊框 -->
+      <div style="display:inline-flex;flex-direction:column;gap:6px;">
+        <div class="field-label">選擇權限狀態：</div>
+        <div class="perm-opts nowrap" id="permOpts" style="margin-bottom:0;">
+          <label class="perm-opt" data-cls="sel-fz"><input type="radio" name="perm" value="凍結"/> 🔒 凍結</label>
+          <label class="perm-opt" data-cls="sel-bl"><input type="radio" name="perm" value="黑名單"/> ⛔ 黑名單</label>
+          <label class="perm-opt" data-cls="sel-gr" data-supervisor="true"><input type="radio" name="perm" value="灰名單"/> ⚠️ 灰名單<span class="perm-opt-lock" id="lockGr"></span></label>
+          <label class="perm-opt" data-cls="sel-cc" data-supervisor="true"><input type="radio" name="perm" value="註銷"/> 🗑 註銷<span class="perm-opt-lock" id="lockCc"></span></label>
+          <label class="perm-opt" data-cls="sel-ok"><input type="radio" name="perm" value="正常"/> ✅ 恢復正常</label>
+        </div>
+        <div id="permDesc" class="perm-desc"></div>
+        <div class="field-label" style="margin-top:6px;">操作原因：</div>
+        <textarea class="reason" id="permReason" placeholder="請輸入操作原因..." style="width:100%;min-width:0;resize:none;"></textarea>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeAll()">取消</button>
+      <button class="btn btn-primary" id="permConfirm">確認</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── 批量匯入 Modal ── -->
+<div class="overlay hidden" id="importOverlay">
+  <div class="modal" style="width:480px;">
+    <div class="modal-head">
+      <h4>📥 批量匯入名單</h4>
+      <button class="modal-close" onclick="closeImport()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="import-tabs">
+        <div class="import-tab active" onclick="switchImportTab('paste')">貼上名單</div>
+        <div class="import-tab" onclick="switchImportTab('file')">上傳 CSV</div>
+      </div>
+      <!-- 貼上名單 -->
+      <div class="import-panel active" id="importPanelPaste">
+        <div class="import-hint">
+          每行填入一筆：<code>用戶ID,狀態</code>，例如：<br/>
+          <code>1021,凍結</code><br/>
+          <code>1022,黑名單</code><br/>
+          <code>1023,正常</code><br/>
+          支援狀態：正常、凍結、黑名單、灰名單、註銷
+        </div>
+        <textarea class="reason" id="importText" style="min-height:120px;resize:vertical;" placeholder="1021,凍結&#10;1022,黑名單&#10;1023,正常"></textarea>
+      </div>
+      <!-- 上傳 CSV -->
+      <div class="import-panel" id="importPanelFile">
+        <div class="import-hint">
+          上傳包含 <code>用戶ID</code> 與 <code>狀態</code> 兩欄的 CSV 檔案。<br/>
+          第一行可為表頭（將自動忽略）。
+        </div>
+        <div class="file-drop" id="fileDrop" onclick="document.getElementById('csvFileInput').click()">
+          <div class="file-drop-icon">📂</div>
+          <div class="file-drop-text">點擊選擇 CSV 檔案，或拖曳至此</div>
+          <input type="file" id="csvFileInput" accept=".csv,text/csv"/>
+        </div>
+        <div id="fileNameDisplay" style="font-size:11px;color:#1890ff;margin-top:6px;display:none;"></div>
+      </div>
+      <div class="import-result" id="importResult"></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeImport()">取消</button>
+      <button class="btn btn-primary" onclick="doImport()">確認匯入</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── 二次確認 Modal（主管專屬操作）── -->
+<div class="overlay hidden" id="confirmOverlay">
+  <div class="modal modal-confirm">
+    <div class="modal-head">
+      <h4>⚠️ 主管二次確認</h4>
+      <button class="modal-close" onclick="closeConfirm()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="confirm-icon">🔐</div>
+      <div class="confirm-msg">確認執行此操作？</div>
+      <div class="confirm-sub">
+        您即將對用戶 <b id="confirmUserId"></b> 執行<br/>
+        <span class="confirm-badge" id="confirmActionBadge"></span><br/>
+        此操作為<b>主管專屬權限</b>，執行後將記錄於操作日誌。
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeConfirm()">取消</button>
+      <button class="btn btn-danger" onclick="doConfirmedAction()">確認執行</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Limit Edit Modal ── -->
+<div class="overlay hidden" id="limitOverlay">
+  <div class="modal" style="width:480px;">
+    <div class="modal-head">
+      <h4 id="limitModalTitle">✏️ 編輯限額</h4>
+      <button class="modal-close" onclick="document.getElementById('limitOverlay').classList.add('hidden')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section">虛擬通貨入金限額</div>
+      <div class="limit-fields">
+        <div class="lf lf-full"><label>（目前無限制）</label></div>
+      </div>
+      <div class="modal-section">虛擬通貨提幣限額（折合USD）</div>
+      <div class="limit-fields">
+        <div class="lf"><label>每日總額上限</label><input id="lf-crypto-daily" type="text" placeholder="無"/></div>
+        <div class="lf"><label>單筆上限</label><input id="lf-crypto-single" type="text" placeholder="無"/></div>
+      </div>
+      <div class="modal-section">法幣入金限額（USD）</div>
+      <div class="limit-fields">
+        <div class="lf"><label>單筆</label><input id="lf-fi-single" type="text" placeholder="無"/></div>
+        <div class="lf"><label>單日</label><input id="lf-fi-daily" type="text" placeholder="無"/></div>
+        <div class="lf lf-full"><label>單月</label><input id="lf-fi-monthly" type="text" placeholder="無"/></div>
+      </div>
+      <div class="modal-section">法幣出金限額（USD）</div>
+      <div class="limit-fields">
+        <div class="lf"><label>單筆</label><input id="lf-fo-single" type="text" placeholder="無"/></div>
+        <div class="lf"><label>單日</label><input id="lf-fo-daily" type="text" placeholder="無"/></div>
+        <div class="lf lf-full"><label>單月</label><input id="lf-fo-monthly" type="text" placeholder="無"/></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="document.getElementById('limitOverlay').classList.add('hidden')">取消</button>
+      <button class="btn btn-primary" id="limitConfirm">儲存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── 角色狀態（預設主管）──
+let currentRole = 'supervisor'; // 'supervisor' | 'general'
+
+function setRole(role) {
+  currentRole = role;
+  document.getElementById('roleGeneral').classList.toggle('active', role === 'general');
+  document.getElementById('roleSupervisor').classList.toggle('active', role === 'supervisor');
+  updatePermOptLocks();
+}
+
+function updatePermOptLocks() {
+  document.querySelectorAll('#permOpts .perm-opt[data-supervisor]').forEach(opt => {
+    if (currentRole !== 'supervisor') {
+      opt.classList.add('disabled');
+      const lock = opt.querySelector('.perm-opt-lock');
+      if (lock) lock.textContent = ' 🔐';
+      opt.title = '僅主管可操作';
+    } else {
+      opt.classList.remove('disabled');
+      const lock = opt.querySelector('.perm-opt-lock');
+      if (lock) lock.textContent = '';
+      opt.title = '';
+    }
+  });
+}
+
+// ── 資料（中文姓名 + 認證狀態）──
+const users = [
+  {id:'1021', cnName:'韋小明', email:'weitodream@gmail.com', phone:'0912-345-678', level:4, type:'一般', status:'正常',  cert:'使用中', lastLogin:'2026-04-25 09:12'},
+  {id:'1022', cnName:'陳小華', email:'alice@tsg.tw',         phone:'0923-111-222', level:2, type:'VIP',  status:'黑名單', cert:'審查中', lastLogin:'2026-04-20 14:33'},
+  {id:'1023', cnName:'林小平', email:'bob@example.com',      phone:'0934-222-333', level:1, type:'一般', status:'灰名單', cert:'使用中', lastLogin:'2026-04-22 11:05'},
+  {id:'1024', cnName:'吳小美', email:'carol@gm.la',          phone:'0945-333-444', level:3, type:'VIP',  status:'凍結',  cert:'審查中', lastLogin:'2026-04-10 08:47'},
+  {id:'1025', cnName:'黃小龍', email:'dave@gm.la',           phone:'0956-444-555', level:1, type:'一般', status:'正常',  cert:'使用中', lastLogin:'2026-04-26 16:20'},
+];
+
+const badgeMap = {正常:'badge-ok', 黑名單:'badge-bl', 灰名單:'badge-gr', 凍結:'badge-fz', 註銷:'badge-cc'};
+let currentUserId = null;
+let cardFilter  = null;
+let formFilters = {id:'', email:'', status:'', cert:''};
+
+// 個資遮罩
+function maskName(name) {
+  if (!name || name.length <= 1) return name;
+  if (name.length === 2) return name[0] + '●';
+  return name[0] + '●'.repeat(name.length - 2) + name[name.length - 1];
+}
+function maskPhone(phone) {
+  if (!phone) return phone;
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length < 7) return phone;
+  return digits.slice(0, 4) + '-●●●-' + digits.slice(-3);
+}
+function maskEmail(email) {
+  if (!email) return email;
+  const at = email.indexOf('@');
+  if (at <= 0) return email;
+  return email.slice(0, 2) + '●●●' + email.slice(at);
+}
+
+const pencilSVG =
+  '<svg viewBox="0 0 16 16" fill="none" stroke="#555" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' +
+  '<path d="M11.5 2.5l2 2L5 13H3v-2L11.5 2.5z"/></svg>';
+
+function updateTag(status) {
+  const tag = document.getElementById('activeTag');
+  if (status) {
+    tag.textContent = status + ' ✕';
+    tag.style.cursor = 'pointer';
+    tag.style.opacity = '1';
+  } else {
+    tag.textContent = '全部';
+    tag.style.cursor = 'default';
+    tag.style.opacity = '.7';
+  }
+}
+
+function filterByCard(el, status) {
+  const cards = document.querySelectorAll('.card');
+  if (cardFilter === status) {
+    cards.forEach(c => c.classList.remove('selected'));
+    cardFilter = null;
+  } else {
+    cards.forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    cardFilter = status;
+  }
+  updateTag(cardFilter);
+  renderTable();
+}
+
+function clearCardFilter() {
+  if (!cardFilter) return;
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
+  cardFilter = null;
+  updateTag(null);
+  renderTable();
+}
+
+document.getElementById('searchBtn').onclick = function () {
+  formFilters.id     = document.getElementById('fId').value.trim();
+  formFilters.email  = document.getElementById('fEmail').value.trim().toLowerCase();
+  formFilters.status = document.getElementById('fStatus').value;
+  formFilters.cert   = document.getElementById('fCert').value;
+  const cards = document.querySelectorAll('.card');
+  if (formFilters.status) {
+    cardFilter = formFilters.status;
+    cards.forEach(c => c.classList.toggle('selected', c.dataset.filter === formFilters.status));
+  } else {
+    cardFilter = null;
+    cards.forEach(c => c.classList.remove('selected'));
+  }
+  updateTag(cardFilter);
+  renderTable();
+};
+
+document.getElementById('resetBtn').onclick = function () {
+  document.getElementById('fId').value    = '';
+  document.getElementById('fEmail').value = '';
+  document.getElementById('fStatus').value = '';
+  document.getElementById('fCert').value   = '';
+  formFilters = {id:'', email:'', status:'', cert:''};
+  cardFilter  = null;
+  document.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
+  updateTag(null);
+  renderTable();
+};
+
+function renderTable() {
+  const tb = document.getElementById('tableBody');
+  tb.innerHTML = '';
+
+  let list = users.filter(u => {
+    if (cardFilter && u.status !== cardFilter) return false;
+    if (formFilters.id     && !u.id.includes(formFilters.id)) return false;
+    if (formFilters.email  && !u.email.toLowerCase().includes(formFilters.email)) return false;
+    if (formFilters.status && u.status !== formFilters.status) return false;
+    if (formFilters.cert   && u.cert   !== formFilters.cert)   return false;
+    return true;
+  });
+
+  document.getElementById('pgTotal').textContent = '共 ' + list.length + ' 筆';
+
+  if (list.length === 0) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = '<td colspan="10" class="no-data">此條件下暫無用戶資料</td>';
+    tb.appendChild(tr);
+    return;
+  }
+
+  list.forEach(u => {
+    const bk = badgeMap[u.status] || 'badge-ok';
+    const certBk = u.cert === '使用中' ? 'badge-cert-ok' : 'badge-cert-rv';
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td><span class="badge badge-review">' + u.type + '</span></td>' +
+      '<td><b>' + u.id + '</b></td>' +
+      '<td class="name-mask">' + maskName(u.cnName) + '</td>' +
+      '<td>' + maskEmail(u.email) + '</td>' +
+      '<td>' + maskPhone(u.phone) + '</td>' +
+      '<td>Lv.' + u.level + '</td>' +
+      '<td><span class="badge ' + bk + '">' + u.status + '</span></td>' +
+      '<td><span class="badge ' + certBk + '">' + u.cert + '</span></td>' +
+      '<td>' + u.lastLogin + '</td>' +
+      '<td class="col-fn"><div class="fn-col">' +
+        '<div class="fdot" title="設定權限" onclick="openPerm(\'' + u.id + '\')">' + pencilSVG + '</div>' +
+      '</div></td>';
+    tb.appendChild(tr);
+  });
+}
+
+function updateCards() {
+  const counts = {正常:0, 黑名單:0, 灰名單:0, 凍結:0, 註銷:0};
+  users.forEach(u => { if (counts[u.status] !== undefined) counts[u.status]++; });
+  document.getElementById('cnt-ok').textContent = counts['正常'];
+  document.getElementById('cnt-bl').textContent = counts['黑名單'];
+  document.getElementById('cnt-gr').textContent = counts['灰名單'];
+  document.getElementById('cnt-fz').textContent = counts['凍結'];
+  document.getElementById('cnt-cc').textContent = counts['註銷'];
+}
+
+// ── 權限 Modal ──
+function openPerm(uid) {
+  currentUserId = uid;
+  document.querySelectorAll('#permOpts .perm-opt').forEach(opt => {
+    // 保留 disabled class，只清除選中狀態
+    const cls = opt.dataset.supervisor && currentRole !== 'supervisor' ? 'perm-opt disabled' : 'perm-opt';
+    opt.className = cls;
+    opt.querySelector('input').checked = false;
+  });
+  document.getElementById('permReason').value = '';
+  updatePermDesc(null);
+  updatePermOptLocks();
+  document.getElementById('permOverlay').classList.remove('hidden');
+}
+
+function closeAll() {
+  document.getElementById('permOverlay').classList.add('hidden');
+}
+
+// 各狀態說明文字
+const permDescMap = {
+  '凍結':  {cls:'desc-fz', text:'暫時停權現有帳號，待調查結果決定是否解凍。'},
+  '黑名單':{cls:'desc-bl', text:'永久禁止使用交易所所有功能，註冊新帳號也會被拒絕。'},
+  '灰名單':{cls:'desc-gr', text:'禁止出入金，可正常交易。'},
+  '註銷':  {cls:'desc-cc', text:'刪除現有帳號，可重新註冊新帳號。'},
+};
+
+function updatePermDesc(value) {
+  const box = document.getElementById('permDesc');
+  const info = permDescMap[value];
+  if (info) {
+    box.className = 'perm-desc show ' + info.cls;
+    box.textContent = info.text;
+  } else {
+    box.className = 'perm-desc';
+    box.textContent = '';
+  }
+}
+
+// 確認按鈕 — 需要二次確認的操作
+let pendingAction = null;
+
+document.getElementById('permConfirm').onclick = function () {
+  const sel = document.querySelector('#permOpts input[name="perm"]:checked');
+  if (!sel) { alert('請選擇權限狀態'); return; }
+  const supervisorOnly = ['灰名單', '註銷'];
+  if (supervisorOnly.indexOf(sel.value) !== -1 && currentRole === 'supervisor') {
+    // 開啟二次確認
+    pendingAction = sel.value;
+    document.getElementById('confirmUserId').textContent = currentUserId;
+    document.getElementById('confirmActionBadge').textContent = sel.value;
+    document.getElementById('permOverlay').classList.add('hidden');
+    document.getElementById('confirmOverlay').classList.remove('hidden');
+  } else {
+    applyPermAction(sel.value);
+  }
+};
+
+function applyPermAction(status) {
+  const u = users.find(x => x.id === currentUserId);
+  if (u) u.status = status;
+  renderTable();
+  updateCards();
+  closeAll();
+  document.getElementById('confirmOverlay').classList.add('hidden');
+}
+
+function doConfirmedAction() {
+  if (pendingAction) {
+    applyPermAction(pendingAction);
+    pendingAction = null;
+  }
+}
+
+function closeConfirm() {
+  document.getElementById('confirmOverlay').classList.add('hidden');
+  // 重新開啟權限 modal 讓用戶重選
+  document.getElementById('permOverlay').classList.remove('hidden');
+}
+
+// Radio 選取高亮
+document.querySelectorAll('#permOpts .perm-opt').forEach(opt => {
+  opt.addEventListener('click', function () {
+    if (this.classList.contains('disabled')) return; // 禁用時不處理
+    const grp = this.closest('.perm-opts');
+    grp.querySelectorAll('.perm-opt').forEach(o => {
+      const base = o.dataset.supervisor && currentRole !== 'supervisor' ? 'perm-opt disabled' : 'perm-opt';
+      o.className = base;
+    });
+    this.classList.add(this.dataset.cls || 'sel-ok');
+    const inp = this.querySelector('input');
+    inp.checked = true;
+    updatePermDesc(inp.value);
+  });
+});
+
+// 背景點擊關閉 Modal
+document.querySelectorAll('.overlay').forEach(ov => {
+  ov.addEventListener('click', function (e) { if (e.target === this) this.classList.add('hidden'); });
+});
+
+// ── 批量匯入 ──
+function openImport() {
+  document.getElementById('importText').value = '';
+  document.getElementById('importResult').className = 'import-result';
+  document.getElementById('importResult').textContent = '';
+  document.getElementById('fileNameDisplay').style.display = 'none';
+  switchImportTab('paste');
+  document.getElementById('importOverlay').classList.remove('hidden');
+}
+
+function closeImport() {
+  document.getElementById('importOverlay').classList.add('hidden');
+}
+
+let importTab = 'paste';
+function switchImportTab(tab) {
+  importTab = tab;
+  document.querySelectorAll('.import-tab').forEach((t, i) => {
+    t.classList.toggle('active', (i === 0 && tab === 'paste') || (i === 1 && tab === 'file'));
+  });
+  document.getElementById('importPanelPaste').classList.toggle('active', tab === 'paste');
+  document.getElementById('importPanelFile').classList.toggle('active', tab === 'file');
+}
+
+// 檔案上傳
+const csvInput = document.getElementById('csvFileInput');
+csvInput.addEventListener('change', function () {
+  if (!this.files[0]) return;
+  const nameEl = document.getElementById('fileNameDisplay');
+  nameEl.textContent = '已選擇：' + this.files[0].name;
+  nameEl.style.display = 'block';
+  const reader = new FileReader();
+  reader.onload = function (e) {
+    document.getElementById('importText').value = e.target.result;
+  };
+  reader.readAsText(this.files[0]);
+});
+
+// 拖曳
+const fileDrop = document.getElementById('fileDrop');
+fileDrop.addEventListener('dragover', function (e) { e.preventDefault(); this.classList.add('drag'); });
+fileDrop.addEventListener('dragleave', function () { this.classList.remove('drag'); });
+fileDrop.addEventListener('drop', function (e) {
+  e.preventDefault();
+  this.classList.remove('drag');
+  const file = e.dataTransfer.files[0];
+  if (!file) return;
+  document.getElementById('fileNameDisplay').textContent = '已選擇：' + file.name;
+  document.getElementById('fileNameDisplay').style.display = 'block';
+  const reader = new FileReader();
+  reader.onload = function (ev) { document.getElementById('importText').value = ev.target.result; };
+  reader.readAsText(file);
+});
+
+const validStatuses = ['正常','凍結','黑名單','灰名單','註銷'];
+
+function doImport() {
+  const raw = document.getElementById('importText').value.trim();
+  const resultEl = document.getElementById('importResult');
+  if (!raw) {
+    resultEl.className = 'import-result err';
+    resultEl.textContent = '請先輸入或上傳名單內容。';
+    return;
+  }
+  const lines = raw.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  let ok = 0, skip = 0, errors = [];
+  lines.forEach((line, idx) => {
+    const parts = line.split(',');
+    if (parts.length < 2) { skip++; return; }
+    const uid = parts[0].trim();
+    const st  = parts[1].trim();
+    // 跳過表頭行
+    if (uid === '用戶ID' || uid === 'id' || uid === 'ID') { skip++; return; }
+    if (validStatuses.indexOf(st) === -1) {
+      errors.push('第' + (idx+1) + '行：無效狀態「' + st + '」');
+      return;
+    }
+    const u = users.find(x => x.id === uid);
+    if (!u) { errors.push('第' + (idx+1) + '行：找不到用戶 ' + uid); return; }
+    // 主管限制
+    if ((st === '灰名單' || st === '註銷') && currentRole !== 'supervisor') {
+      errors.push('第' + (idx+1) + '行：' + st + ' 僅主管可操作');
+      return;
+    }
+    u.status = st;
+    ok++;
+  });
+  renderTable();
+  updateCards();
+  if (errors.length > 0) {
+    resultEl.className = 'import-result err';
+    resultEl.textContent = '成功更新 ' + ok + ' 筆，' + errors.length + ' 筆失敗：' + errors.join('；');
+  } else {
+    resultEl.className = 'import-result ok';
+    resultEl.textContent = '成功更新 ' + ok + ' 筆用戶狀態。';
+  }
+  if (ok > 0) setTimeout(function () { closeImport(); }, 1400);
+}
+
+renderTable();
+updateCards();
+updateTag(null);
+updatePermOptLocks();
+
+// ── 會員等級限額資料 ──
+const limits = [
+  {id:0, identity:'自然人', level:'Level 1', cryptoDaily:'10,000',    cryptoSingle:'無',         fiSingle:'100,000',   fiDaily:'300,000',   fiMonthly:'1,000,000',   foSingle:'30,000',    foDaily:'100,000',   foMonthly:'1,000,000'},
+  {id:1, identity:'自然人', level:'Level 2', cryptoDaily:'1,000,000', cryptoSingle:'500,000',    fiSingle:'200,000',   fiDaily:'200,000',   fiMonthly:'1,000,000',   foSingle:'500,000',   foDaily:'2,000,000', foMonthly:'10,000,000'},
+  {id:2, identity:'自然人', level:'Level 3', cryptoDaily:'10,000,000',cryptoSingle:'5,000,000',  fiSingle:'2,000,000', fiDaily:'2,000,000', fiMonthly:'10,000,000',  foSingle:'500,000',   foDaily:'2,000,000', foMonthly:'10,000,000'},
+  {id:3, identity:'法人',   level:'Level 1', cryptoDaily:'無',         cryptoSingle:'無',         fiSingle:'無',        fiDaily:'無',        fiMonthly:'無',          foSingle:'無',        foDaily:'無',        foMonthly:'無'},
+  {id:4, identity:'法人',   level:'Level 2', cryptoDaily:'1,000,000', cryptoSingle:'500,000',    fiSingle:'200,000',   fiDaily:'200,000',   fiMonthly:'1,000,000',   foSingle:'50,000',    foDaily:'100,000',   foMonthly:'200,000'},
+  {id:5, identity:'法人',   level:'Level 3', cryptoDaily:'10,000,000',cryptoSingle:'2,000,000',  fiSingle:'2,000,000', fiDaily:'2,000,000', fiMonthly:'10,000,000',  foSingle:'1,000,000', foDaily:'2,000,000', foMonthly:'10,000,000'},
+];
+
+function limitCell(lines) {
+  if (!lines || lines.every(l => l.v === '無')) return '<span class="limit-none">無</span>';
+  return '<div class="limit-cell">' + lines.map(l =>
+    '<span class="limit-line">' + l.k + '：<span>' + l.v + '</span></span>'
+  ).join('') + '</div>';
+}
+
+function renderLimits() {
+  const tbody = document.getElementById('limitBody');
+  tbody.innerHTML = '';
+  limits.forEach((r, i) => {
+    const isFirstOfGroup = i === 0 || limits[i-1].identity !== r.identity;
+    const groupSize = limits.filter(x => x.identity === r.identity).length;
+    const pencil = '<svg viewBox="0 0 16 16" fill="none" stroke="#555" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="14" height="14"><path d="M11.5 2.5l2 2L5 13H3v-2L11.5 2.5z"/></svg>';
+    const tag = r.identity === '自然人'
+      ? '<span class="tag-nature">' + r.identity + '</span>'
+      : '<span class="tag-corp">' + r.identity + '</span>';
+    let identityTd = '';
+    if (isFirstOfGroup) {
+      identityTd = '<td class="identity-cell" rowspan="' + groupSize + '">' + tag + '</td>';
+    }
+    const tr = document.createElement('tr');
+    if (isFirstOfGroup && i > 0) tr.classList.add('limit-group-sep');
+    tr.innerHTML =
+      identityTd +
+      '<td><span class="level-badge">' + r.level + '</span></td>' +
+      '<td><span class="limit-none">無</span></td>' +
+      '<td>' + limitCell([{k:'每日總額',v:r.cryptoDaily},{k:'單筆上限',v:r.cryptoSingle}]) + '</td>' +
+      '<td>' + limitCell([{k:'單筆',v:r.fiSingle},{k:'單日',v:r.fiDaily},{k:'單月',v:r.fiMonthly}]) + '</td>' +
+      '<td>' + limitCell([{k:'單筆',v:r.foSingle},{k:'單日',v:r.foDaily},{k:'單月',v:r.foMonthly}]) + '</td>' +
+      '<td><div class="fn-col"><div class="fdot" title="編輯" onclick="openLimitEdit(' + r.id + ')">' + pencil + '</div></div></td>';
+    tbody.appendChild(tr);
+  });
+}
+
+let editingLimitId = null;
+function openLimitEdit(id) {
+  const r = limits[id];
+  editingLimitId = id;
+  document.getElementById('limitModalTitle').textContent = '✏️ 編輯限額 — ' + r.identity + ' ' + r.level;
+  document.getElementById('lf-crypto-daily').value   = r.cryptoDaily  === '無' ? '' : r.cryptoDaily.replace(/,/g,'');
+  document.getElementById('lf-crypto-single').value  = r.cryptoSingle === '無' ? '' : r.cryptoSingle.replace(/,/g,'');
+  document.getElementById('lf-fi-single').value      = r.fiSingle     === '無' ? '' : r.fiSingle.replace(/,/g,'');
+  document.getElementById('lf-fi-daily').value       = r.fiDaily      === '無' ? '' : r.fiDaily.replace(/,/g,'');
+  document.getElementById('lf-fi-monthly').value     = r.fiMonthly    === '無' ? '' : r.fiMonthly.replace(/,/g,'');
+  document.getElementById('lf-fo-single').value      = r.foSingle     === '無' ? '' : r.foSingle.replace(/,/g,'');
+  document.getElementById('lf-fo-daily').value       = r.foDaily      === '無' ? '' : r.foDaily.replace(/,/g,'');
+  document.getElementById('lf-fo-monthly').value     = r.foMonthly    === '無' ? '' : r.foMonthly.replace(/,/g,'');
+  document.getElementById('limitOverlay').classList.remove('hidden');
+}
+
+function fmt(v) {
+  if (!v || v.trim() === '') return '無';
+  return Number(v.replace(/,/g,'')).toLocaleString();
+}
+
+document.getElementById('limitConfirm').onclick = function () {
+  const r = limits[editingLimitId];
+  r.cryptoDaily   = fmt(document.getElementById('lf-crypto-daily').value);
+  r.cryptoSingle  = fmt(document.getElementById('lf-crypto-single').value);
+  r.fiSingle      = fmt(document.getElementById('lf-fi-single').value);
+  r.fiDaily       = fmt(document.getElementById('lf-fi-daily').value);
+  r.fiMonthly     = fmt(document.getElementById('lf-fi-monthly').value);
+  r.foSingle      = fmt(document.getElementById('lf-fo-single').value);
+  r.foDaily       = fmt(document.getElementById('lf-fo-daily').value);
+  r.foMonthly     = fmt(document.getElementById('lf-fo-monthly').value);
+  renderLimits();
+  document.getElementById('limitOverlay').classList.add('hidden');
+};
+
+// ── 頁面切換 ──
+const breadcrumbs = {
+  perm:  '概述 › 用戶管理 › <span>用戶權限管理</span>',
+  limit: '概述 › 幣種與限額設定 › <span>會員等級權益管理</span>',
+};
+function switchPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.querySelectorAll('.sb-item[data-page]').forEach(el => {
+    el.classList.toggle('active', el.dataset.page === page);
+  });
+  document.getElementById('breadcrumb').innerHTML = breadcrumbs[page] || '';
+}
+
+renderLimits();
+</script>
+</body>
+</html>

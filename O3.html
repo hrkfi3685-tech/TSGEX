@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>監控列表管理</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --blue:#1D5FAD;
+  --blue-dark:#1752a0;
+  --blue-light:#EBF3FD;
+  --border:#e5e7eb;
+  --bg:#f4f5f7;
+}
+
+html,body{height:100%;min-height:100vh;}
+
+.app{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  background:var(--bg);color:#1a1a1a;font-size:14px;
+  display:flex;flex-direction:column;min-height:100vh;
+}
+
+/* ── Topbar ── */
+.topbar{
+  background:var(--blue);height:48px;display:flex;align-items:center;
+  padding:0 20px;gap:12px;flex-shrink:0;
+  position:sticky;top:0;z-index:50;
+  box-shadow:0 2px 8px rgba(0,0,0,.18);
+}
+.hamburger{
+  display:none;background:none;border:none;color:#fff;
+  cursor:pointer;padding:4px;border-radius:4px;align-items:center;justify-content:center;
+}
+.hamburger:hover{background:rgba(255,255,255,.15);}
+.topbar-logo{color:#fff;font-size:14px;font-weight:600;letter-spacing:.3px;white-space:nowrap;}
+.topbar-sep{color:rgba(255,255,255,.4);font-size:13px}
+.topbar-page{color:rgba(255,255,255,.85);font-size:13px;white-space:nowrap;}
+.topbar-spacer{flex:1}
+.topbar-user{display:flex;align-items:center;gap:8px;color:rgba(255,255,255,.85);font-size:12px;white-space:nowrap;}
+.av{width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:#fff;flex-shrink:0;}
+
+/* ── Layout ── */
+.layout{display:flex;flex:1;overflow:hidden;position:relative;}
+
+/* ── Sidebar overlay (mobile) ── */
+.sidebar-overlay{
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:40;
+}
+.sidebar-overlay.open{display:block;}
+
+/* ── Sidebar ── */
+.sidebar{
+  width:185px;background:#fff;border-right:1px solid var(--border);
+  padding:14px 0;flex-shrink:0;overflow-y:auto;
+  transition:transform .25s ease;
+}
+.nav-section{font-size:10px;font-weight:500;color:#aaa;letter-spacing:.6px;padding:14px 18px 5px;text-transform:uppercase}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 18px;font-size:13px;color:#555;cursor:pointer;transition:background .12s}
+.nav-item:hover{background:#f0f4ff}
+.nav-item.active{background:var(--blue-light);color:var(--blue);font-weight:500;border-right:2px solid var(--blue)}
+.nav-icon{width:14px;height:14px;flex-shrink:0;opacity:.7}
+.nav-badge{margin-left:auto;font-size:10px;background:#FEF4EA;color:#9A5C14;padding:1px 6px;border-radius:8px;font-weight:600}
+
+/* ── Main ── */
+.main{flex:1;overflow-y:auto;padding:20px;}
+
+/* ── Page header ── */
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;gap:12px;}
+.page-title{font-size:17px;font-weight:500;color:#111}
+.page-sub{font-size:12px;color:#888;margin-top:3px}
+.btn-primary{
+  background:var(--blue);color:#fff;border:none;padding:7px 14px;
+  border-radius:6px;font-size:13px;cursor:pointer;
+  display:flex;align-items:center;gap:5px;white-space:nowrap;flex-shrink:0;
+}
+.btn-primary:hover{background:var(--blue-dark)}
+
+/* ── Stats grid ── */
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+
+.stat-card{
+  background:#fff;border:1px solid var(--border);border-radius:8px;
+  padding:14px 16px;cursor:pointer;
+  transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease;
+  user-select:none;
+  outline:none;
+}
+.stat-card:hover{
+  transform:translateY(-3px);
+  box-shadow:0 6px 20px rgba(29,95,173,.18);
+  border-color:var(--blue);
+}
+.stat-card:focus-visible{
+  box-shadow:0 0 0 3px rgba(29,95,173,.25);
+}
+.stat-card.active{
+  border-color:var(--blue);
+  background:var(--blue-light);
+  box-shadow:0 4px 16px rgba(29,95,173,.15);
+}
+.stat-card-inner{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+}
+.stat-card-left{display:flex;flex-direction:column;flex:1;min-width:0;}
+.stat-label{font-size:14px;color:#555;font-weight:700;margin-bottom:5px;}
+.stat-value{font-size:34px;font-weight:700;color:#111;line-height:1;flex-shrink:0;}
+.stat-change{font-size:11px;color:#888;margin-top:5px;}
+.stat-change.up{color:#177A5A}
+.stat-change.warn{color:#9A5C14}
+
+/* ── Stat detail panel ── */
+.stat-detail-panel{
+  background:#fff;border:1px solid var(--blue);border-radius:8px;
+  margin-bottom:16px;overflow:hidden;
+  animation:slideDown .2s ease;
+}
+@keyframes slideDown{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
+.stat-detail-header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:9px 14px;background:var(--blue-light);border-bottom:1px solid #c8daef;
+}
+.stat-detail-title{font-size:13px;font-weight:500;color:var(--blue);}
+.stat-detail-close{
+  background:none;border:none;color:var(--blue);cursor:pointer;
+  font-size:16px;line-height:1;width:24px;height:24px;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:50%;transition:background .12s;
+}
+.stat-detail-close:hover{background:rgba(29,95,173,.15);}
+.stat-detail-body{max-height:260px;overflow-y:auto;}
+.stat-detail-body table{width:100%;border-collapse:collapse;font-size:12px;}
+.stat-detail-body th{padding:7px 12px;text-align:left;font-size:10px;font-weight:500;color:#666;text-transform:uppercase;letter-spacing:.3px;background:#f8f9fa;border-bottom:1px solid var(--border);}
+.stat-detail-body td{padding:8px 12px;border-bottom:1px solid #f5f5f5;color:#1a1a1a;}
+.stat-detail-body tr:last-child td{border-bottom:none;}
+.stat-detail-body tbody tr:hover{background:#fafbff;}
+.stat-detail-empty{padding:20px;text-align:center;color:#aaa;font-size:13px;}
+
+/* ── AML Bar ── */
+.aml-bar{background:#FFF8E8;border:1px solid #F5C96A;border-radius:8px;padding:11px 14px;display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.aml-dot{width:7px;height:7px;border-radius:50%;background:#C98A00;flex-shrink:0}
+.aml-text{font-size:13px;color:#7A5000;flex:1}
+.aml-link{font-size:13px;color:var(--blue);cursor:pointer;white-space:nowrap}
+
+/* ── Filter panel ── */
+.filter-panel{background:#fff;border:1px solid var(--border);border-radius:8px;margin-bottom:14px;overflow:hidden}
+.filter-panel-header{display:flex;align-items:center;justify-content:space-between;padding:11px 14px;cursor:pointer;border-bottom:1px solid #f5f5f5;user-select:none}
+.filter-panel-title{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:500;color:#333}
+.filter-toggle-icon{font-size:11px;color:#aaa}
+.filter-panel-body{padding:14px 16px 16px}
+.filter-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px 14px;margin-bottom:12px}
+.filter-field{display:flex;flex-direction:column;gap:3px}
+.filter-field-label{font-size:11px;color:#888;font-weight:500}
+.filter-field input,.filter-field select{padding:6px 9px;border:1px solid #ddd;border-radius:6px;font-size:13px;color:#1a1a1a;background:#fff;outline:none;width:100%}
+.filter-field input:focus,.filter-field select:focus{border-color:var(--blue);box-shadow:0 0 0 2px rgba(29,95,173,.12)}
+.filter-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;border-top:1px solid #f0f0f0;padding-top:12px}
+.btn-clear{padding:6px 14px;border:1px solid #ddd;border-radius:6px;font-size:13px;background:#fff;color:#555;cursor:pointer}
+.btn-clear:hover{background:#f5f5f5}
+.btn-search-apply{padding:6px 18px;border:none;border-radius:6px;font-size:13px;font-weight:500;background:var(--blue);color:#fff;cursor:pointer}
+.btn-search-apply:hover{background:var(--blue-dark)}
+
+/* ── Tabs ── */
+.tabs-bar{display:flex;gap:0;border-bottom:1px solid var(--border);background:#fff;border-radius:8px 8px 0 0;}
+.tab-item{padding:9px 16px;font-size:13px;color:#777;cursor:pointer;border-bottom:2px solid transparent;display:flex;align-items:center;gap:5px;transition:all .15s}
+.tab-item.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:500}
+.tab-item:hover:not(.active){color:#333}
+.tab-count{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;padding:0 4px;background:#ff4d4f;color:#fff;border-radius:99px;font-size:10px;font-weight:600}
+
+/* ── Table ── */
+.table-wrap{background:#fff;border:1px solid var(--border);border-radius:0 0 8px 8px;overflow:hidden}
+.table-toolbar{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-bottom:1px solid #f0f0f0;flex-wrap:wrap;gap:8px;}
+.table-toolbar h3{font-size:13px;font-weight:500;color:#333}
+.toolbar-right{display:flex;gap:8px}
+.btn-outline{padding:5px 12px;border:1px solid #ddd;border-radius:6px;font-size:12px;background:#fff;color:#444;cursor:pointer}
+.btn-outline:hover{background:#f5f5f5}
+
+.table-scroll{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;table-layout:fixed;}
+thead tr{background:#f8f9fa;border-bottom:1px solid var(--border)}
+th{padding:10px 14px;text-align:left;font-size:11px;font-weight:500;color:#666;letter-spacing:.3px;text-transform:uppercase;overflow:hidden;white-space:nowrap;}
+td{padding:12px 14px;font-size:13px;color:#1a1a1a;border-bottom:1px solid #f0f0f0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tbody tr:hover{background:#fafbff}
+.no-data-row td{text-align:center;padding:32px;color:#aaa;font-size:13px}
+
+/* Column widths */
+.addr-col-addr   { width: 18%; }
+.addr-col-category { width: 13%; }
+.addr-col-chain  { width:  7%; }
+.addr-col-reason { width: 10%; }
+.addr-col-risk   { width:  9%; }
+.addr-col-status { width:  9%; }
+.addr-col-owner  { width: 10%; }
+.addr-col-updated { width: 12%; }
+.addr-col-note   { width: 13%; }
+.addr-col-action { width:  9%; }
+
+/* ── Badges & chips ── */
+.badge{display:inline-flex;align-items:center;padding:2px 9px;border-radius:12px;font-size:11px;font-weight:500;white-space:nowrap}
+.badge-high{background:#FCEAEA;color:#A32D2D}
+.badge-medium{background:#FEF4EA;color:#9A5C14}
+.badge-low{background:#EAF5EE;color:#177A5A}
+.badge-eth{background:var(--blue-light);color:var(--blue)}
+.badge-btc{background:#FEF4EA;color:#9A5C14}
+.badge-trx{background:#f3e8ff;color:#6B3FC0}
+.badge-pending{background:#FEF4EA;color:#9A5C14}
+.badge-approved{background:#EAF5EE;color:#177A5A}
+.badge-rejected{background:#FCEAEA;color:#A32D2D}
+.badge-active{background:#EAF5EE;color:#177A5A}
+.badge-paused{background:#FEF4EA;color:#9A5C14}
+.badge-removed{background:#F2F4F7;color:#667085}
+.badge-bsc{background:#fff7ed;color:#c2410c}
+
+.code-chip{font-family:'SF Mono',Consolas,monospace;font-size:11px;background:#f0f4ff;color:var(--blue);padding:2px 7px;border-radius:4px;letter-spacing:.3px}
+
+.actions{display:flex;align-items:center;gap:5px}
+.btn-sm{padding:4px 9px;border-radius:4px;font-size:11px;cursor:pointer;font-weight:500;border:1px solid transparent;display:inline-flex;align-items:center;gap:3px;white-space:nowrap}
+.btn-edit{background:#f0f4ff;color:var(--blue);border-color:#c8daef}
+.btn-edit:hover{background:#dde8f8}
+.btn-del{background:#fff0f0;color:#A32D2D;border-color:#f5c6c6}
+.btn-del:hover{background:#fde8e8}
+.btn-review{background:#f0faf4;color:#177A5A;border-color:#b6dfc5}
+.btn-review:hover{background:#dcf0e4}
+
+/* ── Pagination ── */
+.pagination{display:flex;align-items:center;justify-content:center;padding:10px 14px;border-top:1px solid #f0f0f0;gap:8px;position:relative;}
+.page-info{font-size:12px;color:#888;position:absolute;right:14px;}
+.page-btns{display:flex;gap:4px}
+.page-size-wrap{display:flex;align-items:center;gap:6px;position:absolute;left:14px;font-size:12px;color:#888;}
+.page-size-select{padding:3px 7px;border:1px solid #ddd;border-radius:4px;font-size:12px;color:#555;background:#fff;cursor:pointer;outline:none;}
+.page-size-select:focus{border-color:var(--blue);}
+.page-btn{padding:3px 9px;border:1px solid #ddd;border-radius:4px;font-size:12px;cursor:pointer;background:#fff;color:#555}
+.page-btn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+.page-btn:hover:not(.active){background:#f5f5f5}
+
+/* ── Modal ── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:100;align-items:center;justify-content:center;padding:16px;}
+.overlay.open{display:flex}
+.modal{background:#fff;border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.15);width:460px;max-width:100%;max-height:90vh;overflow-y:auto;}
+.modal-head{padding:14px 18px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-between}
+.modal-head h4{font-size:14px;font-weight:500;color:#111}
+.mclose{background:#f0f0f0;border:none;font-size:14px;color:#555;cursor:pointer;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.mclose:hover{background:#e0e0e0}
+.modal-body{padding:16px 18px}
+.modal-foot{padding:12px 18px;border-top:1px solid #f0f0f0;display:flex;justify-content:flex-end;gap:8px}
+.form-row{margin-bottom:12px}
+.form-row label{display:block;font-size:11px;font-weight:500;color:#888;margin-bottom:4px;text-transform:uppercase;letter-spacing:.3px}
+.form-row input,.form-row select,.form-row textarea{width:100%;padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;color:#1a1a1a;font-family:inherit;outline:none}
+.form-row input:focus,.form-row select:focus,.form-row textarea:focus{border-color:var(--blue);box-shadow:0 0 0 2px rgba(29,95,173,.12)}
+.form-row textarea{resize:vertical;min-height:60px}
+.form-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.warn-box{background:#FFF8E8;border:1px solid #F5C96A;border-radius:6px;padding:10px 12px;font-size:12px;color:#7A5000;margin-bottom:12px;display:flex;align-items:flex-start;gap:8px}
+.review-info-card{background:#f8f9fa;border:1px solid var(--border);border-radius:6px;padding:12px 14px;margin-bottom:12px;font-size:13px}
+.info-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #f0f0f0}
+.info-row:last-child{border:none}
+.info-row .lbl{font-size:12px;color:#888}
+.btn-cancel{padding:7px 14px;border:1px solid #ddd;border-radius:6px;font-size:13px;background:#fff;color:#555;cursor:pointer}
+.btn-cancel:hover{background:#f5f5f5}
+.btn-save{padding:7px 18px;border:none;border-radius:6px;font-size:13px;font-weight:500;background:var(--blue);color:#fff;cursor:pointer}
+.btn-save:hover{background:var(--blue-dark)}
+.btn-danger{padding:7px 14px;border:none;border-radius:6px;font-size:13px;font-weight:500;background:#DC2626;color:#fff;cursor:pointer}
+.btn-danger:hover{background:#b91c1c}
+.btn-success{padding:7px 14px;border:none;border-radius:6px;font-size:13px;font-weight:500;background:#177A5A;color:#fff;cursor:pointer}
+.btn-success:hover{background:#126148}
+
+/* datalist input styling */
+.form-row input[list]{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;}
+
+/* ══════════════════════
+   RESPONSIVE BREAKPOINTS
+   ══════════════════════ */
+
+/* Tablet ≤ 1024px */
+@media (max-width:1024px){
+  .stats-grid{grid-template-columns:repeat(2,1fr);}
+  .filter-grid{grid-template-columns:repeat(2,1fr);}
+  .addr-col-note{display:none;}
+  .addr-col-note-header{display:none;}
+}
+
+/* Mobile ≤ 768px */
+@media (max-width:768px){
+  .hamburger{display:flex;}
+  .topbar-page{display:none;}
+  .topbar{padding:0 14px;gap:8px;}
+
+  .sidebar{
+    position:fixed;left:0;top:48px;bottom:0;
+    z-index:45;
+    transform:translateX(-100%);
+    box-shadow:4px 0 16px rgba(0,0,0,.12);
+  }
+  .sidebar.open{transform:translateX(0);}
+
+  .main{padding:14px 12px;}
+
+  .stats-grid{grid-template-columns:repeat(2,1fr);gap:8px;}
+  .stat-value{font-size:26px;}
+
+  .filter-grid{grid-template-columns:1fr 1fr;}
+
+  .page-header{flex-direction:column;align-items:flex-start;}
+
+  .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  table{min-width:560px;}
+
+  .tabs-bar{overflow-x:auto;flex-wrap:nowrap;}
+  .tab-item{white-space:nowrap;}
+
+  .aml-text{font-size:12px;}
+}
+
+/* Small mobile ≤ 480px */
+@media (max-width:480px){
+  .stats-grid{grid-template-columns:1fr 1fr;gap:6px;}
+  .stat-card{padding:10px 12px;}
+  .stat-value{font-size:22px;}
+  .stat-label{font-size:10px;}
+  .filter-grid{grid-template-columns:1fr;}
+  .topbar-user .topbar-email{display:none;}
+  .form-grid-2{grid-template-columns:1fr;}
+}
+</style>
+
+<!-- Mobile sidebar overlay -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+<div class="app">
+
+<!-- ── Topbar ── -->
+<div class="topbar">
+  <button class="hamburger" id="hamburgerBtn" onclick="toggleSidebar()" aria-label="選單">
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8">
+      <path d="M2 4.5h14M2 9h14M2 13.5h14"/>
+    </svg>
+  </button>
+  <span class="topbar-logo">Exchange Admin</span>
+  <span class="topbar-sep">/</span>
+  <span class="topbar-page">監控列表管理</span>
+  <div class="topbar-spacer"></div>
+  <div class="topbar-user">
+    <div class="av">管</div>
+    <span class="topbar-email">admin@exchange.com</span>
+  </div>
+</div>
+
+<div class="layout">
+
+<!-- ── Sidebar ── -->
+<nav class="sidebar" id="sidebar">
+  <div class="nav-section">用戶管理</div>
+  <div class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="5" r="3"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>用戶列表
+  </div>
+  <div class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="3" width="12" height="10" rx="1.5"/><path d="M5 7h6M5 10h4"/></svg>KYC 審核
+  </div>
+  <div class="nav-section">合規</div>
+  <div class="nav-item active">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6"/><path d="M5 8l2 2 4-4"/></svg>監控列表管理
+  </div>
+  <div class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 2l1.5 3 3.5.5-2.5 2.5.6 3.5L8 9.8l-3.1 1.7.6-3.5L3 5.5l3.5-.5z"/></svg>AML 審核佇列
+  </div>
+  <div class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6"/><path d="M8 5v4l2.5 1.5"/></svg>審計日誌
+  </div>
+  <div class="nav-section">系統</div>
+  <div class="nav-item">
+    <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="2.5"/><path d="M8 2v1.5M8 12.5V14M2 8h1.5M12.5 8H14M3.5 3.5l1 1M11.5 11.5l1 1M3.5 12.5l1-1M11.5 4.5l1-1"/></svg>系統設定
+  </div>
+</nav>
+
+<!-- ── Main ── -->
+<main class="main">
+
+  <div class="page-header">
+    <div>
+      <div class="page-title">監控列表管理</div>
+      <div class="page-sub">管理出入金監控地址生命週期：新增、異動、解除監控與異動紀錄留存</div>
+    </div>
+    <button class="btn-primary" onclick="openAddModal()">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6.5 2v9M2 6.5h9"/></svg>
+      新增監控地址
+    </button>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card" id="sc-card-total" tabindex="0" onclick="toggleStatDetail('total')">
+      <div class="stat-card-inner">
+        <div class="stat-card-left">
+          <div class="stat-label">監控地址總數</div>
+          <div class="stat-change">目前 AML 監控名單</div>
+        </div>
+        <div class="stat-value" id="sc-total">0</div>
+      </div>
+    </div>
+
+    <div class="stat-card" id="sc-card-today" tabindex="0" onclick="toggleStatDetail('today')">
+      <div class="stat-card-inner">
+        <div class="stat-card-left">
+          <div class="stat-label">今日新增/異動</div>
+          <div class="stat-change warn">今日維護紀錄</div>
+        </div>
+        <div class="stat-value" id="sc-today">0</div>
+      </div>
+    </div>
+
+    <div class="stat-card" id="sc-card-removed" tabindex="0" onclick="toggleStatDetail('removed')">
+      <div class="stat-card-inner">
+        <div class="stat-card-left">
+          <div class="stat-label">解除監控</div>
+          <div class="stat-change">歷史解除紀錄</div>
+        </div>
+        <div class="stat-value" id="sc-removed">0</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stat-detail-panel" id="statDetailPanel" style="display:none">
+    <div class="stat-detail-header"><span class="stat-detail-title" id="statDetailTitle"></span><button class="stat-detail-close" onclick="closeStatDetail()">✕</button></div>
+    <div class="stat-detail-body" id="statDetailBody"></div>
+  </div>
+
+  <div class="aml-bar">
+    <div class="aml-dot"></div>
+    <div class="aml-text">建議：監控地址不直接解除監控，改以「解除監控」保留稽核軌跡；匯出資料需記錄匯出人員與時間。</div>
+    <div class="aml-link" onclick="alert('此為畫面示意：實務可連至審計日誌或匯出紀錄')">查看控管說明</div>
+  </div>
+
+  <div class="filter-panel">
+    <div class="filter-panel-header" onclick="toggleFilter()">
+      <div class="filter-panel-title"><svg width="13" height="13" viewBox="0 0 14 14" fill="none" stroke="var(--blue)" stroke-width="1.5"><path d="M1 2h12M3 7h8M5.5 12h3"/></svg>篩選條件</div>
+      <span class="filter-toggle-icon" id="filterIcon">▲</span>
+    </div>
+    <div id="filterBody" class="filter-panel-body">
+      <div class="filter-grid">
+        <div class="filter-field"><div class="filter-field-label">地址 / 關鍵字</div><input type="text" id="kw" placeholder="輸入地址、風險類別、備註..."/></div>
+        <div class="filter-field"><div class="filter-field-label">風險類別</div>
+          <select id="catSel">
+            <option value="">全部類別</option>
+            <option>制裁與資恐</option>
+            <option>FATF 前置犯罪類別</option>
+            <option>非法活動</option>
+            <option>其他類別</option>
+            <option>北韓 Bybit 駭客攻擊事件</option>
+          </select>
+        </div>
+        <div class="filter-field"><div class="filter-field-label">監控狀態</div><select id="statusSel"><option value="">全部狀態</option><option value="monitoring">監控中</option><option value="removed">解除監控</option></select></div>
+        <div class="filter-field"><div class="filter-field-label">區塊鏈</div><select id="chainSel"><option value="">全部</option><option value="ETH">ETH</option><option value="BTC">BTC</option><option value="TRON">TRON</option><option value="BSC">BSC</option></select></div>
+        <div class="filter-field"><div class="filter-field-label">操作人員</div><input type="text" id="ownerSel" placeholder="例：Sharon / Compliance"/></div>
+        <div class="filter-field"><div class="filter-field-label">加入日期</div><input type="date" id="dateSel"/></div>
+        <div class="filter-field"><div class="filter-field-label">最後異動日</div><input type="date" id="updatedSel"/></div>
+      </div>
+      <div class="filter-actions"><button class="btn-clear" onclick="resetFilter()">清除條件</button><button class="btn-search-apply" onclick="applyFilter()">套用篩選</button></div>
+    </div>
+  </div>
+
+  <div class="tabs-bar">
+    <div class="tab-item active" id="tab-list-btn" onclick="switchTab('list')">
+      監控地址列表 <span class="tab-count" id="tabActiveCount">0</span>
+    </div>
+    <div class="tab-item" id="tab-removed-btn" onclick="switchTab('removed')">
+      解除列表 <span class="tab-count" id="tabRemovedCount">0</span>
+    </div>
+  </div>
+
+  <div id="pane-list">
+    <div class="table-wrap">
+      <div class="table-toolbar">
+        <h3 id="listTitle">全部監控地址 — 共 0 筆</h3>
+        <div class="toolbar-right"><button class="btn-outline" onclick="exportHint()">匯出 CSV</button><button class="btn-outline" onclick="alert('此為畫面示意：可串接批次匯入黑名單/白名單')">批次匯入</button></div>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <colgroup><col class="addr-col-addr"><col class="addr-col-category"><col class="addr-col-chain"><col class="addr-col-reason"><col class="addr-col-status"><col class="addr-col-owner"><col class="addr-col-updated"><col class="addr-col-note"><col class="addr-col-action"></colgroup>
+          <thead><tr><th>地址</th><th>風險類別</th><th>鏈</th><th>建立/異動說明</th><th>監控狀態</th><th>最後異動人員</th><th>最後異動時間</th><th class="addr-col-note">備註</th><th style="text-align:center;">操作</th></tr></thead>
+          <tbody id="addrTbody"></tbody>
+        </table>
+      </div>
+      <div class="pagination"><div class="page-size-wrap">每頁顯示 <select class="page-size-select" id="pageSizeSel" onchange="changePageSize(this.value)"><option value="10">10</option><option value="25">25</option><option value="50">50</option></select> 筆</div><div class="page-btns" id="addrPageBtns"></div><span class="page-info" id="addrPageInfo">共 0 筆</span></div>
+    </div>
+  </div>
+
+</main>
+</div>
+</div>
+
+<!-- ── Add/Edit Modal ── -->
+<div class="overlay" id="addrModal">
+  <div class="modal">
+    <div class="modal-head"><h4 id="modalTitle">新增監控地址</h4><button class="mclose" onclick="closeModal('addrModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="warn-box" id="modalHint">
+        <span>ⓘ</span>
+        <span>新增地址後即列入監控中；編輯時不調整監控狀態及建立/異動說明。</span>
+      </div>
+
+      <div class="form-row" id="monitorStatusRow">
+        <label>監控狀態</label>
+        <div style="display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:#EAF5EE;color:#177A5A;font-size:12px;font-weight:600;">
+          <span style="width:7px;height:7px;border-radius:50%;background:#177A5A;display:inline-block;"></span>
+          監控中
+        </div>
+      </div>
+
+      <div class="form-row"><label>錢包地址 *</label><input id="fAddr" placeholder="0x... / T... / bc1..."/></div>
+
+      <div class="form-grid-2">
+        <div class="form-row"><label>區塊鏈</label><select id="fChain"><option>ETH</option><option>BTC</option><option>TRON</option><option>BSC</option></select></div>
+        <div class="form-row">
+          <label>風險類型 <span style="color:#aaa;font-weight:400;text-transform:none;letter-spacing:0;font-size:10px;">（可自行輸入）</span></label>
+          <input id="fLabel" list="riskTypeList" placeholder="選擇或自行輸入風險類型..." autocomplete="off"/>
+          <datalist id="riskTypeList">
+            <option value="制裁與資恐">
+            <option value="FATF 前置犯罪類別">
+            <option value="非法活動">
+            <option value="其他類別">
+            <option value="北韓 Bybit 駭客攻擊事件">
+          </datalist>
+        </div>
+      </div>
+
+      <div class="form-row"><label>備註</label><textarea id="fNote" placeholder="說明監控原因、來源或相關依據..."></textarea></div>
+    </div>
+    <div class="modal-foot"><button class="btn-cancel" onclick="closeModal('addrModal')">取消</button><button class="btn-save" onclick="saveAddr()">儲存</button></div>
+  </div>
+</div>
+
+<!-- ── Audit Log Modal ── -->
+<div class="overlay" id="logModal">
+  <div class="modal">
+    <div class="modal-head"><h4 id="logTitle">異動紀錄</h4><button class="mclose" onclick="closeModal('logModal')">✕</button></div>
+    <div class="modal-body" id="logBody"></div>
+    <div class="modal-foot"><button class="btn-cancel" onclick="closeModal('logModal')">關閉</button></div>
+  </div>
+</div>
+
+<script>
+// ── Data ──
+let addresses=[
+  {id:1,addr:'0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',category:'制裁與資恐',chain:'ETH',risk:'high',status:'active',date:'2024-03-01',updatedAt:'2026-05-08 09:12',owner:'Compliance',note:'美國財政部 OFAC 制裁名單',logs:['2026-05-08 09:12 Compliance 新增監控地址','2026-05-08 09:20 AML Supervisor 異動通過']},
+  {id:2,addr:'0x3fC91A3afd70395Cd496C647d5a6CC9D4B2b7FAD',category:'其他類別',chain:'ETH',risk:'low',status:'active',date:'2024-03-05',updatedAt:'2026-05-09 11:30',owner:'Ops',note:'DEX 合約地址，正常監控',logs:['2026-05-09 11:30 Ops 新增白名單觀察']},
+  {id:3,addr:'TNaRAoLUyYEV2uF7GkJSbCbMHBpLDxXPpZ',category:'非法活動',chain:'TRON',risk:'high',status:'active',date:'2024-03-10',updatedAt:'2026-05-10 15:18',owner:'Sharon',note:'疑似混幣器，需人工異動',logs:['2026-05-10 15:18 Sharon 新增監控地址']},
+  {id:4,addr:'1A1zP1eP5QGefi2DMPTfTL5SLmv7Divf',category:'其他類別',chain:'BTC',risk:'medium',status:'active',date:'2024-03-12',updatedAt:'2026-05-11 10:05',owner:'Compliance',note:'歷史意義地址，暫停交易攔截僅保留觀察',logs:['2026-05-11 10:05 Compliance 監控中']},
+  {id:5,addr:'0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045',category:'FATF 前置犯罪類別',chain:'ETH',risk:'high',status:'active',date:'2024-03-15',updatedAt:'2026-05-12 14:22',owner:'AML Team',note:'曾有異常大額出入金記錄',logs:['2026-05-12 14:22 AML Team 調整為制裁/資恐']},
+  {id:6,addr:'0x71C7656EC7ab88b098defB751B7401B5f6d8976F',category:'其他類別',chain:'ETH',risk:'low',status:'removed',date:'2024-03-18',updatedAt:'2026-05-13 09:40',owner:'Ops',note:'已驗證機構地址，解除監控但保留紀錄',logs:['2026-05-13 09:40 Ops 解除監控']},
+  {id:7,addr:'TYASr5UV6HEcXatwdFcdTkwRB5tEvStJNz',category:'北韓 Bybit 駭客攻擊事件',chain:'TRON',risk:'high',status:'active',date:'2024-04-01',updatedAt:'2026-05-13 16:12',owner:'Risk',note:'頻繁小額分批出金',logs:['2026-05-13 16:12 Risk 新增監控']},
+  {id:8,addr:'0x8894E0a0c962CB723c1976a4421c95949bE2D4E3',category:'制裁與資恐',chain:'BSC',risk:'high',status:'active',date:'2024-04-10',updatedAt:'2026-05-14 09:28',owner:'Sharon',note:'BSC 鏈大額歸集地址，需持續觀察',logs:['2026-05-14 09:28 Sharon 新增 BSC 監控地址']},
+];
+
+let editId=null, filtered=[...addresses];
+let activeTab='list';
+let activeStatCard=null;
+let pageSize=10, currentPage=1;
+
+const short=a=>a.length<=14?a:a.slice(0,9)+'…'+a.slice(-6);
+const riskBadge=r=>r==='high'?'<span class="badge badge-high">制裁/資恐</span>':r==='medium'?'<span class="badge badge-medium">詐騙/可疑</span>':'<span class="badge badge-low">其他</span>';
+const statusBadge=s=>s==='removed'?'<span class="badge badge-removed">解除監控</span>':'<span class="badge badge-active">監控中</span>';
+const chainBadge=c=>`<span class="badge badge-${c.toLowerCase()}">${c}</span>`;
+const nowStr=()=>new Date().toISOString().slice(0,16).replace('T',' ');
+
+function getTabBaseData(){
+  return activeTab==='removed'
+    ? addresses.filter(a=>a.status==='removed')
+    : addresses.filter(a=>a.status!=='removed');
+}
+
+function getFilteredData(baseData){
+  const kw=document.getElementById('kw').value.toLowerCase();
+  const cat=document.getElementById('catSel').value;
+  const status=document.getElementById('statusSel').value;
+  const chain=document.getElementById('chainSel').value;
+  const owner=document.getElementById('ownerSel').value.toLowerCase();
+  const date=document.getElementById('dateSel').value;
+  const updated=document.getElementById('updatedSel').value;
+  return baseData.filter(a=>
+    (!kw||a.addr.toLowerCase().includes(kw)||a.category.toLowerCase().includes(kw)||(a.note||'').toLowerCase().includes(kw))&&
+    (!cat||a.category===cat)&&
+    (!status||(status==='monitoring'&&a.status!=='removed')||(status==='removed'&&a.status==='removed'))&&
+    (!chain||a.chain===chain)&&
+    (!owner||a.owner.toLowerCase().includes(owner))&&
+    (!date||a.date===date)&&
+    (!updated||a.updatedAt.slice(0,10)===updated)
+  );
+}
+
+function renderAddr(){
+  filtered=getFilteredData(getTabBaseData());
+  const tb=document.getElementById('addrTbody');
+  const isRemovedTab=activeTab==='removed';
+  const emptyText=isRemovedTab?'目前無解除監控資料':'查無符合條件的監控地址';
+  if(!filtered.length){
+    tb.innerHTML=`<tr class="no-data-row"><td colspan="9">${emptyText}</td></tr>`;
+    document.getElementById('addrPageBtns').innerHTML='';
+    document.getElementById('addrPageInfo').textContent='共 0 筆';
+    document.getElementById('listTitle').textContent=isRemovedTab?'解除列表 — 共 0 筆':'監控地址列表 — 共 0 筆';
+    updateStats();
+    return;
+  }
+  const total=filtered.length;
+  const totalPages=Math.ceil(total/pageSize);
+  if(currentPage>totalPages) currentPage=totalPages;
+  const start=(currentPage-1)*pageSize;
+  const pageData=filtered.slice(start,start+pageSize);
+  tb.innerHTML=pageData.map(a=>`<tr>
+    <td><span class="code-chip" title="${a.addr}">${short(a.addr)}</span></td>
+    <td title="${a.category}">${a.category}</td>
+    <td>${chainBadge(a.chain)}</td>
+    <td>${riskBadge(a.risk)}</td>
+    <td>${statusBadge(a.status)}</td>
+    <td>${a.owner}</td>
+    <td style="color:#888;">${a.updatedAt}</td>
+    <td class="addr-col-note" style="color:#666;" title="${a.note}">${a.note}</td>
+    <td style="text-align:center;"><div class="actions" style="justify-content:center;">
+      <button class="btn-sm btn-edit" onclick="openLog(${a.id})">紀錄</button>
+      ${isRemovedTab?'':`<button class="btn-sm btn-edit" onclick="openEdit(${a.id})">編輯</button><button class="btn-sm btn-del" onclick="removeMonitor(${a.id})">解除監控</button>`}
+    </div></td>
+  </tr>`).join('');
+  document.getElementById('listTitle').textContent=`${isRemovedTab?'解除列表':'監控地址列表'} — 共 ${total} 筆`;
+  document.getElementById('addrPageInfo').textContent=`共 ${total} 筆`;
+  renderPageBtns(totalPages);
+  updateStats();
+}
+
+function renderPageBtns(totalPages){
+  const btns=document.getElementById('addrPageBtns');
+  let html=`<button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled style="opacity:.4;cursor:default;"':''}>‹ 上一頁</button>`;
+  for(let i=1;i<=totalPages;i++) html+=`<button class="page-btn ${i===currentPage?'active':''}" onclick="goPage(${i})">${i}</button>`;
+  html+=`<button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage===totalPages?'disabled style="opacity:.4;cursor:default;"':''}>下一頁 ›</button>`;
+  btns.innerHTML=html;
+}
+function goPage(p){const totalPages=Math.ceil(filtered.length/pageSize);if(p<1||p>totalPages)return;currentPage=p;renderAddr();}
+function changePageSize(val){pageSize=parseInt(val);currentPage=1;renderAddr();}
+
+function updateStats(){
+  const today=new Date().toISOString().slice(0,10);
+  const activeCount=addresses.filter(a=>a.status!=='removed').length;
+  const removedCount=addresses.filter(a=>a.status==='removed').length;
+  document.getElementById('sc-total').textContent=activeCount;
+  document.getElementById('sc-today').textContent=addresses.filter(a=>(a.date===today||(a.updatedAt||'').slice(0,10)===today)).length;
+  document.getElementById('sc-removed').textContent=removedCount;
+  document.getElementById('tabActiveCount').textContent=activeCount;
+  document.getElementById('tabRemovedCount').textContent=removedCount;
+}
+
+function toggleStatDetail(type){
+  const panel=document.getElementById('statDetailPanel');
+  if(activeStatCard===type){closeStatDetail();return;}
+  ['total','today','removed'].forEach(t=>{const el=document.getElementById('sc-card-'+t);if(el)el.classList.remove('active');});
+  document.getElementById('sc-card-'+type).classList.add('active');
+  activeStatCard=type;
+  const today=new Date().toISOString().slice(0,10);
+  const title=document.getElementById('statDetailTitle');
+  const body=document.getElementById('statDetailBody');
+  const map={
+    total:['監控地址總數',a=>a.status!=='removed'],
+    today:['今日新增/異動',a=>a.date===today||(a.updatedAt||'').slice(0,10)===today],
+    removed:['解除監控',a=>a.status==='removed']
+  };
+  const list=addresses.filter(map[type][1]);
+  title.textContent=`${map[type][0]}（${list.length} 筆）`;
+  body.innerHTML=buildAddrMiniTable(list);
+  panel.style.display='block';
+}
+
+function closeStatDetail(){
+  document.getElementById('statDetailPanel').style.display='none';
+  ['total','today','removed'].forEach(t=>{const el=document.getElementById('sc-card-'+t);if(el)el.classList.remove('active');});
+  activeStatCard=null;
+}
+
+function buildAddrMiniTable(list){
+  if(!list.length) return '<div class="stat-detail-empty">無資料</div>';
+  return `<table>
+    <thead><tr><th>地址</th><th>風險類別</th><th>鏈</th><th>建立/異動說明</th><th>監控狀態</th><th>最後異動</th></tr></thead>
+    <tbody>${list.map(a=>`<tr>
+      <td><span class="code-chip" title="${a.addr}">${short(a.addr)}</span></td>
+      <td>${a.category}</td>
+      <td>${chainBadge(a.chain)}</td>
+      <td>${riskBadge(a.risk)}</td>
+      <td>${statusBadge(a.status)}</td>
+      <td>${a.updatedAt}</td>
+    </tr>`).join('')}</tbody>
+  </table>`;
+}
+
+function applyFilter(){currentPage=1;renderAddr();}
+function resetFilter(){['kw','catSel','statusSel','chainSel','ownerSel','dateSel','updatedSel'].forEach(id=>document.getElementById(id).value='');currentPage=1;renderAddr();}
+function toggleFilter(){const b=document.getElementById('filterBody');const ic=document.getElementById('filterIcon');const open=b.style.display!=='none'&&b.style.display!=='';b.style.display=open?'none':'block';ic.textContent=open?'▼':'▲';}
+
+function switchTab(name){
+  activeTab=name;currentPage=1;
+  document.getElementById('pane-list').style.display='block';
+  document.getElementById('tab-list-btn').classList.toggle('active',name==='list');
+  document.getElementById('tab-removed-btn').classList.toggle('active',name==='removed');
+  renderAddr();
+}
+
+function toggleSidebar(){const sidebar=document.getElementById('sidebar');const overlay=document.getElementById('sidebarOverlay');const isOpen=sidebar.classList.contains('open');sidebar.classList.toggle('open',!isOpen);overlay.classList.toggle('open',!isOpen);}
+
+function openAddModal(){
+  editId=null;
+  document.getElementById('modalTitle').textContent='新增監控地址';
+  document.getElementById('modalHint').innerHTML='<span>ⓘ</span><span>新增地址後即列入監控中，監控狀態固定為「監控中」。</span>';
+  document.getElementById('monitorStatusRow').style.display='block';
+  ['fAddr','fLabel','fNote'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('fChain').value='ETH';
+  document.getElementById('addrModal').classList.add('open');
+}
+
+function openEdit(id){
+  const a=addresses.find(x=>x.id===id);
+  editId=id;
+  document.getElementById('modalTitle').textContent='編輯監控地址';
+  document.getElementById('modalHint').innerHTML='<span>ⓘ</span><span>編輯功能僅維護地址資料，不提供調整監控狀態及建立/異動說明。</span>';
+  document.getElementById('monitorStatusRow').style.display='none';
+  document.getElementById('fAddr').value=a.addr;
+  document.getElementById('fLabel').value=a.category||'';
+  document.getElementById('fChain').value=a.chain;
+  document.getElementById('fNote').value=a.note||'';
+  document.getElementById('addrModal').classList.add('open');
+}
+
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+
+function saveAddr(){
+  const addr=document.getElementById('fAddr').value.trim();
+  if(!addr){alert('請輸入錢包地址');return;}
+  const labelVal=document.getElementById('fLabel').value.trim();
+  if(editId){
+    const a=addresses.find(x=>x.id===editId);
+    a.addr=addr;
+    a.category=labelVal||a.category||'其他類別';
+    a.chain=document.getElementById('fChain').value;
+    a.note=document.getElementById('fNote').value.trim();
+    a.owner='Admin';
+    a.updatedAt=nowStr();
+    a.logs.unshift(nowStr()+' Admin 編輯地址資料');
+  } else {
+    addresses.push({
+      id:Date.now(),
+      addr,
+      category:labelVal||'其他類別',
+      chain:document.getElementById('fChain').value,
+      risk:'low',
+      status:'active',
+      date:new Date().toISOString().slice(0,10),
+      owner:'Admin',
+      updatedAt:nowStr(),
+      note:document.getElementById('fNote').value.trim(),
+      logs:[nowStr()+' Admin 新增監控地址']
+    });
+  }
+  activeTab='list';
+  document.getElementById('tab-list-btn').classList.add('active');
+  document.getElementById('tab-removed-btn').classList.remove('active');
+  closeModal('addrModal');
+  renderAddr();
+  if(activeStatCard) closeStatDetail();
+}
+
+function removeMonitor(id){
+  const a=addresses.find(x=>x.id===id);if(!a)return;if(a.status==='removed'){alert('此地址已解除監控');return;}
+  if(!confirm('確定將此地址解除監控？系統會保留異動紀錄。'))return;
+  a.status='removed';a.updatedAt=nowStr();a.owner='Admin';a.logs.unshift(`${a.updatedAt} Admin 解除監控`);
+  renderAddr();if(activeStatCard)closeStatDetail();
+}
+
+function openLog(id){
+  const a=addresses.find(x=>x.id===id);
+  document.getElementById('logTitle').textContent='異動紀錄';
+  document.getElementById('logBody').innerHTML=`<div class="review-info-card"><div class="info-row"><span class="lbl">地址</span><span class="code-chip" title="${a.addr}">${short(a.addr)}</span></div><div class="info-row"><span class="lbl">風險類別</span><span>${a.category}</span></div><div class="info-row"><span class="lbl">目前狀態</span><span>${statusBadge(a.status)}</span></div></div><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr><th style="padding:7px 6px;text-align:left;color:#888;border-bottom:1px solid #eee;">時間 / 異動內容</th></tr></thead><tbody>${a.logs.map(l=>`<tr><td style="padding:9px 6px;border-bottom:1px solid #f0f0f0;color:#333;white-space:normal">${l}</td></tr>`).join('')}</tbody></table>`;
+  document.getElementById('logModal').classList.add('open');
+}
+
+function exportHint(){alert('已建立匯出紀錄：匯出人員 Admin、匯出時間 '+nowStr()+'。實務上建議同步寫入審計日誌。');}
+
+document.querySelectorAll('.overlay').forEach(ov=>ov.addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');}));
+renderAddr();
+</script>
+</html>

@@ -1,0 +1,1655 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>人工審核交易列表 - TSG EX 管理後台</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Microsoft JhengHei', '微軟正黑體', sans-serif; background: #F2F0EB; color: #333; display: flex; min-height: 100vh; font-size: 14px; }
+
+  /* ===== SIDEBAR ===== */
+  .sidebar {
+    width: 200px; min-width: 200px; background: #fff;
+    box-shadow: 2px 0 8px rgba(0,0,0,0.08);
+    display: flex; flex-direction: column;
+    position: fixed; top: 0; left: 0; bottom: 0; z-index: 100;
+  }
+  .sidebar-logo {
+    display: flex; align-items: center; gap: 10px;
+    padding: 14px 16px; background: #1a1a2e; color: #fff;
+    min-height: 56px;
+  }
+  .logo-icon {
+    width: 32px; height: 32px; background: linear-gradient(135deg,#e53935,#ff7043);
+    border-radius: 6px; display: flex; align-items: center; justify-content: center;
+    font-weight: 900; color: #fff; font-size: 13px; letter-spacing: -1px;
+  }
+  .logo-text { line-height: 1.2; }
+  .logo-text .brand { font-size: 13px; font-weight: 700; color: #fff; }
+  .logo-text .sub { font-size: 11px; color: rgba(255,255,255,0.6); }
+
+  .nav { flex: 1; overflow-y: auto; padding: 8px 0; }
+  .nav-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 16px; cursor: pointer; color: #555; transition: all 0.15s;
+    font-size: 13px; gap: 8px;
+  }
+  .nav-item:hover { background: #FFF8F0; color: #e53935; }
+  .nav-item.active { background: #FFF3E0; color: #e53935; font-weight: 600; }
+  .nav-item .nav-left { display: flex; align-items: center; gap: 8px; }
+  .nav-item svg { opacity: 0.6; }
+  .nav-item.active svg, .nav-item:hover svg { opacity: 1; }
+
+  .nav-sub { background: #FAFAF8; }
+  .nav-sub-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 16px 8px 36px; cursor: pointer; color: #666;
+    font-size: 12.5px; transition: all 0.15s;
+  }
+  .nav-sub-item:hover { color: #e53935; background: #FFF8F0; }
+  .nav-sub-item.active { color: #e53935; font-weight: 600; background: #FFF3E0; }
+
+  /* ===== MAIN ===== */
+  .main { margin-left: 200px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+
+  .topbar {
+    height: 56px; background: #fff; display: flex; align-items: center;
+    justify-content: flex-end; padding: 0 24px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08); position: sticky; top: 0; z-index: 50;
+  }
+  .topbar-user {
+    display: flex; align-items: center; gap: 8px; color: #555; cursor: pointer;
+    font-size: 13px;
+  }
+  .avatar {
+    width: 30px; height: 30px; border-radius: 50%; background: #e53935;
+    color: #fff; display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700;
+  }
+
+  .content { padding: 24px; flex: 1; }
+  .breadcrumb { font-size: 12px; color: #999; margin-bottom: 16px; }
+  .breadcrumb a { color: #999; text-decoration: none; }
+  .breadcrumb a:hover { color: #e53935; }
+  .breadcrumb span { margin: 0 6px; }
+
+  .page-header { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 6px; }
+  .page-icon {
+    width: 28px; height: 28px; background: #e53935;
+    border-radius: 6px; display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 2px;
+  }
+  .page-title { font-size: 20px; font-weight: 700; color: #222; }
+  .page-desc { font-size: 12.5px; color: #888; margin-bottom: 20px; margin-left: 38px; }
+
+  /* ===== STAT CARDS ===== */
+  .stat-cards { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 20px; }
+  .stat-card {
+    background: #fff; border-radius: 10px; padding: 16px 20px;
+    display: flex; align-items: center; gap: 14px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+    border-left: 4px solid transparent;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+    position: relative; overflow: hidden;
+  }
+  .stat-card::after {
+    content: ''; position: absolute; inset: 0;
+    background: transparent; transition: background 0.2s;
+    pointer-events: none; border-radius: 10px;
+  }
+  .stat-card:hover::after { background: rgba(255,255,255,0.08); }
+  .stat-card.orange { border-left-color: #FF9800; }
+  .stat-card.blue   { border-left-color: #2196F3; }
+  .stat-card.green  { border-left-color: #4CAF50; }
+  .stat-card.red    { border-left-color: #F44336; }
+
+  .stat-card.orange:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(255,152,0,0.22); background: #FFFBF5; }
+  .stat-card.blue:hover   { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(33,150,243,0.22); background: #F5FBFF; }
+  .stat-card.green:hover  { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(76,175,80,0.22);  background: #F5FBF5; }
+  .stat-card.red:hover    { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(244,67,54,0.22);  background: #FFF5F5; }
+
+  .stat-card.orange.selected { background: #FFF8E1; border-left-width: 5px; box-shadow: 0 6px 20px rgba(255,152,0,0.30); transform: translateY(-2px); }
+  .stat-card.blue.selected   { background: #E8F4FD; border-left-width: 5px; box-shadow: 0 6px 20px rgba(33,150,243,0.30);  transform: translateY(-2px); }
+  .stat-card.green.selected  { background: #EDF7ED; border-left-width: 5px; box-shadow: 0 6px 20px rgba(76,175,80,0.30);   transform: translateY(-2px); }
+  .stat-card.red.selected    { background: #FEEEEE; border-left-width: 5px; box-shadow: 0 6px 20px rgba(244,67,54,0.30);   transform: translateY(-2px); }
+
+  .stat-icon {
+    width: 44px; height: 44px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    transition: transform 0.2s ease;
+  }
+  .stat-card:hover .stat-icon { transform: scale(1.08); }
+  .stat-icon.orange { background: #FFF3E0; }
+  .stat-icon.blue   { background: #E3F2FD; }
+  .stat-icon.green  { background: #E8F5E9; }
+  .stat-icon.red    { background: #FFEBEE; }
+  .stat-info { flex: 1; min-width: 0; }
+  .stat-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .stat-label { font-size: 15px; color: #555; white-space: nowrap; font-weight: 700; }
+  .stat-num { text-align: right; }
+  .stat-value { font-size: 34px; font-weight: 800; color: #222; line-height: 1; letter-spacing: -1px; }
+  .stat-sub { font-size: 11px; color: #aaa; margin-top: 3px; text-align: right; }
+
+  /* ===== FILTER PANEL ===== */
+  .filter-panel {
+    background: #fff; border-radius: 10px; margin-bottom: 16px;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.06); overflow: hidden;
+  }
+  .filter-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 20px; border-bottom: 1px solid #F0EDE8; cursor: pointer;
+  }
+  .filter-header-left { display: flex; align-items: center; gap: 6px; font-size: 13px; color: #555; font-weight: 600; }
+  .filter-body { padding: 16px 20px; }
+  .filter-row { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 14px; }
+  .filter-row:last-child { margin-bottom: 0; }
+  .filter-group { display: flex; flex-direction: column; gap: 5px; }
+  .filter-label { font-size: 12px; color: #666; font-weight: 500; }
+  .filter-input, .filter-select {
+    height: 34px; border: 1px solid #E0DDD8; border-radius: 6px;
+    padding: 0 10px; font-size: 13px; color: #333; background: #FAFAF8;
+    outline: none; transition: border-color 0.15s; font-family: inherit;
+    width: 100%;
+  }
+  .filter-input:focus, .filter-select:focus { border-color: #e53935; background: #fff; }
+  .filter-input-range { display: flex; align-items: center; gap: 6px; }
+  .filter-input-range .filter-input { flex: 1; }
+  .filter-input-range span { color: #aaa; font-size: 12px; flex-shrink: 0; }
+  .filter-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 16px; padding-top: 14px; border-top: 1px solid #F0EDE8; }
+
+  /* ===== BUTTONS ===== */
+  .btn {
+    height: 34px; padding: 0 16px; border-radius: 6px; border: none;
+    font-size: 13px; cursor: pointer; font-family: inherit;
+    display: inline-flex; align-items: center; gap: 6px; font-weight: 500;
+    transition: all 0.15s; white-space: nowrap;
+  }
+  .btn-primary { background: linear-gradient(135deg,#e53935,#f57c00); color: #fff; }
+  .btn-primary:hover { background: linear-gradient(135deg,#c62828,#e65100); transform: translateY(-1px); box-shadow: 0 3px 8px rgba(229,57,53,0.3); }
+  .btn-ghost { background: #F5F2EE; color: #666; border: 1px solid #E0DDD8; }
+  .btn-ghost:hover { background: #EDE9E4; }
+  .btn-sm { height: 28px; padding: 0 10px; font-size: 12px; border-radius: 5px; }
+  .btn-outline-blue { background: #fff; color: #1976D2; border: 1px solid #90CAF9; }
+  .btn-outline-blue:hover { background: #E3F2FD; }
+  .btn-outline-green { background: #fff; color: #388E3C; border: 1px solid #A5D6A7; }
+  .btn-outline-green:hover { background: #E8F5E9; }
+  .btn-outline-red { background: #fff; color: #D32F2F; border: 1px solid #EF9A9A; }
+  .btn-outline-red:hover { background: #FFEBEE; }
+  .btn-outline-gray { background: #fff; color: #757575; border: 1px solid #BDBDBD; }
+  .btn-outline-gray:hover { background: #F5F5F5; }
+
+  /* ===== TABLE AREA ===== */
+  .table-area { background: #fff; border-radius: 10px; box-shadow: 0 1px 6px rgba(0,0,0,0.06); overflow: hidden; }
+  .table-toolbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 20px; border-bottom: 1px solid #F0EDE8;
+  }
+  .table-toolbar-left { display: flex; align-items: center; gap: 10px; }
+  .table-toolbar-right { display: flex; align-items: center; gap: 10px; }
+  .tab-group { display: flex; gap: 2px; background: #F5F2EE; padding: 3px; border-radius: 7px; }
+  .tab-btn {
+    padding: 5px 14px; border-radius: 5px; font-size: 12.5px; cursor: pointer;
+    border: none; background: transparent; font-family: inherit; color: #666;
+    transition: all 0.15s; font-weight: 500;
+  }
+  .tab-btn.active { background: #fff; color: #e53935; box-shadow: 0 1px 4px rgba(0,0,0,0.12); font-weight: 600; }
+  .tab-btn:hover:not(.active) { color: #333; }
+
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  thead tr { background: #F7F5F1; }
+  th { padding: 10px 14px; text-align: left; font-size: 12.5px; font-weight: 600; color: #666; white-space: nowrap; border-bottom: 1px solid #EDEAE5; }
+  td { padding: 11px 14px; font-size: 13px; color: #444; border-bottom: 1px solid #F0EDE8; vertical-align: middle; }
+  tr:hover td { background: #FAFAF8; }
+  tr:last-child td { border-bottom: none; }
+
+  /* ===== BADGES ===== */
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px; border-radius: 12px; font-size: 11.5px; font-weight: 600;
+    white-space: nowrap;
+  }
+  .badge::before { content: ''; width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+  .badge-pending { background: #FFF3E0; color: #E65100; }
+  .badge-pending::before { background: #FF9800; }
+  .badge-handler { background: #E3F2FD; color: #1565C0; }
+  .badge-handler::before { background: #2196F3; }
+  .badge-approved { background: #E8F5E9; color: #2E7D32; }
+  .badge-approved::before { background: #4CAF50; }
+  .badge-rejected { background: #FFEBEE; color: #C62828; }
+  .badge-rejected::before { background: #F44336; }
+  .badge-na { background: #F5F5F5; color: #9E9E9E; font-weight: 400; }
+  .badge-na::before { background: #BDBDBD; }
+  .badge-returned { background: #FFF8E1; color: #E65100; }
+  .badge-returned::before { background: #FF9800; }
+  .badge-closed { background: #ECEFF1; color: #546E7A; }
+  .badge-closed::before { background: #90A4AE; }
+
+  /* Category Badge */
+  .cat-badge {
+    display: inline-flex; align-items: center; gap: 3px;
+    padding: 2px 7px; border-radius: 4px; font-size: 11px; font-weight: 600;
+    white-space: nowrap;
+  }
+  .cat-monitor-out { background: #FFF3E0; color: #E65100; border: 1px solid #FFCC80; }
+  .cat-monitor-in  { background: #E8F5E9; color: #2E7D32; border: 1px solid #A5D6A7; }
+  .cat-large-out   { background: #FFEBEE; color: #C62828; border: 1px solid #FFCDD2; }
+  .cat-large-in    { background: #E3F2FD; color: #1565C0; border: 1px solid #90CAF9; }
+  .cat-grey-out    { background: #F3E5F5; color: #7B1FA2; border: 1px solid #CE93D8; }
+  .cat-grey-in     { background: #E0F2F1; color: #00695C; border: 1px solid #80CBC4; }
+
+  /* Risk Badge */
+  .risk-badge {
+    display: inline-flex; align-items: center; padding: 2px 7px;
+    border-radius: 4px; font-size: 11px; font-weight: 700;
+  }
+  .risk-high { background: #FFEBEE; color: #C62828; border: 1px solid #FFCDD2; }
+  .risk-med  { background: #FFF8E1; color: #F57F17; border: 1px solid #FFE082; }
+
+  /* ===== PAGINATION ===== */
+  .pagination { display: flex; align-items: center; justify-content: flex-end; padding: 14px 20px; gap: 8px; border-top: 1px solid #F0EDE8; }
+  .page-info { font-size: 12px; color: #888; margin-right: 6px; }
+  .per-page { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #666; }
+  .per-page select { height: 28px; border: 1px solid #E0DDD8; border-radius: 5px; padding: 0 6px; font-size: 12px; background: #FAFAF8; }
+  .page-btns { display: flex; gap: 4px; }
+  .page-btn {
+    width: 28px; height: 28px; border-radius: 5px; border: 1px solid #E0DDD8;
+    background: #fff; cursor: pointer; font-size: 13px; color: #555;
+    display: flex; align-items: center; justify-content: center; transition: all 0.15s;
+  }
+  .page-btn:hover { border-color: #e53935; color: #e53935; }
+  .page-btn.active { background: #e53935; color: #fff; border-color: #e53935; }
+  .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ===== MODAL ===== */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+    display: flex; align-items: center; justify-content: center; z-index: 1000;
+    backdrop-filter: blur(2px);
+  }
+  .modal-overlay.hidden { display: none; }
+  .modal {
+    background: #fff; border-radius: 12px; width: 760px; max-width: 95vw;
+    max-height: 90vh; overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    animation: modalIn 0.2s ease;
+  }
+  @keyframes modalIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .modal-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 24px; border-bottom: 1px solid #F0EDE8;
+  }
+  .modal-title { font-size: 16px; font-weight: 700; color: #222; display: flex; align-items: center; gap: 8px; }
+  .modal-close { width: 28px; height: 28px; border: none; background: #F5F2EE; border-radius: 6px; cursor: pointer; font-size: 16px; color: #666; display: flex; align-items: center; justify-content: center; }
+  .modal-close:hover { background: #FFEBEE; color: #e53935; }
+  .modal-body { padding: 20px 24px; }
+  .modal-footer { padding: 16px 24px; border-top: 1px solid #F0EDE8; display: flex; justify-content: flex-end; gap: 10px; }
+
+  .detail-section { margin-bottom: 20px; }
+  .detail-section-title { font-size: 12.5px; font-weight: 700; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1px solid #F0EDE8; }
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .detail-item { display: flex; flex-direction: column; gap: 3px; }
+  .detail-label { font-size: 11.5px; color: #999; }
+  .detail-value { font-size: 13px; color: #333; font-weight: 500; word-break: break-all; }
+  .detail-value.mono { font-family: 'Courier New', monospace; font-size: 12px; color: #1565C0; }
+  .detail-value.amount { font-size: 15px; font-weight: 700; color: #C62828; }
+
+  .addr-card {
+    background: #FFF8F0; border: 1px solid #FFE0B2; border-radius: 8px;
+    padding: 12px 14px; margin-bottom: 14px;
+  }
+  .addr-card-title { font-size: 11.5px; font-weight: 700; color: #E65100; margin-bottom: 6px; display: flex; align-items: center; gap: 5px; }
+  .addr-card-value { font-family: monospace; font-size: 12.5px; color: #333; word-break: break-all; }
+  .addr-card-sub { font-size: 11px; color: #888; margin-top: 4px; }
+
+  .risk-info { background: #FFEBEE; border: 1px solid #FFCDD2; border-radius: 8px; padding: 12px 14px; margin-bottom: 14px; }
+  .risk-info-title { font-size: 11.5px; font-weight: 700; color: #C62828; margin-bottom: 6px; display: flex; align-items: center; gap: 5px; }
+  .risk-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .risk-tag { background: #fff; border: 1px solid #EF9A9A; color: #C62828; padding: 2px 8px; border-radius: 4px; font-size: 11.5px; }
+
+  .review-history { display: flex; flex-direction: column; gap: 0; }
+  .review-step {
+    display: flex; gap: 14px; position: relative; padding-bottom: 18px;
+  }
+  .review-step:last-child { padding-bottom: 0; }
+  .step-indicator { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+  .step-dot { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; flex-shrink: 0; }
+  .step-dot.done { background: #4CAF50; color: #fff; }
+  .step-dot.intercepted { background: #FF9800; color: #fff; }
+  .step-dot.pending { background: #FF9800; color: #fff; }
+  .step-dot.waiting { background: #E0E0E0; color: #9E9E9E; }
+  .step-dot.rejected { background: #F44336; color: #fff; }
+  .step-line { width: 2px; flex: 1; background: #E0E0E0; margin-top: 4px; }
+  .step-content { flex: 1; padding-top: 4px; }
+  .step-title { font-size: 13px; font-weight: 600; color: #333; }
+  .step-sub { font-size: 12px; color: #888; margin-top: 2px; }
+  .step-comment { background: #F5F5F5; border-radius: 6px; padding: 8px 10px; margin-top: 8px; font-size: 12px; color: #555; line-height: 1.5; }
+
+  .review-form { margin-top: 4px; }
+  .form-group { margin-bottom: 14px; }
+  .form-label { font-size: 12.5px; font-weight: 600; color: #555; margin-bottom: 6px; display: block; }
+  .form-label .required { color: #e53935; margin-left: 2px; }
+  .form-textarea {
+    width: 100%; border: 1px solid #E0DDD8; border-radius: 6px; padding: 10px;
+    font-size: 13px; color: #333; background: #FAFAF8; resize: vertical;
+    min-height: 80px; font-family: inherit; outline: none;
+  }
+  .form-textarea:focus { border-color: #e53935; background: #fff; }
+  .decision-btns { display: flex; gap: 10px; }
+  .decision-btn {
+    flex: 1; height: 40px; border-radius: 8px; border: 2px solid transparent;
+    font-size: 14px; font-weight: 700; cursor: pointer; font-family: inherit;
+    transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .decision-approve { background: #E8F5E9; color: #2E7D32; border-color: #A5D6A7; }
+  .decision-approve:hover { background: #4CAF50; color: #fff; border-color: #4CAF50; }
+  .decision-return  { background: #FFF8E1; color: #E65100; border-color: #FFE082; }
+  .decision-return:hover  { background: #FF9800; color: #fff; border-color: #FF9800; }
+  .decision-reject  { background: #FFEBEE; color: #C62828; border-color: #EF9A9A; }
+  .decision-reject:hover  { background: #F44336; color: #fff; border-color: #F44336; }
+
+  /* Refund Info */
+  .refund-info {
+    border-radius: 8px; padding: 12px 14px; margin-bottom: 14px;
+    display: flex; align-items: flex-start; gap: 10px;
+  }
+  .refund-auto   { background: #E8F5E9; border: 1px solid #A5D6A7; }
+  .refund-manual { background: #E3F2FD; border: 1px solid #90CAF9; }
+  .refund-info-icon { flex-shrink: 0; margin-top: 1px; }
+  .refund-info-body {}
+  .refund-info-title { font-size: 11.5px; font-weight: 700; margin-bottom: 4px; }
+  .refund-auto   .refund-info-title { color: #2E7D32; }
+  .refund-manual .refund-info-title { color: #1565C0; }
+  .refund-info-desc  { font-size: 12px; color: #555; line-height: 1.5; }
+
+  /* Notify Box */
+  .notify-box {
+    background: #FFF9C4; border: 1px solid #F9A825; border-radius: 8px;
+    padding: 10px 14px; margin-bottom: 14px;
+    font-size: 12px; color: #555; display: flex; align-items: flex-start; gap: 8px;
+  }
+  .notify-box-icon { flex-shrink: 0; color: #F9A825; }
+
+  /* Chips */
+  .amount-large { font-size: 14px; font-weight: 700; color: #333; }
+  .amount-large .currency { font-size: 11px; font-weight: 600; color: #888; margin-left: 2px; }
+
+  .empty-state { text-align: center; padding: 60px 20px; color: #aaa; }
+  .empty-state svg { margin-bottom: 12px; opacity: 0.4; }
+  .empty-state p { font-size: 13px; }
+
+  .truncate { max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mono-small { font-family: monospace; font-size: 12px; color: #1565C0; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #F5F2EE; }
+  ::-webkit-scrollbar-thumb { background: #D0CBC2; border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<!-- ===== SIDEBAR ===== -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">TSG</div>
+    <div class="logo-text">
+      <div class="brand">TSG EX</div>
+      <div class="sub">管理後台</div>
+    </div>
+  </div>
+  <nav class="nav">
+    <div class="nav-item" onclick="toggleSub(this)">
+      <div class="nav-left">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        首頁
+      </div>
+    </div>
+    <div class="nav-item" onclick="toggleSub(this)">
+      <div class="nav-left">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+        管理者管理
+      </div>
+      <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+    </div>
+    <div class="nav-item" onclick="toggleSub(this)">
+      <div class="nav-left">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+        幣種與會員等級設定
+      </div>
+      <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+    </div>
+    <div class="nav-item active" onclick="toggleSub(this)">
+      <div class="nav-left">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18"/></svg>
+        交易紀錄
+      </div>
+      <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 15l-6-6-6 6"/></svg>
+    </div>
+    <div class="nav-sub">
+      <div class="nav-sub-item" onclick="location.href='#'">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+        撮合限價單紀錄
+      </div>
+      <div class="nav-sub-item">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+        撮合市價單紀錄
+      </div>
+      <div class="nav-sub-item">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4"/></svg>
+        閃兌紀錄
+      </div>
+      <div class="nav-sub-item active">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
+        人工審核交易列表
+      </div>
+    </div>
+    <div class="nav-item" onclick="toggleSub(this)">
+      <div class="nav-left">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+        用戶管理
+      </div>
+      <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+    </div>
+    <div class="nav-item">
+      <div class="nav-left">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        風險管理
+      </div>
+      <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+    </div>
+    <div class="nav-item">
+      <div class="nav-left">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        VASP風控管理
+      </div>
+      <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+    </div>
+  </nav>
+</aside>
+
+<!-- ===== MAIN ===== -->
+<div class="main">
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-user">
+      <div class="avatar">A</div>
+      <span>baasid</span>
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+    <!-- Breadcrumb -->
+    <div class="breadcrumb">
+      <a href="#">首頁</a><span>›</span>
+      <a href="#">交易紀錄</a><span>›</span>
+      人工審核交易列表
+    </div>
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <div class="page-icon">
+        <svg width="16" height="16" fill="none" stroke="#fff" stroke-width="2.5" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
+      </div>
+      <div class="page-title">人工審核交易列表</div>
+    </div>
+    <p class="page-desc">當出金交易目標地址命中監控名單時，系統將自動攔截並進入待審核佇列。審核流程需金防部經辦及主管兩層簽核方可放行。</p>
+
+    <!-- Stat Cards -->
+    <div class="stat-cards">
+      <div class="stat-card orange" id="card-pending" onclick="filterByStatus('pending')" title="點擊篩選待審核交易">
+        <div class="stat-icon orange">
+          <svg width="22" height="22" fill="none" stroke="#FF9800" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+        </div>
+        <div class="stat-info">
+          <div class="stat-top">
+            <div class="stat-label">待審核</div>
+            <div class="stat-num">
+              <div class="stat-value" style="color:#E65100;">12</div>
+              <div class="stat-sub">較昨日 +3</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="stat-card blue" id="card-handler" onclick="filterByStatus('handler')" title="點擊篩選待主管覆核交易">
+        <div class="stat-icon blue">
+          <svg width="22" height="22" fill="none" stroke="#2196F3" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+        </div>
+        <div class="stat-info">
+          <div class="stat-top">
+            <div class="stat-label">經辦已審核（待主管覆核）</div>
+            <div class="stat-num">
+              <div class="stat-value" style="color:#1565C0;">5</div>
+              <div class="stat-sub">目前累計</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="stat-card green" id="card-approved" onclick="filterByStatus('approved')" title="點擊篩選審核通過交易">
+        <div class="stat-icon green">
+          <svg width="22" height="22" fill="none" stroke="#4CAF50" stroke-width="2" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>
+        </div>
+        <div class="stat-info">
+          <div class="stat-top">
+            <div class="stat-label">審核通過</div>
+            <div class="stat-num">
+              <div class="stat-value" style="color:#2E7D32;">148</div>
+              <div class="stat-sub">本月累計</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="stat-card red" id="card-rejected" onclick="filterByStatus('rejected')" title="點擊篩選已拒絕交易">
+        <div class="stat-icon red">
+          <svg width="22" height="22" fill="none" stroke="#F44336" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/></svg>
+        </div>
+        <div class="stat-info">
+          <div class="stat-top">
+            <div class="stat-label">已拒絕</div>
+            <div class="stat-num">
+              <div class="stat-value" style="color:#C62828;">23</div>
+              <div class="stat-sub">本月累計</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filter Panel -->
+    <div class="filter-panel">
+      <div class="filter-header" onclick="toggleFilter()">
+        <div class="filter-header-left">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+          篩選條件
+        </div>
+        <svg id="filterChevron" width="14" height="14" fill="none" stroke="#999" stroke-width="2" viewBox="0 0 24 24"><path d="M18 15l-6-6-6 6"/></svg>
+      </div>
+      <div class="filter-body" id="filterBody">
+        <div class="filter-row">
+          <div class="filter-group">
+            <div class="filter-label">交易ID / Hash</div>
+            <input class="filter-input" placeholder="請輸入交易 ID 或 Hash">
+          </div>
+          <div class="filter-group">
+            <div class="filter-label">轉帳編號</div>
+            <input class="filter-input" placeholder="請輸入轉帳編號">
+          </div>
+          <div class="filter-group">
+            <div class="filter-label">交易類型</div>
+            <select class="filter-select">
+              <option>全部</option>
+              <option>轉出</option>
+              <option>轉入</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <div class="filter-label">用戶ID</div>
+            <input class="filter-input" placeholder="請輸入用戶 ID">
+          </div>
+        </div>
+        <div class="filter-row">
+          <div class="filter-group">
+            <div class="filter-label">幣種</div>
+            <select class="filter-select">
+              <option>全部</option>
+              <option>USDT</option>
+              <option>BTC</option>
+              <option>ETH</option>
+              <option>USDC</option>
+              <option>BNB</option>
+              <option>TWD</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <div class="filter-label">審核狀態</div>
+            <select class="filter-select">
+              <option>全部</option>
+              <option>待審核</option>
+              <option>待主管覆核</option>
+              <option>退回重審</option>
+              <option>已通過</option>
+              <option>已拒絕</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <div class="filter-label">錢包地址</div>
+            <input class="filter-input" placeholder="請輸入轉出或轉入地址">
+          </div>
+          <div class="filter-group">
+            <div class="filter-label">審核類別</div>
+            <select class="filter-select">
+              <option>全部</option>
+              <option>監控名單轉出</option>
+              <option>監控名單轉入</option>
+              <option>大額轉出</option>
+              <option>大額轉入</option>
+              <option>灰名單轉出</option>
+              <option>灰名單轉入</option>
+            </select>
+          </div>
+        </div>
+        <div class="filter-row">
+          <div class="filter-group">
+            <div class="filter-label">審核人員（經辦）</div>
+            <input class="filter-input" placeholder="請輸入經辦帳號，如 @gfb_lps01">
+          </div>
+          <div class="filter-group">
+            <div class="filter-label">出金金額範圍</div>
+            <div class="filter-input-range">
+              <input class="filter-input" placeholder="最小" style="width:100%">
+              <span>～</span>
+              <input class="filter-input" placeholder="最大" style="width:100%">
+            </div>
+          </div>
+          <div class="filter-group">
+            <div class="filter-label">觸發時間範圍</div>
+            <div class="filter-input-range">
+              <input type="date" class="filter-input">
+              <span>～</span>
+              <input type="date" class="filter-input">
+            </div>
+          </div>
+          <div class="filter-group"></div>
+        </div>
+        <div class="filter-actions">
+          <button class="btn btn-ghost" onclick="clearFilter()">清空</button>
+          <button class="btn btn-primary" onclick="doSearch()">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            搜尋
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table Area -->
+    <div class="table-area">
+      <div class="table-toolbar">
+        <div class="table-toolbar-left">
+          <div class="tab-group">
+            <button class="tab-btn active" id="tab-all" onclick="switchTab(this,'all')">全部 (170)</button>
+            <button class="tab-btn" id="tab-pending" onclick="switchTab(this,'pending')">待審核 (12)</button>
+            <button class="tab-btn" id="tab-handler" onclick="switchTab(this,'handler')">待主管覆核 (5)</button>
+            <button class="tab-btn" id="tab-returned" onclick="switchTab(this,'returned')">退回重審 (2)</button>
+            <button class="tab-btn" id="tab-approved" onclick="switchTab(this,'approved')">已通過 (148)</button>
+            <button class="tab-btn" id="tab-rejected" onclick="switchTab(this,'rejected')">已拒絕 (3)</button>
+          </div>
+        </div>
+        <div class="table-toolbar-right">
+          <button class="btn btn-ghost btn-sm">
+            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            匯出 Excel
+          </button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>交易 ID</th>
+              <th>用戶 ID</th>
+              <th>幣種</th>
+              <th>出金金額</th>
+              <th>審核類別</th>
+              <th>觸發時間</th>
+              <th>審核狀態</th>
+              <th>經辦審核</th>
+              <th>主管複核</th>
+              <th>功能</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            <!-- Row 1: Pending -->
+            <tr data-status="pending">
+              <td><span class="mono-small">TXN-20240504-001</span></td>
+              <td>U-88821</td>
+              <td>USDT</td>
+              <td><span class="amount-large">520,000<span class="currency">USDT</span></span></td>
+              <td><span class="cat-badge cat-monitor-out">監控名單轉出</span></td>
+              <td>2026-05-04 09:12:33</td>
+              <td><span class="badge badge-pending">待審核</span></td>
+              <td><span class="badge badge-na">—</span></td>
+              <td><span class="badge badge-na">—</span></td>
+              <td>
+                <div style="display:flex;gap:5px">
+                  <button class="btn btn-sm btn-outline-blue" onclick="openReview('TXN-20240504-001','pending')">審核</button>
+                  <button class="btn btn-sm btn-outline-gray" onclick="openDetail('TXN-20240504-001','pending')">詳情</button>
+                </div>
+              </td>
+            </tr>
+            <!-- Row 2: Pending -->
+            <tr data-status="pending">
+              <td><span class="mono-small">TXN-20240504-002</span></td>
+              <td>U-33147</td>
+              <td>BTC</td>
+              <td><span class="amount-large">3.5<span class="currency">BTC</span></span></td>
+              <td><span class="cat-badge cat-monitor-in">監控名單轉入</span></td>
+              <td>2026-05-04 10:05:17</td>
+              <td><span class="badge badge-pending">待審核</span></td>
+              <td><span class="badge badge-na">—</span></td>
+              <td><span class="badge badge-na">—</span></td>
+              <td>
+                <div style="display:flex;gap:5px">
+                  <button class="btn btn-sm btn-outline-blue" onclick="openReview('TXN-20240504-002','pending')">審核</button>
+                  <button class="btn btn-sm btn-outline-gray" onclick="openDetail('TXN-20240504-002','pending')">詳情</button>
+                </div>
+              </td>
+            </tr>
+            <!-- Row 3: Handler approved, waiting supervisor -->
+            <tr data-status="handler">
+              <td><span class="mono-small">TXN-20240503-015</span></td>
+              <td>U-56209</td>
+              <td>USDT</td>
+              <td><span class="amount-large">1,200,000<span class="currency">USDT</span></span></td>
+              <td><span class="cat-badge cat-large-out">大額轉出</span></td>
+              <td>2026-05-03 15:44:02</td>
+              <td><span class="badge badge-handler">待主管複核</span></td>
+              <td>
+                <div style="font-size:12px">
+                  <div style="color:#1565C0;font-weight:600">✓ @gfb_lps01（經辦）</div>
+                  <div style="color:#888;font-size:11px">05-03 17:20</div>
+                </div>
+              </td>
+              <td><span class="badge badge-pending">待複核</span></td>
+              <td>
+                <div style="display:flex;gap:5px">
+                  <button class="btn btn-sm btn-outline-green" onclick="openReview('TXN-20240503-015','supervisor')">主管複核</button>
+                  <button class="btn btn-sm btn-outline-gray" onclick="openDetail('TXN-20240503-015','handler')">詳情</button>
+                </div>
+              </td>
+            </tr>
+            <!-- Row 4: Fully approved -->
+            <tr data-status="approved">
+              <td><span class="mono-small">TXN-20240502-008</span></td>
+              <td>U-19004</td>
+              <td>ETH</td>
+              <td><span class="amount-large">85.2<span class="currency">ETH</span></span></td>
+              <td><span class="cat-badge cat-large-in">大額轉入</span></td>
+              <td>2026-05-02 11:30:55</td>
+              <td><span class="badge badge-approved">審核通過</span></td>
+              <td>
+                <div style="font-size:12px">
+                  <div style="color:#2E7D32;font-weight:600">✓ @gfb_wjm02（經辦）</div>
+                  <div style="color:#888;font-size:11px">05-02 13:10</div>
+                </div>
+              </td>
+              <td>
+                <div style="font-size:12px">
+                  <div style="color:#2E7D32;font-weight:600">✓ @gfb_csf01（主管）</div>
+                  <div style="color:#888;font-size:11px">05-02 14:35</div>
+                </div>
+              </td>
+              <td>
+                <button class="btn btn-sm btn-outline-gray" onclick="openDetail('TXN-20240502-008')">詳情</button>
+              </td>
+            </tr>
+            <!-- Row 5: Both rejected → 已拒絕 -->
+            <tr data-status="rejected">
+              <td><span class="mono-small">TXN-20240502-011</span></td>
+              <td>U-72831</td>
+              <td>BTC</td>
+              <td><span class="amount-large">12.8<span class="currency">BTC</span></span></td>
+              <td><span class="cat-badge cat-grey-out">灰名單轉出</span></td>
+              <td>2026-05-02 16:22:41</td>
+              <td><span class="badge badge-rejected">已拒絕</span></td>
+              <td>
+                <div style="font-size:12px">
+                  <div style="color:#C62828;font-weight:600">✗ @gfb_lzy03（經辦）</div>
+                  <div style="color:#888;font-size:11px">05-02 17:55</div>
+                </div>
+              </td>
+              <td>
+                <div style="font-size:12px">
+                  <div style="color:#C62828;font-weight:600">✗ @gfb_csf01（主管）</div>
+                  <div style="color:#888;font-size:11px">05-02 18:30</div>
+                </div>
+              </td>
+              <td>
+                <button class="btn btn-sm btn-outline-gray" onclick="openDetail('TXN-20240502-011','rejected')">詳情</button>
+              </td>
+            </tr>
+            <!-- Row 6: Returned (supervisor sent back to handler) -->
+            <tr data-status="returned">
+              <td><span class="mono-small">TXN-20240504-003</span></td>
+              <td>U-44562</td>
+              <td>USDT</td>
+              <td><span class="amount-large">88,500<span class="currency">USDT</span></span></td>
+              <td><span class="cat-badge cat-grey-in">灰名單轉入</span></td>
+              <td>2026-05-04 11:47:09</td>
+              <td><span class="badge badge-returned">退回重審</span></td>
+              <td>
+                <div style="font-size:12px">
+                  <div style="color:#1565C0;font-weight:600">✓ @gfb_lps01（經辦）</div>
+                  <div style="color:#888;font-size:11px">05-04 13:10</div>
+                </div>
+              </td>
+              <td>
+                <div style="font-size:12px">
+                  <div style="color:#E65100;font-weight:600;display:flex;align-items:center;gap:3px"><svg width="13" height="13" fill="none" stroke="#E65100" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M4 7h13a5 5 0 0 1 0 10H4"/><path d="M7 4l-3 3 3 3"/></svg>@gfb_csf01（主管）</div>
+                  <div style="color:#888;font-size:11px">05-04 14:22 退回</div>
+                </div>
+              </td>
+              <td>
+                <div style="display:flex;gap:5px">
+                  <button class="btn btn-sm btn-outline-blue" onclick="openReview('TXN-20240504-003','pending')">重新審核</button>
+                  <button class="btn btn-sm btn-outline-gray" onclick="openDetail('TXN-20240504-003','returned')">詳情</button>
+                </div>
+              </td>
+            </tr>
+            <!-- Row 7: Rejected by supervisor -->
+            <tr data-status="rejected">
+              <td><span class="mono-small">TXN-20240501-019</span></td>
+              <td>U-30088</td>
+              <td>ETH</td>
+              <td><span class="amount-large">200.0<span class="currency">ETH</span></span></td>
+              <td><span class="cat-badge cat-large-out">大額轉出</span></td>
+              <td>2026-05-01 09:05:12</td>
+              <td><span class="badge badge-rejected">已拒絕</span></td>
+              <td>
+                <div style="font-size:12px">
+                  <div style="color:#2E7D32;font-weight:600">✓ @gfb_lps01（經辦）</div>
+                  <div style="color:#888;font-size:11px">05-01 10:30</div>
+                </div>
+              </td>
+              <td>
+                <div style="font-size:12px">
+                  <div style="color:#C62828;font-weight:600">✗ @gfb_csf01（主管）</div>
+                  <div style="color:#888;font-size:11px">05-01 11:55</div>
+                </div>
+              </td>
+              <td>
+                <button class="btn btn-sm btn-outline-gray" onclick="openDetail('TXN-20240501-019','rejected')">詳情</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="pagination">
+        <div class="per-page">
+          每頁項目：
+          <select><option>10</option><option>20</option><option>50</option></select>
+        </div>
+        <div class="page-info">共 170 筆，第 1 / 17 頁</div>
+        <div class="page-btns">
+          <button class="page-btn" disabled>«</button>
+          <button class="page-btn" disabled>‹</button>
+          <button class="page-btn active">1</button>
+          <button class="page-btn">2</button>
+          <button class="page-btn">3</button>
+          <button class="page-btn">›</button>
+          <button class="page-btn">»</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ===== REVIEW MODAL ===== -->
+<div class="modal-overlay hidden" id="reviewModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">
+        <svg width="18" height="18" fill="none" stroke="#e53935" stroke-width="2" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
+        <span id="reviewModalTitle">人工審核 — 經辦審查</span>
+      </div>
+      <button class="modal-close" onclick="closeModal('reviewModal')">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Transaction Info -->
+      <div class="detail-section">
+        <div class="detail-section-title">交易資訊</div>
+        <div class="detail-grid">
+          <div class="detail-item">
+            <div class="detail-label">交易 ID</div>
+            <div class="detail-value mono" id="m_txnId">TXN-20240504-001</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">用戶 ID</div>
+            <div class="detail-value">U-88821</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">幣種</div>
+            <div class="detail-value">USDT (ERC-20)</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">交易類型</div>
+            <div class="detail-value"><span style="background:#FFF3E0;color:#E65100;padding:1px 8px;border-radius:4px;font-size:12px;font-weight:600;">轉出</span></div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">數量</div>
+            <div class="detail-value amount">520,000 USDT</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">新台幣價值</div>
+            <div class="detail-value">≈ NT$16,640,000</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">觸發時間</div>
+            <div class="detail-value">2026-05-04 09:12:33</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">風險等級</div>
+            <div class="detail-value"><span class="risk-badge risk-high">HIGH RISK</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Monitored Address -->
+      <div class="addr-card">
+        <div class="addr-card-title">
+          <svg width="13" height="13" fill="none" stroke="#E65100" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          監控命中地址
+        </div>
+        <div class="addr-card-value">0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D</div>
+        <div class="addr-card-sub">📋 監控名冊：OFAC制裁名單 ・ 命中類型：出金目標地址</div>
+      </div>
+
+      <!-- Risk Info -->
+      <div class="risk-info">
+        <div class="risk-info-title">
+          <svg width="13" height="13" fill="none" stroke="#C62828" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0zM12 9v4M12 17h.01"/></svg>
+          風險提示
+        </div>
+        <div style="font-size:12.5px;color:#555;margin-top:4px">該地址已於 OFAC SDN 制裁名單內，出金行為疑涉洗錢風險，請審核人員謹慎評估。</div>
+        <div class="risk-tags">
+          <span class="risk-tag">OFAC制裁</span>
+          <span class="risk-tag">高額出金</span>
+          <span class="risk-tag">單日累積超限</span>
+        </div>
+      </div>
+
+      <!-- Refund Info -->
+      <div id="refundInfo" class="refund-info refund-manual">
+        <div class="refund-info-icon">
+          <svg id="refundIcon" width="18" height="18" fill="none" stroke="#1565C0" stroke-width="2" viewBox="0 0 24 24"><path d="M3 12a9 9 0 109 9"/><path d="M3 3v9h9"/></svg>
+        </div>
+        <div class="refund-info-body">
+          <div class="refund-info-title" id="refundTitle">虛擬貨幣 — 線下人工退款</div>
+          <div class="refund-info-desc" id="refundDesc">本幣種為虛擬貨幣，若交易被拒絕，將由客服人員進行線下人工退款作業，請通知用戶耐心等候。</div>
+        </div>
+      </div>
+
+      <!-- Review Progress -->
+      <div class="detail-section">
+        <div class="detail-section-title">審核進度</div>
+        <div class="review-history">
+          <div class="review-step">
+            <div class="step-indicator">
+              <div class="step-dot intercepted">1</div>
+              <div class="step-line"></div>
+            </div>
+            <div class="step-content">
+              <div class="step-title">系統攔截</div>
+              <div class="step-sub">2026-05-04 09:12:33 ・ 自動觸發</div>
+            </div>
+          </div>
+          <div class="review-step" id="handlerStep">
+            <div class="step-indicator">
+              <div class="step-dot pending" id="handlerDot">2</div>
+              <div class="step-line"></div>
+            </div>
+            <div class="step-content">
+              <div class="step-title" id="handlerStepTitle">經辦審查（金防部）</div>
+              <div class="step-sub" id="handlerStepSub">等待經辦人員審核</div>
+            </div>
+          </div>
+          <div class="review-step">
+            <div class="step-indicator">
+              <div class="step-dot waiting" id="supervisorDot">3</div>
+              <div class="step-line"></div>
+            </div>
+            <div class="step-content">
+              <div class="step-title">主管複核（金防部主管）</div>
+              <div class="step-sub" id="supervisorStepSub">待經辦通過後進行</div>
+            </div>
+          </div>
+          <div class="review-step">
+            <div class="step-indicator">
+              <div class="step-dot waiting" id="notifyDot">4</div>
+            </div>
+            <div class="step-content">
+              <div class="step-title">通知客戶</div>
+              <div class="step-sub" id="notifyStepSub">審核結果確認後自動發送通知信</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Review Form -->
+      <div class="detail-section review-form" id="reviewFormSection">
+        <div class="detail-section-title" id="reviewFormTitle">經辦審核意見</div>
+        <div class="form-group">
+          <label class="form-label">審核備註 <span class="required">*</span></label>
+          <textarea class="form-textarea" id="reviewComment" placeholder="請輸入審核說明（必填）…"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">審核決定</label>
+          <div class="decision-btns" id="decisionBtns">
+            <!-- populated by openReview() -->
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ===== DETAIL MODAL ===== -->
+<div class="modal-overlay hidden" id="detailModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">
+        <svg width="18" height="18" fill="none" stroke="#1565C0" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+        交易審核詳情
+      </div>
+      <button class="modal-close" onclick="closeModal('detailModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="detail-section">
+        <div class="detail-section-title">交易資訊</div>
+        <div class="detail-grid">
+          <div class="detail-item">
+            <div class="detail-label">交易 ID</div>
+            <div class="detail-value mono">TXN-20240502-008</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">用戶 ID</div>
+            <div class="detail-value">U-19004</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">幣種</div>
+            <div class="detail-value">ETH (Ethereum)</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">鏈</div>
+            <div class="detail-value">Ethereum (ERC-20)</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">交易類型</div>
+            <div class="detail-value"><span style="background:#FFF3E0;color:#E65100;padding:1px 8px;border-radius:4px;font-size:12px;font-weight:600;">轉出</span></div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">數量</div>
+            <div class="detail-value amount">85.2 ETH</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">新台幣價值</div>
+            <div class="detail-value">≈ NT$14,084,000</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">地址風險分數</div>
+            <div class="detail-value"><span style="background:#FFEBEE;color:#C62828;padding:1px 8px;border-radius:4px;font-size:12px;font-weight:700;">8.5 / 10</span></div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">觸發時間</div>
+            <div class="detail-value">2026-05-02 11:30:55</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">最終結果</div>
+            <div class="detail-value"><span class="badge badge-approved">審核通過</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">地址資訊</div>
+        <div class="detail-grid" style="grid-template-columns:1fr;">
+          <div class="detail-item">
+            <div class="detail-label">轉出地址</div>
+            <div class="detail-value mono" style="display:flex;align-items:center;gap:8px;">
+              0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48
+              <button onclick="navigator.clipboard.writeText('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48')" style="border:none;background:#F5F2EE;border-radius:4px;padding:2px 6px;cursor:pointer;font-size:11px;color:#666;" title="複製">複製</button>
+            </div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">轉入地址（監控命中）</div>
+            <div class="detail-value mono" style="display:flex;align-items:center;gap:8px;">
+              0x4838B106FCe9647Bdf1E7877BF73cE8B0BAD5f97
+              <button onclick="navigator.clipboard.writeText('0x4838B106FCe9647Bdf1E7877BF73cE8B0BAD5f97')" style="border:none;background:#F5F2EE;border-radius:4px;padding:2px 6px;cursor:pointer;font-size:11px;color:#666;" title="複製">複製</button>
+            </div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">Tx ID / Hash</div>
+            <div class="detail-value mono" style="display:flex;align-items:center;gap:8px;">
+              0x1a2b3c4d5e6f7890abcdef1234567890abcdef12
+              <button onclick="navigator.clipboard.writeText('0x1a2b3c4d5e6f7890abcdef1234567890abcdef12')" style="border:none;background:#F5F2EE;border-radius:4px;padding:2px 6px;cursor:pointer;font-size:11px;color:#666;" title="複製">複製</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">帳戶與裝置資訊</div>
+        <div class="detail-grid">
+          <div class="detail-item">
+            <div class="detail-label">虛擬帳號</div>
+            <div class="detail-value">010-****4521</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">綁定銀行</div>
+            <div class="detail-value">凱基銀行</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">IP 地址</div>
+            <div class="detail-value mono">1.34.136.22</div>
+          </div>
+          <div class="detail-item">
+            <div class="detail-label">IP 位置</div>
+            <div class="detail-value">🇹🇼 台灣・台北市</div>
+          </div>
+        </div>
+      </div>
+      <div class="addr-card">
+        <div class="addr-card-title">
+          <svg width="13" height="13" fill="none" stroke="#E65100" stroke-width="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          監控命中地址
+        </div>
+        <div class="addr-card-value">0x4838B106FCe9647Bdf1E7877BF73cE8B0BAD5f97</div>
+        <div class="addr-card-sub">📋 監控名冊：高風險地址觀察名單 ・ 命中類型：出金目標地址</div>
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">審核流程紀錄</div>
+        <div class="review-history" id="detailReviewHistory">
+          <div class="review-step">
+            <div class="step-indicator">
+              <div class="step-dot intercepted">1</div>
+              <div class="step-line"></div>
+            </div>
+            <div class="step-content">
+              <div class="step-title">系統攔截</div>
+              <div class="step-sub">2026-05-02 11:30:55 ・ 自動觸發</div>
+            </div>
+          </div>
+          <div class="review-step">
+            <div class="step-indicator">
+              <div class="step-dot done">2</div>
+              <div class="step-line"></div>
+            </div>
+            <div class="step-content">
+              <div class="step-title">經辦審查通過</div>
+              <div class="step-sub">@gfb_wjm02（經辦）・ 2026-05-02 13:10:22</div>
+              <div class="step-comment">經查核該地址並非制裁名單，為交易所冷錢包，用戶KYC已完成，出金目的合理，建議通過。</div>
+            </div>
+          </div>
+          <div class="review-step">
+            <div class="step-indicator">
+              <div class="step-dot done">3</div>
+              <div class="step-line"></div>
+            </div>
+            <div class="step-content">
+              <div class="step-title">主管複核通過</div>
+              <div class="step-sub">@gfb_csf01（主管）・ 2026-05-02 14:35:08</div>
+              <div class="step-comment">同意經辦意見，本次交易符合規範，予以放行。</div>
+            </div>
+          </div>
+          <div class="review-step">
+            <div class="step-indicator">
+              <div class="step-dot done">4</div>
+            </div>
+            <div class="step-content">
+              <div class="step-title">通知客戶</div>
+              <div class="step-sub">2026-05-02 14:35:10 ・ 系統自動發送</div>
+              <div class="step-comment">交易審核通過通知已發送至用戶信箱（u19004@example.com）。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('detailModal')">關閉</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SUCCESS TOAST ===== -->
+<div id="toast" style="
+  position:fixed; bottom:24px; right:24px; z-index:9999;
+  background:#333; color:#fff; padding:12px 20px; border-radius:8px;
+  font-size:13px; display:flex; align-items:center; gap:8px;
+  box-shadow:0 4px 16px rgba(0,0,0,0.2); transform:translateY(80px);
+  transition:transform 0.3s ease; pointer-events:none;
+">
+  <svg width="16" height="16" fill="none" stroke="#4CAF50" stroke-width="2.5" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+  <span id="toastMsg">操作成功</span>
+</div>
+
+<script>
+// Filter toggle
+let filterOpen = true;
+function toggleFilter() {
+  filterOpen = !filterOpen;
+  document.getElementById('filterBody').style.display = filterOpen ? '' : 'none';
+  document.getElementById('filterChevron').style.transform = filterOpen ? '' : 'rotate(180deg)';
+}
+function clearFilter() { document.querySelectorAll('.filter-input,.filter-select').forEach(el => { el.tagName === 'SELECT' ? el.selectedIndex = 0 : el.value = ''; }); }
+function doSearch() { showToast('搜尋中，請稍候…'); }
+
+// Tab switch
+let currentTabFilter = 'all';
+function switchTab(el, tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  currentTabFilter = tab;
+  applyTableFilter(tab);
+  document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('selected'));
+  if (tab === 'pending')  document.getElementById('card-pending').classList.add('selected');
+  if (tab === 'handler')  document.getElementById('card-handler').classList.add('selected');
+  if (tab === 'approved') document.getElementById('card-approved').classList.add('selected');
+  if (tab === 'rejected') document.getElementById('card-rejected').classList.add('selected');
+}
+
+// Stat card click → filter table
+let currentCardFilter = null;
+function filterByStatus(status) {
+  const cards = { pending: 'card-pending', handler: 'card-handler', approved: 'card-approved', rejected: 'card-rejected' };
+  const tabs  = { pending: 'tab-pending', handler: 'tab-handler', approved: 'tab-approved', rejected: 'tab-rejected' };
+
+  if (currentCardFilter === status) {
+    currentCardFilter = null;
+    document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('selected'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-all').classList.add('active');
+    applyTableFilter('all');
+    return;
+  }
+
+  currentCardFilter = status;
+  document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById(cards[status]).classList.add('selected');
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  const targetTab = tabs[status];
+  if (targetTab) document.getElementById(targetTab).classList.add('active');
+  applyTableFilter(status);
+}
+
+function applyTableFilter(filter) {
+  const rows = document.querySelectorAll('#tableBody tr');
+  const statusMap = {
+    all: null,
+    pending:  'pending',
+    handler:  'handler',
+    returned: 'returned',
+    approved: 'approved',
+    rejected: 'rejected',
+  };
+  const target = statusMap[filter];
+  rows.forEach(row => {
+    const s = row.dataset.status;
+    row.style.display = (!target || s === target) ? '' : 'none';
+  });
+}
+
+// ---- Currency metadata for open transactions (demo data) ----
+const txnCurrencyMap = {
+  'TXN-20240504-001': 'USDT',
+  'TXN-20240504-002': 'BTC',
+  'TXN-20240503-015': 'USDT',
+  'TXN-20240504-003': 'USDT',
+};
+function isFiat(currency) { return ['TWD','NTD'].includes(currency); }
+
+// Modal control
+let currentReviewType = 'pending'; // 'pending' or 'supervisor'
+let currentTxnId = '';
+
+function openReview(txnId, type) {
+  currentReviewType = type;
+  currentTxnId = txnId;
+  document.getElementById('m_txnId').textContent = txnId;
+
+  // --- Refund info ---
+  const currency = txnCurrencyMap[txnId] || 'USDT';
+  const refundEl = document.getElementById('refundInfo');
+  const refundTitle = document.getElementById('refundTitle');
+  const refundDesc  = document.getElementById('refundDesc');
+  const refundIcon  = document.getElementById('refundIcon');
+  if (isFiat(currency)) {
+    refundEl.className = 'refund-info refund-auto';
+    refundTitle.textContent = '法幣（' + currency + '）— 系統自動退款';
+    refundDesc.textContent  = '本幣種為法幣，若交易被拒絕，系統將自動退款至用戶原始帳戶，無需人工介入。';
+    refundIcon.innerHTML = '<circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/>';
+    refundIcon.setAttribute('stroke','#2E7D32');
+  } else {
+    refundEl.className = 'refund-info refund-manual';
+    refundTitle.textContent = '虛擬貨幣（' + currency + '）— 線下人工退款';
+    refundDesc.textContent  = '本幣種為虛擬貨幣，若交易被拒絕，將由客服人員進行線下人工退款作業，請通知用戶耐心等候。';
+    refundIcon.innerHTML = '<path d="M3 12a9 9 0 109 9"/><path d="M3 3v9h9"/>';
+    refundIcon.setAttribute('stroke','#1565C0');
+  }
+
+  // --- Step states ---
+  if (type === 'supervisor') {
+    document.getElementById('reviewModalTitle').textContent = '主管複核 — 金防部主管';
+    document.getElementById('handlerDot').className = 'step-dot done';
+    document.getElementById('handlerStepTitle').textContent = '經辦審查通過';
+    document.getElementById('handlerStepSub').textContent = '@gfb_lps01（經辦）・ 2026-05-03 17:20';
+    document.getElementById('supervisorDot').className = 'step-dot pending';
+    document.getElementById('supervisorStepSub').textContent = '等待主管複核';
+    document.getElementById('notifyDot').className = 'step-dot waiting';
+    document.getElementById('notifyStepSub').textContent = '審核結果確認後自動發送通知信';
+    document.getElementById('reviewFormTitle').textContent = '主管複核意見';
+    // 3 buttons: 通過 | 退回經辦 | 拒絕
+    document.getElementById('decisionBtns').innerHTML = `
+      <button class="decision-btn decision-approve" onclick="submitReview('approve')">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>通過
+      </button>
+      <button class="decision-btn decision-return" onclick="submitReview('return')">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M4 7h13a5 5 0 0 1 0 10H4"/><path d="M7 4l-3 3 3 3"/></svg>退回經辦
+      </button>
+      <button class="decision-btn decision-reject" onclick="submitReview('reject')">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>拒絕
+      </button>`;
+  } else {
+    document.getElementById('reviewModalTitle').textContent = '人工審核 — 經辦審查';
+    document.getElementById('handlerDot').className = 'step-dot pending';
+    document.getElementById('handlerStepTitle').textContent = '經辦審查（金防部）';
+    document.getElementById('handlerStepSub').textContent = '等待經辦人員審核';
+    document.getElementById('supervisorDot').className = 'step-dot waiting';
+    document.getElementById('supervisorStepSub').textContent = '待經辦通過後進行';
+    document.getElementById('notifyDot').className = 'step-dot waiting';
+    document.getElementById('notifyStepSub').textContent = '審核結果確認後自動發送通知信';
+    document.getElementById('reviewFormTitle').textContent = '經辦審核意見';
+    // 2 buttons: 通過 | 拒絕
+    document.getElementById('decisionBtns').innerHTML = `
+      <button class="decision-btn decision-approve" onclick="submitReview('approve')">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>通過
+      </button>
+      <button class="decision-btn decision-reject" onclick="submitReview('reject')">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>拒絕
+      </button>`;
+  }
+
+  document.getElementById('reviewComment').value = '';
+  document.getElementById('reviewComment').style.borderColor = '';
+  document.getElementById('reviewModal').classList.remove('hidden');
+}
+
+function openDetail(txnId, status) {
+  document.getElementById('detailModal').classList.remove('hidden');
+
+  const reviewHistory = document.getElementById('detailReviewHistory');
+  if (!reviewHistory) return;
+
+  if (status === 'pending') {
+    // 待審核：系統攔截後尚未進行經辦審查
+    reviewHistory.innerHTML = `
+      <div class="review-step">
+        <div class="step-indicator">
+          <div class="step-dot intercepted">1</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="step-content">
+          <div class="step-title">系統攔截</div>
+          <div class="step-sub">2026-05-04 09:12:33 ・ 自動觸發</div>
+        </div>
+      </div>
+      <div class="review-step">
+        <div class="step-indicator">
+          <div class="step-dot pending">2</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="step-content">
+          <div class="step-title" style="color:#E65100;">待經辦審查</div>
+          <div class="step-sub">尚未指派・等待金防部經辦人員進行審查</div>
+        </div>
+      </div>
+      <div class="review-step">
+        <div class="step-indicator">
+          <div class="step-dot waiting">3</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="step-content">
+          <div class="step-title" style="color:#9E9E9E;">主管複核</div>
+          <div class="step-sub">待經辦完成審查後進行</div>
+        </div>
+      </div>
+      <div class="review-step">
+        <div class="step-indicator">
+          <div class="step-dot waiting">4</div>
+        </div>
+        <div class="step-content">
+          <div class="step-title" style="color:#9E9E9E;">通知客戶</div>
+          <div class="step-sub">待審核完成後系統自動發送</div>
+        </div>
+      </div>`;
+
+  } else if (status === 'handler') {
+    // 待主管複核：經辦已通過，等待主管複核
+    reviewHistory.innerHTML = `
+      <div class="review-step">
+        <div class="step-indicator">
+          <div class="step-dot intercepted">1</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="step-content">
+          <div class="step-title">系統攔截</div>
+          <div class="step-sub">2026-05-03 14:08:19 ・ 自動觸發</div>
+        </div>
+      </div>
+      <div class="review-step">
+        <div class="step-indicator">
+          <div class="step-dot done">2</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="step-content">
+          <div class="step-title">經辦審查通過</div>
+          <div class="step-sub">@gfb_wjm02（經辦）・ 2026-05-03 15:44:07</div>
+          <div class="step-comment">地址查核無命中制裁名單，KYC資料完整，交易目的合理，建議主管予以放行。</div>
+        </div>
+      </div>
+      <div class="review-step">
+        <div class="step-indicator">
+          <div class="step-dot pending">3</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="step-content">
+          <div class="step-title" style="color:#E65100;">待主管複核</div>
+          <div class="step-sub">@gfb_csf01（主管）・ 等待複核中</div>
+        </div>
+      </div>
+      <div class="review-step">
+        <div class="step-indicator">
+          <div class="step-dot waiting">4</div>
+        </div>
+        <div class="step-content">
+          <div class="step-title" style="color:#9E9E9E;">通知客戶</div>
+          <div class="step-sub">待主管完成複核後系統自動發送</div>
+        </div>
+      </div>`;
+
+  } else if (status === 'returned') {
+    // 退回重審：主管退回，需經辦重新審查
+    reviewHistory.innerHTML = `
+      <div class="review-step">
+        <div class="step-indicator">
+          <div class="step-dot intercepted">1</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="step-content">
+          <div class="step-title">系統攔截</div>
+          <div class="step-sub">2026-05-04 11:47:09 ・ 自動觸發</div>
+        </div>
+      </div>
+      <div class="review-step">
+        <div class="step-indicator">
+          <div class="step-dot done">2</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="step-content">
+          <div class="step-title">經辦初審通過</div>
+          <div class="step-sub">@gfb_lps01（經辦）・ 2026-05-04 13:10:44</div>
+          <div class="step-comment">查核地址未命中制裁名單，建議通過。</div>
+        </div>
+      </div>
+      <div class="review-step">
+        <div class="step-indicator">
+          <div class="step-dot" style="background:#E65100;color:#fff;">3</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="step-content">
+          <div class="step-title" style="color:#E65100;">主管退回重審</div>
+          <div class="step-sub">@gfb_csf01（主管）・ 2026-05-04 14:22:31</div>
+          <div class="step-comment">補充資料不足，請經辦重新查核用戶近 30 日交易紀錄並確認資金來源合規性後再行送審。</div>
+        </div>
+      </div>
+      <div class="review-step">
+        <div class="step-indicator">
+          <div class="step-dot pending">4</div>
+        </div>
+        <div class="step-content">
+          <div class="step-title" style="color:#E65100;">待經辦重新審查</div>
+          <div class="step-sub">@gfb_lps01（經辦）・ 等待重新審查中</div>
+        </div>
+      </div>`;
+
+  } else if (status === 'rejected') {
+    // 已拒絕：經辦＋主管皆拒絕，交易失敗
+    reviewHistory.innerHTML = `
+      <div class="review-step">
+        <div class="step-indicator">
+          <div class="step-dot intercepted">1</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="step-content">
+          <div class="step-title">系統攔截</div>
+          <div class="step-sub">2026-05-02 16:22:41 ・ 自動觸發</div>
+        </div>
+      </div>
+      <div class="review-step">
+        <div class="step-indicator">
+          <div class="step-dot rejected">2</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="step-content">
+          <div class="step-title" style="color:#C62828;">經辦拒絕</div>
+          <div class="step-sub">@gfb_lzy03（經辦）・ 2026-05-02 17:55:03</div>
+          <div class="step-comment">目標地址命中灰名單，交易金額異常偏高，用戶近期多筆大額轉出紀錄，建議拒絕本次交易。</div>
+        </div>
+      </div>
+      <div class="review-step">
+        <div class="step-indicator">
+          <div class="step-dot rejected">3</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="step-content">
+          <div class="step-title" style="color:#C62828;">主管複核拒絕</div>
+          <div class="step-sub">@gfb_csf01（主管）・ 2026-05-02 18:30:17</div>
+          <div class="step-comment">認同經辦判斷，交易風險評估不通過，依內控規定予以拒絕，並通知客服聯繫用戶。</div>
+        </div>
+      </div>
+      <div class="review-step">
+        <div class="step-indicator">
+          <div class="step-dot rejected">4</div>
+        </div>
+        <div class="step-content">
+          <div class="step-title" style="color:#C62828;">交易失敗通知</div>
+          <div class="step-sub">2026-05-02 18:30:20 ・ 系統自動發送</div>
+          <div class="step-comment">交易拒絕通知已發送至用戶信箱，請用戶聯絡客服人員進行後續退款處理。</div>
+        </div>
+      </div>`;
+  } else {
+    // 已通過（預設顯示）
+    reviewHistory.innerHTML = `
+      <div class="review-step">
+        <div class="step-indicator">
+          <div class="step-dot intercepted">1</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="step-content">
+          <div class="step-title">系統攔截</div>
+          <div class="step-sub">2026-05-02 11:30:55 ・ 自動觸發</div>
+        </div>
+      </div>
+      <div class="review-step">
+        <div class="step-indicator">
+          <div class="step-dot done">2</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="step-content">
+          <div class="step-title">經辦審查通過</div>
+          <div class="step-sub">@gfb_wjm02（經辦）・ 2026-05-02 13:10:22</div>
+          <div class="step-comment">經查核該地址並非制裁名單，為交易所冷錢包，用戶KYC已完成，出金目的合理，建議通過。</div>
+        </div>
+      </div>
+      <div class="review-step">
+        <div class="step-indicator">
+          <div class="step-dot done">3</div>
+          <div class="step-line"></div>
+        </div>
+        <div class="step-content">
+          <div class="step-title">主管複核通過</div>
+          <div class="step-sub">@gfb_csf01（主管）・ 2026-05-02 14:35:08</div>
+          <div class="step-comment">同意經辦意見，本次交易符合規範，予以放行。</div>
+        </div>
+      </div>
+      <div class="review-step">
+        <div class="step-indicator">
+          <div class="step-dot done">4</div>
+        </div>
+        <div class="step-content">
+          <div class="step-title">通知客戶</div>
+          <div class="step-sub">2026-05-02 14:35:10 ・ 系統自動發送</div>
+          <div class="step-comment">交易審核通過通知已發送至用戶信箱（u19004@example.com）。</div>
+        </div>
+      </div>`;
+  }
+}
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+
+// Close on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', function(e) { if (e.target === this) this.classList.add('hidden'); });
+});
+
+function submitReview(decision) {
+  const comment = document.getElementById('reviewComment').value.trim();
+  if (!comment) {
+    document.getElementById('reviewComment').style.borderColor = '#e53935';
+    document.getElementById('reviewComment').focus();
+    return;
+  }
+  closeModal('reviewModal');
+
+  if (decision === 'approve') {
+    const msg = currentReviewType === 'supervisor'
+      ? '✅ 主管複核通過，交易已放行，系統已發送通知信至用戶'
+      : '✅ 經辦審查通過，已送交主管複核';
+    showToast(msg, 'green');
+
+  } else if (decision === 'return') {
+    showToast('↩ 已退回經辦重新審查，請經辦人員盡速處理', 'orange');
+
+  } else if (decision === 'reject') {
+    if (currentReviewType === 'supervisor') {
+      // 經辦 + 主管皆拒絕 → 結案，發通知
+      showToast('❌ 交易已拒絕：' + currentTxnId + ' 系統已發送通知信至用戶：本筆交易失敗，請聯絡客服人員', 'red');
+    } else {
+      // 經辦拒絕，等待主管確認
+      showToast('⚠️ 經辦已拒絕，請主管進行複核確認後完成審查', 'orange');
+    }
+  }
+}
+
+function showToast(msg, type) {
+  const toast = document.getElementById('toast');
+  const colors = { green: '#2E7D32', orange: '#E65100', red: '#C62828', default: '#333' };
+  toast.style.background = colors[type] || colors.default;
+  document.getElementById('toastMsg').textContent = msg;
+  toast.style.transform = 'translateY(0)';
+  // Longer display for rejection/close notifications
+  const dur = (type === 'red') ? 5000 : 3000;
+  setTimeout(() => { toast.style.transform = 'translateY(80px)'; }, dur);
+}
+
+function toggleSub(el) {
+  const sub = el.nextElementSibling;
+  if (sub && sub.classList.contains('nav-sub')) {
+    sub.style.display = sub.style.display === 'none' ? '' : 'none';
+  }
+}
+</script>
+</body>
+</html>

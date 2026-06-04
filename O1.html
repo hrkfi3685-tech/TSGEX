@@ -1,0 +1,2066 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TSG EX 管理後台 — 可疑交易監控系統 v5 ｜ 2026-05-20</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Noto Sans TC', 'Microsoft JhengHei', sans-serif; background: #f0f2f5; color: #2c3e50; font-size: 14px; }
+
+/* ── Layout ── */
+.layout { display: flex; min-height: 100vh; }
+.sidebar { width: 240px; background: #1a1a2e; color: #ccc; flex-shrink: 0; font-size: 13px; }
+.sidebar-logo { padding: 16px; border-bottom: 1px solid #2d2d4e; display: flex; align-items: center; gap: 8px; }
+.sidebar-logo .logo-box { background: #e8a838; color: #fff; width: 32px; height: 32px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 12px; }
+.sidebar-logo .logo-text { color: #e8a838; font-size: 16px; font-weight: 700; }
+.sidebar-logo small { color: #888; font-size: 10px; display: block; }
+.sidebar nav a { display: block; padding: 10px 18px; color: #99a; font-size: 12px; text-decoration: none; border-left: 3px solid transparent; cursor: pointer; }
+.sidebar nav a.active { background: rgba(232,168,56,0.12); color: #e8a838; border-left-color: #e8a838; }
+.sidebar nav a:hover { background: rgba(255,255,255,0.05); color: #fff; }
+.sidebar-section { padding: 10px 18px 3px; font-size: 9px; color: #555; text-transform: uppercase; letter-spacing: 1px; }
+.sidebar nav a.sub-nav { padding-left: 36px; font-size: 11px; color: #778; }
+.sidebar nav a.sub-nav.active { background: rgba(232,168,56,0.08); color: #e8a838; border-left-color: #e8a838; }
+.sidebar nav a.sub-nav:hover { color: #ddd; }
+.sidebar nav a.parent-label { color: #bbc; font-weight: 600; cursor: default; }
+.sidebar nav a.parent-label:hover { background: transparent; color: #bbc; }
+.demo-divider { padding: 8px 18px 4px; font-size: 9px; color: #e8a838; text-transform: uppercase; letter-spacing: 1px; border-top: 1px dashed #2d2d4e; margin-top: 8px; }
+
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+.topbar { background: #fff; padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #e8ecf0; position: sticky; top: 0; z-index: 100; }
+.breadcrumb { font-size: 12px; color: #aaa; display: flex; align-items: center; gap: 6px; }
+.breadcrumb span { color: #555; font-weight: 600; }
+.topbar-right { display: flex; align-items: center; gap: 12px; font-size: 12px; color: #666; }
+.role-indicator { padding: 4px 10px; border-radius: 6px; font-weight: 700; font-size: 11px; }
+.role-indicator.operator { background: #e3f0ff; color: #2471a3; }
+.role-indicator.supervisor { background: #fdecea; color: #c0392b; }
+.content { flex: 1; padding: 20px 24px; overflow-y: auto; }
+
+/* ── Buttons ── */
+.btn { padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; display: inline-flex; align-items: center; gap: 5px; transition: all 0.15s; }
+.btn-outline { background: #fff; border: 1px solid #d0d7de; color: #555; }
+.btn-outline:hover { background: #f5f6f8; border-color: #bbb; }
+.btn-primary { background: #1a1a2e; color: #fff; }
+.btn-primary:hover { background: #2a2a4e; }
+.btn-success { background: #27ae60; color: #fff; }
+.btn-success:hover { background: #219a52; }
+.btn-danger { background: #fdecea; color: #e74c3c; border: 1px solid #f5c6c2; }
+.btn-warning { background: #fef9e7; color: #b7950b; border: 1px solid #f9e79f; }
+.btn-sm { padding: 4px 10px; font-size: 11px; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Section Card ── */
+.section-card { background: #fff; border-radius: 10px; border: 1px solid #eef0f3; box-shadow: 0 1px 4px rgba(0,0,0,0.05); margin-bottom: 16px; overflow: hidden; }
+.section-header { padding: 14px 18px; border-bottom: 1px solid #f0f2f5; display: flex; align-items: center; justify-content: space-between; }
+.section-title { font-size: 13px; font-weight: 700; color: #2c3e50; display: flex; align-items: center; gap: 7px; }
+
+/* ── Pills / Badges ── */
+.pill { font-size: 11px; padding: 3px 10px; border-radius: 10px; font-weight: 600; display: inline-block; }
+.pill-green { background: #eafaf1; color: #1e8449; }
+.pill-red { background: #fdecea; color: #c0392b; }
+.pill-orange { background: #fef9e7; color: #9a7d0a; }
+.pill-gray { background: #f0f2f5; color: #777; }
+.pill-blue { background: #e3f0ff; color: #2471a3; }
+.pill-purple { background: #f3e8ff; color: #7d3c98; }
+.pill-yellow { background: #fff8dc; color: #b7950b; }
+
+/* ── Stat Cards ── */
+.stat-row { display: grid; gap: 12px; margin-bottom: 12px; }
+.stat-row.r1 { grid-template-columns: repeat(4, 1fr); }
+.stat-row.r2 { grid-template-columns: repeat(4, 1fr); }
+.stat-row.r3 { grid-template-columns: repeat(2, 1fr) auto; }
+.stat-card { background: #fff; border: 1px solid #eef0f3; border-radius: 8px; padding: 14px; text-align: center; }
+.stat-card.attention { border-color: #f9c8c4; background: #fef5f4; }
+.stat-card.warn { border-color: #f9e79f; background: #fefbe9; }
+.stat-val { font-size: 22px; font-weight: 800; color: #1a1a2e; }
+.stat-val.danger { color: #c0392b; }
+.stat-val.warn { color: #b7950b; }
+.stat-val.success { color: #1e8449; }
+.stat-label { font-size: 11px; color: #888; margin-top: 3px; }
+
+/* ── Batch info bar ── */
+.batch-bar { background: #fff; border: 1px solid #eef0f3; border-radius: 8px; padding: 10px 16px; display: flex; align-items: center; gap: 16px; margin-bottom: 14px; font-size: 12px; color: #666; box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
+.batch-bar strong { color: #1a1a2e; }
+
+/* ── Tabs ── */
+.tabs-bar { display: flex; gap: 0; background: #fff; border-bottom: 1px solid #eef0f3; padding: 0 18px; border-radius: 10px 10px 0 0; }
+.tab-btn { padding: 12px 18px; font-size: 13px; font-weight: 700; cursor: pointer; color: #888; border: none; background: transparent; border-bottom: 3px solid transparent; transition: all 0.15s; }
+.tab-btn.active { color: #1a1a2e; border-bottom-color: #e8a838; }
+.tab-btn:hover:not(.active) { color: #2c3e50; }
+.tab-btn .count-badge { display: inline-block; min-width: 20px; padding: 1px 6px; margin-left: 5px; background: #f0f2f5; color: #777; border-radius: 10px; font-size: 10px; font-weight: 700; }
+.tab-btn.active .count-badge { background: #e8a838; color: #fff; }
+.tab-pane { display: none; }
+.tab-pane.active { display: block; }
+.tab-content-card { background: #fff; border: 1px solid #eef0f3; border-top: none; border-radius: 0 0 10px 10px; }
+
+/* ── Filter Bar (collapsible) ── */
+.filter-section { padding: 14px 18px; border-bottom: 1px solid #eef0f3; background: #fafbfc; }
+.filter-toggle { display: flex; align-items: center; justify-content: space-between; cursor: pointer; user-select: none; }
+.filter-toggle-title { font-size: 12px; font-weight: 700; color: #555; display: flex; align-items: center; gap: 6px; }
+.filter-toggle-arrow { font-size: 14px; color: #999; transition: transform 0.2s; }
+.filter-section.collapsed .filter-toggle-arrow { transform: rotate(180deg); }
+.filter-section.collapsed .filter-content { display: none; }
+.filter-content { margin-top: 12px; }
+.filter-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px 14px; }
+.filter-item { display: flex; flex-direction: column; gap: 4px; }
+.filter-label { font-size: 10px; color: #888; font-weight: 600; }
+.filter-input { height: 32px; padding: 0 10px; border: 1px solid #dde0e5; border-radius: 6px; font-size: 12px; color: #2c3e50; background: #fff; outline: none; }
+.filter-input:focus { border-color: #1a1a2e; }
+.filter-select { height: 32px; padding: 0 8px; border: 1px solid #dde0e5; border-radius: 6px; font-size: 12px; color: #2c3e50; background: #fff; cursor: pointer; appearance: none; -webkit-appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%23aaa' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; padding-right: 24px; outline: none; }
+.filter-select:focus { border-color: #1a1a2e; }
+.filter-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
+
+/* ── Data Table ── */
+.table-wrapper { overflow-x: auto; max-height: 580px; overflow-y: auto; position: relative; }
+.data-table { width: 100%; border-collapse: separate; border-spacing: 0; min-width: 100%; }
+.data-table th { background: #fafbfc; padding: 10px 12px; font-size: 11px; color: #888; font-weight: 700; text-align: left; border-bottom: 1px solid #eef0f3; white-space: nowrap; position: sticky; top: 0; z-index: 5; }
+.data-table td { padding: 11px 12px; font-size: 12px; color: #2c3e50; border-bottom: 1px solid #f5f6f8; vertical-align: middle; white-space: nowrap; }
+.data-table tr:hover td { background: #fafbfc; }
+.data-table tr.row-disabled { opacity: 0.4; pointer-events: none; }
+.data-table tr.row-disabled td { background: #f5f6f8; color: #aaa; }
+/* Sticky 操作 column on the right */
+.data-table th.sticky-right, .data-table td.sticky-right { position: sticky; right: 0; background: #fff; box-shadow: -2px 0 4px rgba(0,0,0,0.04); z-index: 4; }
+.data-table tr:hover td.sticky-right { background: #fafbfc; }
+.data-table th.sticky-right { z-index: 6; background: #fafbfc; }
+
+.mono { font-family: 'Menlo', 'Courier New', monospace; font-size: 11px; color: #555; }
+.user-id-link { color: #2471a3; cursor: pointer; font-weight: 600; text-decoration: underline; text-decoration-color: #b8d4f0; text-underline-offset: 2px; }
+.user-id-link:hover { color: #1a5276; }
+
+/* ── Trigger tags (multi-line) ── */
+.trigger-list { display: flex; flex-direction: column; gap: 3px; }
+.trigger-tag { font-size: 10px; padding: 2px 7px; border-radius: 4px; font-weight: 600; display: inline-block; width: fit-content; }
+.trigger-tag.trade { background: #fef3e0; color: #c0710a; }
+.trigger-tag.identity { background: #e3f0ff; color: #2471a3; }
+.trigger-tag.terror { background: #fdecea; color: #c0392b; }
+
+/* ── S/T tooltip (hover 顯示樣態與規則說明) ── */
+.s-tooltip-wrap { position: relative; cursor: help; border-bottom: 1px dotted #aaa; display: inline-block; }
+.s-tooltip-wrap .s-tooltip-box { display: none; position: absolute; bottom: calc(100% + 4px); left: 0; background: #1a1a2e; color: #fff; padding: 8px 12px; border-radius: 6px; font-size: 11px; line-height: 1.6; white-space: normal; min-width: 260px; max-width: 360px; z-index: 250; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+.s-tooltip-wrap .s-tooltip-box::after { content: ''; position: absolute; top: 100%; left: 12px; border: 6px solid transparent; border-top-color: #1a1a2e; }
+.s-tooltip-wrap:hover .s-tooltip-box { display: block; }
+.s-tooltip-box .tip-line { margin-bottom: 4px; }
+.s-tooltip-box .tip-line:last-child { margin-bottom: 0; }
+.s-tooltip-box b { color: #e8a838; }
+
+/* ── Accordion (Tab 1 row expand) ── */
+.accordion-row { background: #fcfcfd; }
+.accordion-row td { padding: 0; border-bottom: 2px solid #eef0f3; }
+.accordion-content { padding: 14px 18px; font-size: 12px; }
+
+/* ── Pagination ── */
+.table-footer { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-top: 1px solid #f0f2f5; background: #fafbfc; font-size: 12px; color: #666; flex-wrap: wrap; gap: 8px; border-radius: 0 0 10px 10px; }
+.tf-left { display: flex; align-items: center; gap: 8px; }
+.tf-per-page { height: 28px; padding: 0 22px 0 8px; border: 1px solid #dde0e5; border-radius: 6px; font-size: 12px; color: #2c3e50; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'%3E%3Cpath d='M1 1l3 3 3-3' stroke='%23aaa' stroke-width='1.2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 7px center; -webkit-appearance: none; cursor: pointer; outline: none; }
+.tf-info { color: #888; font-size: 12px; }
+.tf-pagination { display: flex; align-items: center; gap: 4px; }
+.tf-btn { width: 28px; height: 28px; border: 1px solid #dde0e5; border-radius: 6px; background: #fff; color: #555; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; padding: 0; }
+.tf-btn:hover:not(:disabled) { background: #f0f2f5; border-color: #c5ccd5; }
+.tf-btn:disabled { color: #ccc; cursor: default; }
+
+/* ── Sticky action bar (for 接案/併案) ── */
+.action-bar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #1a1a2e; color: #fff; padding: 12px 20px; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.25); display: none; align-items: center; gap: 16px; z-index: 50; }
+.action-bar.visible { display: flex; }
+.action-bar .selected-count { font-size: 13px; }
+.action-bar .selected-count strong { color: #e8a838; font-size: 16px; margin-right: 3px; }
+.action-bar .selected-error { color: #ffb3b0; font-size: 11px; padding-left: 8px; border-left: 1px solid #444; }
+
+/* ── Detail modal ── */
+.detail-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 200; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.detail-overlay[hidden] { display: none; }
+.detail-panel { width: 1000px; max-height: 90vh; background: #fff; border-radius: 14px; box-shadow: 0 12px 40px rgba(0,0,0,0.2); display: flex; flex-direction: column; overflow: hidden; }
+/* v5：footer max-height 從 50vh 提高到 60vh，避免 G/H 兩區同時展開時 H 區被壓縮（兩區皆 210px → 含 header 約 516px，需 60vh = 540px on 900vp 才完全容納） */
+.detail-footer { flex-shrink: 0; border-top: 1px solid #d8dde3; background: #fff; max-height: 60vh; overflow-y: auto; border-radius: 0 0 14px 14px; }
+.detail-header { padding: 16px 24px; border-bottom: 1px solid #eef0f3; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; border-radius: 14px 14px 0 0; background: #fafbfc; }
+.detail-header h2 { font-size: 16px; font-weight: 700; color: #1a1a2e; }
+.detail-close { font-size: 22px; cursor: pointer; color: #999; background: none; border: none; padding: 4px 8px; }
+.detail-close:hover { color: #333; }
+.detail-body { padding: 20px 24px; overflow-y: auto; flex: 1; }
+.detail-section { margin-bottom: 22px; }
+.detail-section-title { font-size: 12px; font-weight: 700; color: #888; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 6px; border-bottom: 1px solid #eef0f3; }
+.kv-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px 16px; padding: 4px 0; }
+.kv-item-label { font-size: 10px; color: #aaa; margin-bottom: 2px; }
+.kv-item-value { font-size: 13px; font-weight: 600; color: #2c3e50; }
+
+/* B 區 警示明細 accordion */
+.alert-detail-card { background: #fafbfc; border: 1px solid #eef0f3; border-radius: 8px; margin-bottom: 8px; overflow: hidden; }
+.alert-detail-header { padding: 10px 14px; cursor: pointer; display: flex; align-items: center; justify-content: space-between; }
+.alert-detail-header:hover { background: #f0f2f5; }
+.alert-detail-body { padding: 12px 14px; border-top: 1px solid #eef0f3; background: #fff; display: none; }
+.alert-detail-card.expanded .alert-detail-body { display: block; }
+.alert-detail-card .toggle-arrow { color: #999; font-size: 12px; transition: transform 0.2s; }
+.alert-detail-card.expanded .toggle-arrow { transform: rotate(90deg); }
+
+.tx-table { width: 100%; border-collapse: collapse; font-size: 11px; margin-top: 8px; }
+.tx-table th { background: #f5f6f8; padding: 6px 10px; text-align: left; color: #888; font-weight: 700; font-size: 10px; text-transform: uppercase; }
+.tx-table td { padding: 6px 10px; border-top: 1px solid #f0f2f5; color: #2c3e50; }
+
+/* C/D 區 表單 */
+.form-section { padding: 14px; background: #fafbfc; border: 1px solid #eef0f3; border-radius: 8px; }
+.form-section.readonly { background: #f5f6f8; opacity: 0.8; }
+.form-section-label { font-size: 11px; font-weight: 700; color: #888; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.3px; }
+.form-row { margin-bottom: 14px; }
+.form-row:last-child { margin-bottom: 0; }
+.form-input, .form-textarea { width: 100%; padding: 8px 10px; border: 1px solid #dde0e5; border-radius: 6px; font-size: 12px; color: #2c3e50; background: #fff; outline: none; font-family: inherit; }
+.form-textarea { min-height: 70px; resize: vertical; }
+.form-input:focus, .form-textarea:focus { border-color: #1a1a2e; }
+.form-input:disabled, .form-textarea:disabled { background: #f0f2f5; color: #777; cursor: not-allowed; }
+.radio-group, .checkbox-group { display: flex; flex-direction: column; gap: 6px; }
+.radio-group.inline, .checkbox-group.inline { flex-direction: row; gap: 16px; flex-wrap: wrap; }
+.radio-item, .checkbox-item { display: flex; align-items: center; gap: 6px; font-size: 12px; cursor: pointer; }
+.radio-item input, .checkbox-item input { cursor: pointer; }
+.radio-item.disabled, .checkbox-item.disabled { color: #999; cursor: not-allowed; }
+.upload-box { border: 2px dashed #dde0e5; border-radius: 8px; padding: 14px; text-align: center; color: #888; font-size: 12px; background: #fff; cursor: pointer; }
+.upload-box:hover { border-color: #1a1a2e; color: #1a1a2e; }
+.attachment-chip { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; background: #e3f0ff; color: #2471a3; border-radius: 4px; font-size: 11px; margin: 2px; }
+.form-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; padding-top: 14px; border-top: 1px solid #eef0f3; }
+
+/* E 區 退回 banner */
+.return-banner { background: #fef9e7; border: 1px solid #f9e79f; border-left: 4px solid #b7950b; border-radius: 8px; padding: 14px; margin-bottom: 16px; }
+.return-banner-title { font-size: 13px; font-weight: 700; color: #7d6608; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+.return-banner-content { font-size: 12px; color: #5d4e08; line-height: 1.6; padding: 8px 12px; background: #fef5d4; border-radius: 6px; }
+
+/* F 區 一年內判定紀錄 */
+.history-card { background: #fff; border: 1px solid #eef0f3; border-radius: 8px; padding: 12px 14px; margin-bottom: 8px; }
+.history-card-title { font-size: 12px; font-weight: 700; color: #1a1a2e; margin-bottom: 6px; }
+.history-card-summary { font-size: 11px; color: #777; line-height: 1.6; }
+.history-card.expanded .history-card-tx { display: block !important; }
+
+/* ── KYC Modal ── */
+.kyc-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 250; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.kyc-overlay[hidden] { display: none; }
+.kyc-panel { width: 1100px; max-height: 90vh; background: #fff; border-radius: 14px; box-shadow: 0 12px 40px rgba(0,0,0,0.2); display: flex; flex-direction: column; overflow: hidden; }
+.kyc-header { padding: 16px 24px; border-bottom: 1px solid #eef0f3; display: flex; align-items: center; gap: 12px; }
+.kyc-avatar { width: 40px; height: 40px; border-radius: 8px; background: #1a1a2e; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; }
+.kyc-title { flex: 1; }
+.kyc-title h2 { font-size: 16px; font-weight: 700; color: #1a1a2e; display: flex; align-items: center; gap: 8px; }
+.kyc-title .sub { font-size: 11px; color: #888; margin-top: 2px; }
+.kyc-body { padding: 18px 24px; overflow-y: auto; display: grid; grid-template-columns: 2fr 1fr; gap: 18px; }
+.kyc-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 14px; background: #fafbfc; border-radius: 8px; margin-bottom: 16px; }
+.kyc-summary-item { display: flex; flex-direction: column; }
+.kyc-summary-label { font-size: 10px; color: #aaa; }
+.kyc-summary-value { font-size: 13px; font-weight: 700; color: #1a1a2e; margin-top: 2px; }
+
+/* ── 未接案警示彈窗 ── */
+.popup-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 300; display: flex; align-items: center; justify-content: center; }
+.popup-overlay[hidden] { display: none; }
+.popup-panel { width: 380px; background: #fff; border-radius: 12px; box-shadow: 0 12px 40px rgba(0,0,0,0.25); padding: 24px; }
+.popup-content { font-size: 13px; color: #2c3e50; margin-bottom: 16px; line-height: 1.6; }
+.popup-content strong { color: #c0392b; font-size: 16px; }
+.popup-actions { display: flex; align-items: center; justify-content: space-between; }
+.popup-checkbox { font-size: 12px; color: #666; display: flex; align-items: center; gap: 6px; cursor: pointer; }
+
+/* ── Demo annotation ── */
+.demo-note { padding: 6px 10px; background: #fff8dc; border: 1px dashed #d6b656; border-radius: 6px; font-size: 10px; color: #b7950b; }
+
+/* ── v4 新增：附件 chip 帶刪除 ✕ ── */
+.attachment-chip .chip-del { margin-left: 4px; cursor: pointer; color: #2471a3; opacity: 0.6; font-weight: 700; }
+.attachment-chip .chip-del:hover { opacity: 1; color: #c0392b; }
+.attachment-chip { cursor: pointer; }
+
+/* ── v4 新增：confirm modal（結案／混合併案） ── */
+.confirm-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 320; display: flex; align-items: center; justify-content: center; }
+.confirm-overlay[hidden] { display: none; }
+.confirm-panel { width: 380px; background: #fff; border-radius: 12px; box-shadow: 0 12px 40px rgba(0,0,0,0.25); padding: 22px; }
+.confirm-title { font-size: 14px; font-weight: 700; color: #1a1a2e; margin-bottom: 10px; }
+.confirm-msg { font-size: 13px; color: #2c3e50; line-height: 1.7; margin-bottom: 18px; }
+.confirm-actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+/* ── v4 新增：轉單 modal ── */
+.reassign-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 310; display: flex; align-items: center; justify-content: center; }
+.reassign-overlay[hidden] { display: none; }
+.reassign-panel { width: 420px; background: #fff; border-radius: 12px; padding: 22px; box-shadow: 0 12px 40px rgba(0,0,0,0.25); }
+.reassign-title { font-size: 15px; font-weight: 700; color: #1a1a2e; margin-bottom: 14px; }
+.reassign-row { margin-bottom: 16px; font-size: 12px; }
+.reassign-row label { display: block; font-size: 11px; color: #888; font-weight: 600; margin-bottom: 4px; }
+.reassign-row select { width: 100%; padding: 8px 10px; border: 1px solid #dde0e5; border-radius: 6px; font-size: 13px; background: #fff; }
+.reassign-actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+/* ── v4 新增：審核結果唯讀顯示（純文字，非輸入框） ── */
+.audit-result-display { font-size: 13px; color: #2c3e50; font-weight: 700; padding: 2px 0; }
+.audit-result-display.empty { color: #aaa; font-weight: 400; }
+
+/* ── v4 新增：限制帳號權限中／關戶清退流程中 pill ── */
+.pill-blue-deep { background: #d6eaff; color: #1a5276; }
+.pill-orange-deep { background: #fde5cc; color: #ba4a00; }
+
+/* ── v4 主管畫面：Tab 1 隱藏勾選欄/底部 action bar/警示詳情接案按鈕 ── */
+body.role-supervisor #tbl-alerts th.col-checkbox,
+body.role-supervisor #tbl-alerts td.col-checkbox { display: none; }
+body.role-supervisor #action-bar { display: none !important; }
+body.role-supervisor #ad-take-case-btn { display: none; }
+
+/* ── v4 F 區「載入更多」 ── */
+.f-load-more-row { text-align: center; padding: 10px 0; }
+.f-load-more-btn { padding: 6px 18px; border: 1px solid #d0d7de; background: #fff; color: #555; border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 600; }
+.f-load-more-btn:hover { background: #f0f2f5; }
+.f-end-msg { text-align: center; padding: 10px 0; font-size: 11px; color: #aaa; }
+
+/* ── v5：textarea 旁送出說明按鈕（白底方形向右箭頭） ── */
+.note-submit-wrap { display: flex; gap: 8px; align-items: flex-start; }
+.note-submit-wrap .form-textarea { flex: 1; }
+.note-submit-btn { height: 32px; width: 36px; padding: 0; border: 1px solid #d0d7de; background: #fff; color: #1a1a2e; border-radius: 6px; cursor: pointer; flex-shrink: 0; align-self: flex-start; display: inline-flex; align-items: center; justify-content: center; transition: all 0.15s; }
+.note-submit-btn:hover { background: #f5f6f8; border-color: #1a1a2e; }
+.note-submit-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.note-submit-btn svg { width: 18px; height: 18px; }
+
+/* ── v5：B 區卡片標題列產出時間 ── */
+.alert-detail-header .alert-produced-at { font-size: 11px; color: #999; margin-left: 6px; }
+
+/* ── v5：G/H 區紀錄區塊（固定於詳情頁底部，視覺對齊 KYC 詳情頁的審查紀錄／全事件 TIMELINE）
+       v5：展開後 height: 210px（固定，依 G 區單 row ≈ 50px × 3 + thead 30 + padding 28 推算） ── */
+.record-section { background: #fff; border-bottom: 1px solid #eef0f3; overflow: hidden; }
+.record-section:last-child { border-bottom: none; }
+.record-section-header { padding: 12px 24px; background: #fafbfc; cursor: pointer; display: flex; align-items: center; justify-content: space-between; user-select: none; }
+.record-section-header:hover { background: #f0f2f5; }
+.record-section-title { font-size: 12px; font-weight: 700; color: #555; display: flex; align-items: center; gap: 8px; }
+.record-section-arrow { font-size: 12px; color: #999; transition: transform 0.2s; }
+.record-section.expanded .record-section-arrow { transform: rotate(90deg); }
+.record-section-body { display: none; padding: 14px 24px; }
+.record-section.expanded .record-section-body { display: block; height: 210px; overflow-y: auto; }
+/* H 區變動內容多行 */
+.record-table td.col-changes { padding: 6px 10px; }
+/* v5：.change-item 由 block div 改為 inline span，多筆以「、」分隔整併成單行 */
+.change-item { line-height: 1.6; font-size: 12px; color: #2c3e50; }
+/* v5：G/H 區依操作角色 row 底色 (方案 A) */
+.record-table tr.row-op td { background: #f0f7ff; }
+.record-table tr.row-sup td { background: #fff4f4; }
+.record-table tr.row-op:hover td { background: #e1eefe; }
+.record-table tr.row-sup:hover td { background: #fde8e8; }
+.record-filter { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; padding: 10px 12px; background: #fafbfc; border: 1px solid #eef0f3; border-radius: 6px; font-size: 12px; flex-wrap: wrap; }
+.record-filter label { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+.record-filter select { height: 28px; padding: 0 8px; border: 1px solid #dde0e5; border-radius: 4px; font-size: 12px; background: #fff; }
+.record-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.record-table th { background: #fafbfc; padding: 8px 10px; text-align: left; font-size: 11px; font-weight: 700; color: #888; border-bottom: 1px solid #eef0f3; white-space: nowrap; }
+.record-table td { padding: 8px 10px; font-size: 12px; color: #2c3e50; border-bottom: 1px solid #f5f6f8; vertical-align: top; }
+.record-table tr:last-child td { border-bottom: none; }
+.record-table td.col-content { white-space: pre-wrap; word-break: break-word; }
+.record-table .pill-action { font-size: 10px; padding: 2px 8px; border-radius: 4px; font-weight: 600; display: inline-block; }
+.pill-action.save { background: #f0f2f5; color: #777; }
+.pill-action.submit { background: #e3f0ff; color: #2471a3; }
+.pill-action.retreat { background: #fef9e7; color: #b7950b; }
+.pill-action.limit { background: #fde5cc; color: #ba4a00; }
+.pill-action.closeout { background: #fdecea; color: #c0392b; }
+.pill-action.close { background: #eafaf1; color: #1e8449; }
+.pill-action.reassign { background: #f3e8ff; color: #7d3c98; }
+.record-table .pill-changetype { font-size: 10px; padding: 2px 8px; border-radius: 4px; font-weight: 600; display: inline-block; background: #f0f2f5; color: #555; }
+.record-empty { padding: 20px; text-align: center; color: #aaa; font-size: 12px; }
+
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-box">TSG</div>
+      <div>
+        <div class="logo-text">TSG EX</div>
+        <small>管理後台</small>
+      </div>
+    </div>
+    <div class="sidebar-section">主選單</div>
+    <nav>
+      <a>🏠 首頁</a>
+      <a>🛡 管理者管理</a>
+      <a>₿ 幣種與等級設定</a>
+      <a>📋 交易紀錄</a>
+      <a>👥 用戶管理</a>
+      <a>🪪 自然人 KYC 審核</a>
+      <a>🏢 法人 KYC 審核</a>
+      <a>🏦 銀行帳戶管理</a>
+      <a>💰 財務管理</a>
+      <a>🧾 發票管理</a>
+      <a>⚙️ 營運管理</a>
+      <a>📊 報表統計</a>
+      <a>🔒 風險管理</a>
+      <a>🤖 機器人</a>
+      <a>👛 錢包管理</a>
+      <a class="parent-label">🔍 VASP 風控管理</a>
+      <a class="sub-nav active" id="nav-operator" onclick="switchRole('operator')">📋 綜合警示清單（經辦畫面）</a>
+      <a class="sub-nav" id="nav-supervisor" onclick="switchRole('supervisor')">📋 綜合警示清單（主管畫面）</a>
+      <a class="sub-nav">⚙️ 可疑樣態設定</a>
+      <div class="demo-divider">⚠ Demo 提示</div>
+      <div style="padding: 8px 18px; font-size: 10px; color: #777; line-height: 1.6;">「經辦畫面」與「主管畫面」為 demo 用切換入口，正式版以登入身分自動判定，移除此兩入口。</div>
+    </nav>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <div class="breadcrumb">首頁 › VASP 風控管理 › <span>綜合警示清單</span></div>
+      <div class="topbar-right">
+        <span class="role-indicator operator" id="role-indicator">👤 經辦：admin01</span>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- Batch info bar -->
+      <div class="batch-bar">
+        <span>⏱ 最近批次：<strong>2026-05-04 02:00:12</strong></span>
+        <span style="color: #ddd;">|</span>
+        <span>排程狀態：<span class="pill pill-green">正常完成</span></span>
+        <span style="color: #ddd;">|</span>
+        <span>各樣態警示區間依設定回推（24h／3 日／1 月／6 月）</span>
+      </div>
+
+      <!-- Stat cards row 1: 週期性數值 -->
+      <div class="stat-row r1">
+        <div class="stat-card">
+          <div class="stat-val">12</div>
+          <div class="stat-label">本批次新增警示數</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val">187</div>
+          <div class="stat-label">本月累計警示數</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val">42</div>
+          <div class="stat-label">本週累計警示數</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val danger">+12.5%</div>
+          <div class="stat-label">本週警示增加率</div>
+        </div>
+      </div>
+
+      <!-- Stat cards row 2: 待處理 -->
+      <div class="stat-row r2">
+        <div class="stat-card attention">
+          <div class="stat-val danger">8</div>
+          <div class="stat-label">未接案警示數</div>
+        </div>
+        <div class="stat-card warn">
+          <div class="stat-val warn">3</div>
+          <div class="stat-label">退回補件數</div>
+        </div>
+        <div class="stat-card warn">
+          <div class="stat-val warn">2</div>
+          <div class="stat-label">隔日到期警示</div>
+        </div>
+        <div class="stat-card attention">
+          <div class="stat-val danger">1</div>
+          <div class="stat-label">需關戶清退</div>
+        </div>
+      </div>
+
+      <!-- Stat cards row 3: 已結案 + 匯出 -->
+      <div class="stat-row r3">
+        <div class="stat-card">
+          <div class="stat-val">26</div>
+          <div class="stat-label">未結案件數</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-val">2</div>
+          <div class="stat-label">已結案需申報</div>
+        </div>
+        <div style="display: flex; align-items: center;">
+          <button class="btn btn-outline" onclick="alert('產出 xlsx：含統計區塊 10 個指標數值\n（含本月/本週累計警示、本週增加率、各待處理數、已結案統計）')">📥 匯出數據</button>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs-bar">
+        <button class="tab-btn active" data-tab="alerts" onclick="switchTab('alerts')">警示清單</button>
+        <button class="tab-btn" data-tab="cases-active" onclick="switchTab('cases-active')">案件清單—未結案</button>
+        <button class="tab-btn" data-tab="cases-closed" onclick="switchTab('cases-closed')">所有案件</button>
+      </div>
+
+      <!-- TAB CONTENT GOES HERE -->
+
+      <!-- Tab 1: 警示清單 -->
+      <div class="tab-pane active" id="tab-alerts">
+        <div class="tab-content-card">
+          <!-- Filter -->
+          <div class="filter-section" id="filter-alerts">
+            <div class="filter-toggle" onclick="toggleFilter('filter-alerts')">
+              <div class="filter-toggle-title">︻ 篩選條件</div>
+              <span class="filter-toggle-arrow">︿</span>
+            </div>
+            <div class="filter-content">
+              <div class="filter-grid">
+                <div class="filter-item"><label class="filter-label">警示產出日 (開始)</label><input class="filter-input" type="date"></div>
+                <div class="filter-item"><label class="filter-label">警示產出日 (結束)</label><input class="filter-input" type="date"></div>
+                <div class="filter-item"><label class="filter-label">用戶 ID</label><input class="filter-input" type="text" placeholder="輸入用戶 ID"></div>
+                <div class="filter-item"><label class="filter-label">警示類型</label><select class="filter-select"><option>全部</option><option>事中監控</option><option>事後監控</option></select></div>
+                <div class="filter-item"><label class="filter-label">用戶風險等級</label><select class="filter-select"><option>全部</option><option>高風險</option><option>中風險</option><option>低風險</option></select></div>
+                <div class="filter-item"><label class="filter-label">樣態類別</label><select class="filter-select"><option>全部</option><option>身分類</option><option>交易類</option><option>資恐類</option></select></div>
+                <div class="filter-item"><label class="filter-label">樣態代碼</label><select class="filter-select"><option>全部</option><option>S11</option><option>S12</option><option>S14</option><option>S15</option><option>S21</option><option>S22</option><option>S23</option><option>S25</option><option>S28</option><option>S29</option><option>S31</option><option>S32</option></select></div>
+              </div>
+              <div class="filter-actions">
+                <button class="btn btn-outline">清空</button>
+                <button class="btn btn-primary">🔍 搜尋</button>
+              </div>
+            </div>
+          </div>
+          <div style="padding: 8px 18px; font-size: 11px; color: #999; background: #fafbfc; border-bottom: 1px solid #eef0f3; display: flex; justify-content: space-between; align-items: center;">
+            <span>* 本頁顯示當週新增之未接案警示</span>
+            <button class="btn btn-sm btn-outline" onclick="alert('產出 xlsx：依當前篩選結果匯出未接案警示')">📥 匯出警示清單</button>
+          </div>
+
+          <div class="table-wrapper">
+            <table class="data-table" id="tbl-alerts">
+              <thead>
+                <tr>
+                  <th class="col-checkbox" style="width: 36px;"><input type="checkbox" id="alerts-select-all" onclick="toggleSelectAllAlerts(this)"></th>
+                  <th>警示編號</th>
+                  <th>用戶 ID</th>
+                  <th>用戶風險等級</th>
+                  <th>樣態類別</th>
+                  <th>觸發樣態</th>
+                  <th>警示產出日期</th>
+                  <th>警示類型</th>
+                  <th class="sticky-right">操作</th>
+                </tr>
+              </thead>
+              <tbody id="alerts-tbody"></tbody>
+            </table>
+          </div>
+
+          <div class="table-footer">
+            <div class="tf-left">
+              <span>每頁項目：</span>
+              <select class="tf-per-page"><option>10</option><option>25</option><option>50</option></select>
+              <span class="tf-info">8 條中的 1～8 條</span>
+            </div>
+            <div class="tf-pagination">
+              <button class="tf-btn" disabled>⟪</button>
+              <button class="tf-btn" disabled>‹</button>
+              <button class="tf-btn" disabled>›</button>
+              <button class="tf-btn" disabled>⟫</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: 案件清單—未結案 -->
+      <div class="tab-pane" id="tab-cases-active">
+        <div class="tab-content-card">
+          <div class="filter-section" id="filter-cases-active">
+            <div class="filter-toggle" onclick="toggleFilter('filter-cases-active')">
+              <div class="filter-toggle-title">︻ 篩選條件</div>
+              <span class="filter-toggle-arrow">︿</span>
+            </div>
+            <div class="filter-content">
+              <div class="filter-grid">
+                <div class="filter-item"><label class="filter-label">案件產出日 (開始)</label><input class="filter-input" type="date"></div>
+                <div class="filter-item"><label class="filter-label">案件產出日 (結束)</label><input class="filter-input" type="date"></div>
+                <div class="filter-item"><label class="filter-label">用戶 ID</label><input class="filter-input" type="text"></div>
+                <div class="filter-item"><label class="filter-label">警示類型</label><select class="filter-select"><option>全部</option><option>事中監控</option><option>事後監控</option></select></div>
+                <div class="filter-item"><label class="filter-label">用戶風險等級</label><select class="filter-select"><option>全部</option><option>高風險</option><option>中風險</option><option>低風險</option></select></div>
+                <div class="filter-item"><label class="filter-label">樣態類別</label><select class="filter-select"><option>全部</option><option>身分類</option><option>交易類</option><option>資恐類</option></select></div>
+                <div class="filter-item"><label class="filter-label">樣態代碼</label><select class="filter-select"><option>全部</option></select></div>
+                <div class="filter-item"><label class="filter-label">經辦</label><select class="filter-select"><option>全部</option><option>admin01</option><option>admin02</option><option>admin03</option><option>admin04</option></select></div>
+                <div class="filter-item"><label class="filter-label">案件狀態</label><select class="filter-select"><option>全部</option><option>經辦處理中</option><option>案件調查中</option><option>主管覆核中</option><option>限制帳號權限中</option><option>關戶清退流程中</option><option>退回經辦</option><option>主管再次覆核中</option></select></div>
+                <div class="filter-item"><label class="filter-label">調查措施</label><select class="filter-select"><option>全部</option><option>無</option><option>RFI</option><option>EDD</option></select></div>
+                <div class="filter-item"><label class="filter-label">審核結果</label><select class="filter-select"><option>全部</option><option>暫無異常</option><option>限制帳號權限</option><option>關戶清退</option></select></div>
+                <div class="filter-item"><label class="filter-label">申報 STR</label><select class="filter-select"><option>全部</option><option>需申報</option><option>不申報</option></select></div>
+              </div>
+              <div class="filter-actions">
+                <button class="btn btn-outline">清空</button>
+                <button class="btn btn-primary">🔍 搜尋</button>
+              </div>
+            </div>
+          </div>
+          <div style="padding: 8px 18px; font-size: 11px; color: #999; background: #fafbfc; border-bottom: 1px solid #eef0f3; display: flex; justify-content: space-between; align-items: center;">
+            <span>* 本頁顯示所有未結案之案件 ｜ 本週新增 6 件</span>
+            <button class="btn btn-sm btn-outline" onclick="alert('產出 xlsx：依當前篩選結果匯出未結案案件')">📥 匯出案件清單</button>
+          </div>
+
+          <div class="table-wrapper">
+            <table class="data-table" id="tbl-cases-active">
+              <thead>
+                <tr>
+                  <th>案件編號</th>
+                  <th>用戶 ID</th>
+                  <th>用戶風險等級</th>
+                  <th>用戶帳戶狀態</th>
+                  <th>用戶會員等級</th>
+                  <th>樣態類別</th>
+                  <th>觸發樣態</th>
+                  <th>警示類型</th>
+                  <th>案件產出日期</th>
+                  <th>經辦</th>
+                  <th>經辦處理日期</th>
+                  <th>經辦送出日期</th>
+                  <th>主管覆核日期</th>
+                  <th>經辦再次送出日期</th>
+                  <th>主管再次覆核日期</th>
+                  <th>調查措施</th>
+                  <th>案件狀態</th>
+                  <th>審核結果</th>
+                  <th>關戶清退進度</th>
+                  <th>申報 STR</th>
+                  <th class="sticky-right">操作</th>
+                </tr>
+              </thead>
+              <tbody id="cases-active-tbody"></tbody>
+            </table>
+          </div>
+
+          <div class="table-footer">
+            <div class="tf-left">
+              <span>每頁項目：</span>
+              <select class="tf-per-page"><option>10</option><option>25</option><option>50</option></select>
+              <span class="tf-info">6 條中的 1～6 條</span>
+            </div>
+            <div class="tf-pagination">
+              <button class="tf-btn" disabled>⟪</button>
+              <button class="tf-btn" disabled>‹</button>
+              <button class="tf-btn" disabled>›</button>
+              <button class="tf-btn" disabled>⟫</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 3: 所有案件 -->
+      <div class="tab-pane" id="tab-cases-closed">
+        <div class="tab-content-card">
+          <div class="filter-section" id="filter-cases-closed">
+            <div class="filter-toggle" onclick="toggleFilter('filter-cases-closed')">
+              <div class="filter-toggle-title">︻ 篩選條件</div>
+              <span class="filter-toggle-arrow">︿</span>
+            </div>
+            <div class="filter-content">
+              <div class="filter-grid">
+                <div class="filter-item"><label class="filter-label">案件產出日 (開始)</label><input class="filter-input" type="date"></div>
+                <div class="filter-item"><label class="filter-label">案件產出日 (結束)</label><input class="filter-input" type="date"></div>
+                <div class="filter-item"><label class="filter-label">結案日 (開始)</label><input class="filter-input" type="date"></div>
+                <div class="filter-item"><label class="filter-label">結案日 (結束)</label><input class="filter-input" type="date"></div>
+                <div class="filter-item"><label class="filter-label">用戶 ID</label><input class="filter-input" type="text"></div>
+                <div class="filter-item"><label class="filter-label">警示類型</label><select class="filter-select"><option>全部</option><option>事中監控</option><option>事後監控</option></select></div>
+                <div class="filter-item"><label class="filter-label">用戶風險等級</label><select class="filter-select"><option>全部</option><option>高風險</option><option>中風險</option><option>低風險</option></select></div>
+                <div class="filter-item"><label class="filter-label">樣態類別</label><select class="filter-select"><option>全部</option><option>身分類</option><option>交易類</option><option>資恐類</option></select></div>
+                <div class="filter-item"><label class="filter-label">樣態代碼</label><select class="filter-select"><option>全部</option><option>S11</option><option>S12</option><option>S14</option><option>S15</option><option>S21</option><option>S22</option><option>S23</option><option>S25</option><option>S28</option><option>S29</option><option>S31</option><option>S32</option></select></div>
+                <div class="filter-item"><label class="filter-label">經辦</label><select class="filter-select"><option>全部</option><option>admin01</option><option>admin02</option><option>admin03</option><option>admin04</option></select></div>
+                <div class="filter-item"><label class="filter-label">案件狀態</label><select class="filter-select"><option>全部</option><option>經辦處理中</option><option>案件調查中</option><option>主管覆核中</option><option>限制帳號權限中</option><option>關戶清退流程中</option><option>退回經辦</option><option>主管再次覆核中</option><option>已結案</option></select></div>
+                <div class="filter-item"><label class="filter-label">調查措施</label><select class="filter-select"><option>全部</option><option>無</option><option>RFI</option><option>EDD</option></select></div>
+                <div class="filter-item"><label class="filter-label">審核結果</label><select class="filter-select"><option>全部</option><option>暫無異常</option><option>限制帳號權限</option><option>關戶清退</option></select></div>
+                <div class="filter-item"><label class="filter-label">申報 STR</label><select class="filter-select"><option>全部</option><option>需申報</option><option>不申報</option></select></div>
+              </div>
+              <div class="filter-actions">
+                <button class="btn btn-outline">清空</button>
+                <button class="btn btn-primary">🔍 搜尋</button>
+              </div>
+            </div>
+          </div>
+          <div style="padding: 8px 18px; font-size: 11px; color: #999; background: #fafbfc; border-bottom: 1px solid #eef0f3; display: flex; justify-content: space-between; align-items: center;">
+            <span>* 本頁顯示所有案件（含進行中與已結案）</span>
+            <span style="display: flex; gap: 6px;">
+              <button class="btn btn-sm btn-outline" onclick="alert('產出 xlsx：依當前篩選結果匯出所有案件')">📥 匯出案件清單</button>
+              <button class="btn btn-sm btn-outline" onclick="alert('產出 xlsx：依當前篩選結果匯出申報 STR=需申報之案件')">📥 匯出申報名單</button>
+            </span>
+          </div>
+
+          <div class="table-wrapper">
+            <table class="data-table" id="tbl-cases-closed">
+              <thead>
+                <tr>
+                  <th>案件編號</th>
+                  <th>用戶 ID</th>
+                  <th>用戶風險等級</th>
+                  <th>用戶帳戶狀態</th>
+                  <th>用戶會員等級</th>
+                  <th>樣態類別</th>
+                  <th>觸發樣態</th>
+                  <th>警示類型</th>
+                  <th>案件產出日期</th>
+                  <th>結案日期</th>
+                  <th>經辦</th>
+                  <th>經辦處理日期</th>
+                  <th>經辦送出日期</th>
+                  <th>主管覆核日期</th>
+                  <th>經辦再次送出日期</th>
+                  <th>主管再次覆核日期</th>
+                  <th>調查措施</th>
+                  <th>案件狀態</th>
+                  <th>審核結果</th>
+                  <th>關戶清退進度</th>
+                  <th>申報 STR</th>
+                  <th class="sticky-right">操作</th>
+                </tr>
+              </thead>
+              <tbody id="cases-closed-tbody"></tbody>
+            </table>
+          </div>
+
+          <div class="table-footer">
+            <div class="tf-left">
+              <span>每頁項目：</span>
+              <select class="tf-per-page"><option>10</option><option>25</option><option>50</option></select>
+              <span class="tf-info">3 條中的 1～3 條</span>
+            </div>
+            <div class="tf-pagination">
+              <button class="tf-btn" disabled>⟪</button>
+              <button class="tf-btn" disabled>‹</button>
+              <button class="tf-btn" disabled>›</button>
+              <button class="tf-btn" disabled>⟫</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /.content -->
+  </div><!-- /.main -->
+</div><!-- /.layout -->
+
+<!-- Sticky action bar (for 接案/併案) -->
+<div class="action-bar" id="action-bar">
+  <div class="selected-count">已勾選 <strong id="selected-count">0</strong> 筆警示</div>
+  <span id="selected-error" class="selected-error" hidden></span>
+  <button class="btn btn-success" id="btn-take-case" onclick="executeAction('take')" disabled>接案</button>
+  <button class="btn btn-success" id="btn-merge-case" onclick="executeAction('merge')" disabled>併案</button>
+  <button class="btn btn-outline" onclick="clearSelection()" style="background:#444;color:#fff;border-color:#666;">取消</button>
+</div>
+
+<!-- 警示詳情 Modal (Tab 1 查看) -->
+<div class="detail-overlay" id="alert-detail-overlay" hidden onclick="if(event.target===this)closeAlertDetail()">
+  <div class="detail-panel" style="width: 760px;">
+    <div class="detail-header">
+      <h2 id="ad-title">警示詳情</h2>
+      <button class="detail-close" onclick="closeAlertDetail()">×</button>
+    </div>
+    <div class="detail-body" id="ad-body"></div>
+    <div style="padding: 14px 24px; border-top: 1px solid #eef0f3; background: #fafbfc; display: flex; gap: 8px; justify-content: flex-end; border-radius: 0 0 14px 14px;">
+      <button class="btn btn-outline" onclick="closeAlertDetail()">關閉</button>
+      <button class="btn btn-success" id="ad-take-case-btn" onclick="takeAlertFromDetail()">接案</button>
+    </div>
+  </div>
+</div>
+
+<!-- 案件詳情 Modal -->
+<div class="detail-overlay" id="case-detail-overlay" hidden onclick="if(event.target===this)closeCaseDetail()">
+  <div class="detail-panel">
+    <div class="detail-header">
+      <h2 id="cd-title">案件詳情</h2>
+      <button class="detail-close" onclick="closeCaseDetail()">×</button>
+    </div>
+    <div class="detail-body" id="cd-body">
+      <!-- A 區、B 區、C 區、D 區、F 區內容由 JS 動態產生 -->
+    </div>
+    <div class="detail-footer" id="cd-footer">
+      <!-- v5：G 區（處理說明紀錄）、H 區（案件處理紀錄）固定於詳情頁底部，內容區滾動時不動 -->
+    </div>
+  </div>
+</div>
+
+<!-- KYC Modal -->
+<div class="kyc-overlay" id="kyc-overlay" hidden onclick="if(event.target===this)closeKyc()">
+  <div class="kyc-panel">
+    <div class="kyc-header">
+      <div class="kyc-avatar" id="kyc-avatar">K</div>
+      <div class="kyc-title">
+        <h2 id="kyc-title-text">KYC #46 <span class="pill pill-green">流程結束</span></h2>
+        <div class="sub" id="kyc-sub">會員 #1017 ｜ 自然人</div>
+      </div>
+      <button class="detail-close" onclick="closeKyc()">×</button>
+    </div>
+    <div class="kyc-body">
+      <div>
+        <div class="kyc-summary">
+          <div class="kyc-summary-item"><span class="kyc-summary-label">會員 ID</span><span class="kyc-summary-value" id="kyc-member-id">1017</span></div>
+          <div class="kyc-summary-item"><span class="kyc-summary-label">CDD 狀態</span><span class="kyc-summary-value" id="kyc-cdd">已轉特殊案件</span></div>
+          <div class="kyc-summary-item"><span class="kyc-summary-label">EDD 狀態</span><span class="kyc-summary-value" id="kyc-edd">已通過</span></div>
+        </div>
+
+        <div class="detail-section">
+          <div class="detail-section-title">流程與狀態</div>
+          <div class="kv-grid">
+            <div><div class="kv-item-label">審核單號</div><div class="kv-item-value">46</div></div>
+            <div><div class="kv-item-label">會員 ID</div><div class="kv-item-value" id="kyc-detail-uid">1017</div></div>
+            <div><div class="kv-item-label">申請類型</div><div class="kv-item-value">自然人</div></div>
+            <div><div class="kv-item-label">流程類型</div><div class="kv-item-value">EDD 補件</div></div>
+            <div><div class="kv-item-label">目前關卡</div><div class="kv-item-value">流程結束</div></div>
+            <div><div class="kv-item-label">補件流程</div><div class="kv-item-value">否</div></div>
+            <div><div class="kv-item-label">申請時間</div><div class="kv-item-value">2026-04-29 16:01:09</div></div>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <div class="detail-section-title">問卷與補件旗標</div>
+          <div class="kv-grid">
+            <div><div class="kv-item-label">CDD 問卷完成</div><div class="kv-item-value">是</div></div>
+            <div><div class="kv-item-label">EDD 問卷完成</div><div class="kv-item-value">否</div></div>
+            <div><div class="kv-item-label">CDD 補件次數</div><div class="kv-item-value">0</div></div>
+            <div><div class="kv-item-label">EDD 補件次數</div><div class="kv-item-value">1</div></div>
+            <div><div class="kv-item-label">Sumsub 完成</div><div class="kv-item-value">是</div></div>
+            <div><div class="kv-item-label">戶政檢核完成</div><div class="kv-item-value">是</div></div>
+            <div><div class="kv-item-label">TDCC 檢核完成</div><div class="kv-item-value">是</div></div>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <div class="detail-section-title">Sumsub 識別</div>
+          <div class="kv-grid">
+            <div><div class="kv-item-label">Sumsub Applicant ID</div><div class="kv-item-value mono">69f1c8e06f4f822f38e4758b</div></div>
+            <div><div class="kv-item-label">External User ID</div><div class="kv-item-value mono">ccd08b2a-ec1a-49f2-986e-729e1336129a</div></div>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <div class="detail-section-title">姓名檢核</div>
+          <div style="font-size: 11px; color: #aaa;">（demo 省略，沿用既有 KYC Modal 元件）</div>
+        </div>
+      </div>
+      <div>
+        <div class="detail-section-title" style="margin-bottom: 12px;">📋 SUMSUB 歷程</div>
+        <div style="background: #fff8dc; padding: 12px; border-radius: 8px; border: 1px dashed #d6b656; font-size: 11px; color: #b7950b; line-height: 1.6;">
+          ⓘ 此 Modal 樣式比照既有 KYC #46 元件直接複用，正式版資料由 KYC 模組 API 提供。
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 未接案警示彈窗 -->
+<div class="popup-overlay" id="alert-popup" hidden>
+  <div class="popup-panel">
+    <div class="popup-content">目前共有 <strong id="popup-count">8</strong> 件未接案警示，請及時處理。</div>
+    <div class="popup-actions">
+      <label class="popup-checkbox">
+        <input type="checkbox" id="popup-skip-today">
+        今天不再顯示
+      </label>
+      <button class="btn btn-primary" onclick="closeAlertPopup()">關閉</button>
+    </div>
+  </div>
+</div>
+
+<!-- v4 新增：結案確認 pop up -->
+<div class="confirm-overlay" id="close-confirm-overlay" hidden>
+  <div class="confirm-panel">
+    <div class="confirm-msg">結案後不可再編輯。是否確認結案？</div>
+    <div class="confirm-actions">
+      <button class="btn btn-outline" onclick="closeConfirmClose(false)">取消</button>
+      <button class="btn btn-success" onclick="closeConfirmClose(true)">確認結案</button>
+    </div>
+  </div>
+</div>
+
+<!-- v4 新增：接案／同類型併案／混合類型併案 共用 confirm 彈窗 -->
+<div class="confirm-overlay" id="action-confirm-overlay" hidden>
+  <div class="confirm-panel">
+    <div class="confirm-msg" id="action-confirm-msg">確認後將建立案件，是否確認接案？</div>
+    <div class="confirm-actions">
+      <button class="btn btn-outline" onclick="closeActionConfirm(false)">取消</button>
+      <button class="btn btn-success" id="action-confirm-btn" onclick="closeActionConfirm(true)">確認接案</button>
+    </div>
+  </div>
+</div>
+
+<!-- v4 新增：主管轉單 modal -->
+<div class="reassign-overlay" id="reassign-overlay" hidden>
+  <div class="reassign-panel">
+    <div class="reassign-title">轉單</div>
+    <div class="reassign-row">
+      <label>請選擇接手經辦：</label>
+      <select id="reassign-select">
+        <option value="admin01">admin01</option>
+        <option value="admin02">admin02</option>
+        <option value="admin03">admin03</option>
+        <option value="admin04">admin04</option>
+      </select>
+    </div>
+    <div class="reassign-actions">
+      <button class="btn btn-outline" onclick="confirmReassign(false)">取消</button>
+      <button class="btn btn-primary" onclick="confirmReassign(true)">確認轉單</button>
+    </div>
+  </div>
+</div>
+
+<!-- body close moved to script file -->
+
+
+<script>
+/* ════════════════════ Demo data ════════════════════ */
+const ALERTS = [
+  { id: 'ALT20260504109301', userId: '1102', userName: '黃**', userRisk: 'low', sCode: 'S14', tCode: 'T1', category: 'identity', alertType: 'realtime', producedAt: '2026-05-04 02:00' },
+  { id: 'ALT20260504109302', userId: '1102', userName: '黃**', userRisk: 'low', sCode: 'S23', tCode: 'T1', category: 'trade', alertType: 'batch', producedAt: '2026-05-04 02:00' },
+  { id: 'ALT20260504109303', userId: '1099', userName: '許**', userRisk: 'high', sCode: 'S29', tCode: 'T2', category: 'trade', alertType: 'batch', producedAt: '2026-05-04 02:00' },
+  { id: 'ALT20260504109304', userId: '1099', userName: '許**', userRisk: 'high', sCode: 'S15', tCode: 'T1', category: 'identity', alertType: 'batch', producedAt: '2026-05-04 02:00' },
+  { id: 'ALT20260504109305', userId: '1099', userName: '許**', userRisk: 'high', sCode: 'S21', tCode: 'T1', category: 'trade', alertType: 'batch', producedAt: '2026-05-04 02:00' },
+  { id: 'ALT20260503109280', userId: '1067', userName: '張**', userRisk: 'low', sCode: 'S22', tCode: 'T2', category: 'trade', alertType: 'batch', producedAt: '2026-05-03 02:00' },
+  { id: 'ALT20260503109281', userId: '1067', userName: '張**', userRisk: 'low', sCode: 'S15', tCode: 'T1', category: 'identity', alertType: 'batch', producedAt: '2026-05-03 02:00' },
+  { id: 'ALT20260502109210', userId: '1048', userName: '李**', userRisk: 'high', sCode: 'S31', tCode: '', category: 'terror', alertType: 'realtime', producedAt: '2026-05-02 09:15' }
+];
+
+const CASES_ACTIVE = [
+  { id: 'CAS20260504000012', userId: '1012', userName: '王**', userRisk: 'high', accountStatus: '正常', userLevel: 'Level 3', triggers: [{s:'S21',t:'T1',cat:'trade'}], alertType: '事後監控', producedAt: '2026-05-04 09:30', operator: 'admin01', operatorProcessedAt: '2026-05-04 10:30', operatorSubmittedAt: '', supervisorReviewedAt: '', operatorResubmittedAt: '', supervisorRereviewedAt: '', alertIds: ['ALT20260504109001'], investigation: '無', state: '經辦處理中', auditResult: '', closeoutProgress: '', strReport: '' },
+  { id: 'CAS20260504000013', userId: '1035', userName: '陳**', userRisk: 'mid', accountStatus: '灰名單', userLevel: 'Level 2', triggers: [{s:'S12',t:'',cat:'identity'},{s:'S29',t:'T2',cat:'trade'}], alertType: '混合（事中+事後）', producedAt: '2026-05-04 11:00', operator: 'admin02', operatorProcessedAt: '2026-05-04 14:20', operatorSubmittedAt: '', supervisorReviewedAt: '', operatorResubmittedAt: '', supervisorRereviewedAt: '', alertIds: ['ALT20260504109015','ALT20260504109017'], investigation: 'RFI', state: '案件調查中', auditResult: '', closeoutProgress: '', strReport: '' },
+  { id: 'CAS20260503000010', userId: '1048', userName: '李**', userRisk: 'high', accountStatus: '正常', userLevel: 'Level 3', triggers: [{s:'S31',t:'',cat:'terror'}], alertType: '事中監控', producedAt: '2026-05-03 09:30', operator: 'admin03', operatorProcessedAt: '2026-05-03 11:00', operatorSubmittedAt: '2026-05-03 16:00', supervisorReviewedAt: '', operatorResubmittedAt: '', supervisorRereviewedAt: '', alertIds: ['ALT20260503109120'], investigation: '無', state: '主管覆核中', auditResult: '', closeoutProgress: '', strReport: '' },
+  { id: 'CAS20260503000011', userId: '1118', userName: '吳**', userRisk: 'high', accountStatus: '正常', userLevel: 'Level 4', triggers: [{s:'S32',t:'',cat:'terror'},{s:'S12',t:'',cat:'identity'}], alertType: '事中監控', producedAt: '2026-05-03 10:15', operator: 'admin01', operatorProcessedAt: '2026-05-03 13:30', operatorSubmittedAt: '2026-05-03 17:00', supervisorReviewedAt: '2026-05-03 18:00', operatorResubmittedAt: '', supervisorRereviewedAt: '', alertIds: ['ALT20260503109130','ALT20260503109131'], investigation: 'EDD', state: '退回經辦', auditResult: '', closeoutProgress: '', strReport: '需申報', returnReason: '本案命中資恐名單，首次判定僅以「已電訪」為由建議不通報，說明不足；請補充與金管會名單比對結果、實質受益人查詢摘要、以及用戶近 90 天交易對手方分析，重新送出判定。' },
+  { id: 'CAS20260502000007', userId: '1089', userName: '林**', userRisk: 'mid', accountStatus: '正常', userLevel: 'Level 2', triggers: [{s:'S21',t:'T1',cat:'trade'},{s:'S21',t:'T2',cat:'trade'},{s:'S15',t:'T1',cat:'identity'}], alertType: '事後監控', producedAt: '2026-05-02 09:30', operator: 'admin04', operatorProcessedAt: '2026-05-02 14:00', operatorSubmittedAt: '2026-05-02 18:00', supervisorReviewedAt: '2026-05-03 09:00', operatorResubmittedAt: '2026-05-03 14:00', supervisorRereviewedAt: '', alertIds: ['ALT20260502109050','ALT20260502109051','ALT20260502109052'], investigation: '無', state: '主管再次覆核中', auditResult: '', closeoutProgress: '', strReport: '' },
+  { id: 'CAS20260502000008', userId: '1125', userName: '趙**', userRisk: 'mid', accountStatus: '正常', userLevel: 'Level 2', triggers: [{s:'S21',t:'T1',cat:'trade'},{s:'S25',t:'T3',cat:'trade'}], alertType: '事後監控', producedAt: '2026-05-02 10:00', operator: 'admin02', operatorProcessedAt: '2026-05-02 15:30', operatorSubmittedAt: '2026-05-02 19:00', supervisorReviewedAt: '', operatorResubmittedAt: '', supervisorRereviewedAt: '', alertIds: ['ALT20260502109060','ALT20260502109061'], investigation: '無', state: '主管覆核中', auditResult: '無', closeoutProgress: '', strReport: '' },
+  /* v5 範例：限制帳號權限中（歸經辦手上，由 admin01 經辦執行限制動作） */
+  { id: 'CAS20260505000020', userId: '1141', userName: '謝**', userRisk: 'high', accountStatus: '灰名單', userLevel: 'Level 3', triggers: [{s:'S28',t:'',cat:'trade'}], alertType: '事中監控', producedAt: '2026-05-05 09:30', operator: 'admin01', operatorProcessedAt: '2026-05-05 11:30', operatorSubmittedAt: '2026-05-05 15:00', supervisorReviewedAt: '2026-05-05 17:00', operatorResubmittedAt: '', supervisorRereviewedAt: '', alertIds: ['ALT20260505109140'], investigation: 'EDD', state: '限制帳號權限中', auditResult: '限制帳號權限', closeoutProgress: '', strReport: '需申報' },
+  /* v4 新增：關戶清退流程中 範例 */
+  { id: 'CAS20260505000021', userId: '1156', userName: '何**', userRisk: 'high', accountStatus: '黑名單', userLevel: 'Level 4', triggers: [{s:'S31',t:'',cat:'terror'}], alertType: '事中監控', producedAt: '2026-05-05 10:45', operator: 'admin01', operatorProcessedAt: '2026-05-05 13:00', operatorSubmittedAt: '2026-05-05 16:30', supervisorReviewedAt: '2026-05-06 10:00', operatorResubmittedAt: '', supervisorRereviewedAt: '', alertIds: ['ALT20260505109155'], investigation: 'EDD', state: '關戶清退流程中', auditResult: '關戶清退', closeoutProgress: { value: '已限制帳號權限', ts: '2026-05-06 11:20' }, strReport: '需申報' }
+];
+
+const CASES_CLOSED = [
+  { id: 'CAS20260420000005', userId: '0890', userName: '周**', userRisk: 'low', accountStatus: '正常', userLevel: 'Level 1', triggers: [{s:'S21',t:'T1',cat:'trade'}], alertType: '事後監控', producedAt: '2026-04-20 09:30', closedAt: '2026-04-22 16:00', operator: 'admin01', operatorProcessedAt: '2026-04-20 11:00', operatorSubmittedAt: '2026-04-21 18:00', supervisorReviewedAt: '2026-04-22 16:00', operatorResubmittedAt: '', supervisorRereviewedAt: '', alertIds: ['ALT20260418109050'], investigation: '無', auditResult: '暫無異常', closeoutProgress: '', strReport: '不申報' },
+  { id: 'CAS20260415000003', userId: '0750', userName: '蔡**', userRisk: 'high', accountStatus: '正常→灰名單', userLevel: 'Level 3', triggers: [{s:'S25',t:'T3',cat:'trade'},{s:'S25',t:'T5',cat:'trade'}], alertType: '事後監控', producedAt: '2026-04-15 09:30', closedAt: '2026-04-18 17:00', operator: 'admin02', operatorProcessedAt: '2026-04-15 14:00', operatorSubmittedAt: '2026-04-16 19:00', supervisorReviewedAt: '2026-04-17 09:00', operatorResubmittedAt: '2026-04-17 18:00', supervisorRereviewedAt: '2026-04-18 17:00', alertIds: ['ALT20260413109021','ALT20260413109022'], investigation: 'RFI', auditResult: '限制帳號權限', closeoutProgress: [{ts:'2026-04-17 19:30', item:'已限制帳號權限'},{ts:'2026-04-18 10:00', item:'已發送通知'}], strReport: '需申報' },
+  { id: 'CAS20260408000001', userId: '0623', userName: '鄭**', userRisk: 'high', accountStatus: '黑名單', userLevel: 'Level 4', triggers: [{s:'S31',t:'',cat:'terror'}], alertType: '事中監控', producedAt: '2026-04-08 11:00', closedAt: '2026-04-12 15:00', operator: 'admin03', operatorProcessedAt: '2026-04-08 13:00', operatorSubmittedAt: '2026-04-09 17:00', supervisorReviewedAt: '2026-04-10 09:00', operatorResubmittedAt: '2026-04-11 15:00', supervisorRereviewedAt: '2026-04-12 15:00', alertIds: ['ALT20260406108988'], investigation: 'EDD', auditResult: '關戶清退', closeoutProgress: [{ts:'2026-04-09 18:00', item:'已限制帳號權限'},{ts:'2026-04-10 14:00', item:'已發送通知'},{ts:'2026-04-11 16:30', item:'已結清並關戶'}], strReport: '需申報' },
+  /* v5 demo：最完整 log 範例（含所有 action_button、退回多輪、升降級、closeout snapshot） */
+  { id: 'CAS20260420000099', userId: '1199', userName: '林**', userRisk: 'high', accountStatus: '黑名單', userLevel: 'Level 4', triggers: [{s:'S29',t:'T2',cat:'trade'},{s:'S28',t:'',cat:'trade'}], alertType: '混合（事中+事後）', producedAt: '2026-04-10 09:00', closedAt: '2026-04-20 16:00', operator: 'admin01', operatorProcessedAt: '2026-04-15 10:00', operatorSubmittedAt: '2026-04-10 17:00', supervisorReviewedAt: '2026-04-11 11:00', operatorResubmittedAt: '2026-04-18 14:00', supervisorRereviewedAt: '2026-04-20 16:00', alertIds: ['ALT20260410109099','ALT20260410109100'], investigation: 'EDD', auditResult: '關戶清退', closeoutProgress: { value: '已結清並關戶', ts: '2026-04-18 13:00' }, strReport: '需申報' }
+];
+
+const KYC_DATA = {
+  '1012': { name: '王**', risk: '高風險', kycStatus: '已驗證', registeredAt: '2025-08-12', cdd: '已通過', edd: '－' },
+  '1035': { name: '陳**', risk: '中風險', kycStatus: '已驗證', registeredAt: '2024-12-08', cdd: '已通過', edd: '－' },
+  '1048': { name: '李**', risk: '高風險', kycStatus: '已驗證', registeredAt: '2025-03-22', cdd: '已轉特殊案件', edd: '已通過' },
+  '1067': { name: '張**', risk: '低風險', kycStatus: '已驗證', registeredAt: '2026-01-15', cdd: '已通過', edd: '－' },
+  '1089': { name: '林**', risk: '中風險', kycStatus: '已驗證', registeredAt: '2025-09-03', cdd: '已通過', edd: '－' },
+  '1099': { name: '許**', risk: '高風險', kycStatus: '已驗證', registeredAt: '2024-08-19', cdd: '已轉 EDD', edd: '已通過' },
+  '1102': { name: '黃**', risk: '低風險', kycStatus: '已驗證', registeredAt: '2025-11-28', cdd: '已通過', edd: '－' },
+  '1118': { name: '吳**', risk: '高風險', kycStatus: '已驗證', registeredAt: '2024-03-15', cdd: '已轉特殊案件', edd: '已通過' },
+  '1125': { name: '趙**', risk: '中風險', kycStatus: '已驗證', registeredAt: '2025-06-04', cdd: '已通過', edd: '－' },
+  '1141': { name: '謝**', risk: '高風險', kycStatus: '已驗證', registeredAt: '2024-11-02', cdd: '已轉特殊案件', edd: '已通過' },
+  '1156': { name: '何**', risk: '高風險', kycStatus: '已驗證', registeredAt: '2024-02-18', cdd: '已轉特殊案件', edd: '已通過' },
+  '1199': { name: '林**', risk: '高風險', kycStatus: '已驗證', registeredAt: '2023-09-15', cdd: '已轉特殊案件', edd: '已通過' }
+};
+
+/* ════════════════════ v5 案件處理紀錄 demo data ════════════════════ */
+/* case_note_log：經辦處理說明 / 主管覆核說明 歷次送出 */
+const NOTE_LOGS = {
+  'CAS20260503000011': [
+    { ts: '2026-05-03 14:30', noteType: 'operator_note', actor: 'admin01', actorRole: 'operator', content: '初步比對：用戶曾於 2025 年通過 EDD 補件，名單未直接命中。建議僅電訪確認，暫不通報。' },
+    { ts: '2026-05-03 18:00', noteType: 'supervisor_note', actor: 'super01', actorRole: 'supervisor', content: '本案命中資恐名單，首次判定僅以「已電訪」為由建議不通報，說明不足；請補充與金管會名單比對結果、實質受益人查詢摘要、以及用戶近 90 天交易對手方分析，重新送出判定。' }
+  ],
+  'CAS20260502000007': [
+    { ts: '2026-05-02 17:30', noteType: 'operator_note', actor: 'admin04', actorRole: 'operator', content: '經查近 3 日交易量增加，初步盤點為投資理財所需，建議不申報 STR。' },
+    { ts: '2026-05-03 09:00', noteType: 'supervisor_note', actor: 'super01', actorRole: 'supervisor', content: '經辦未檢視 IP 變動歷史與資金流向。請補充 IP 變動紀錄、資金來源憑證、與用戶聲明對照。' },
+    { ts: '2026-05-03 14:00', noteType: 'operator_note', actor: 'admin04', actorRole: 'operator', content: '已補件：IP 變動為用戶出差日本（提供出入境紀錄）；資金來自薪資轉入（薪資單存證）。建議維持不申報。' }
+  ],
+  'CAS20260505000020': [
+    { ts: '2026-05-05 14:50', noteType: 'operator_note', actor: 'admin01', actorRole: 'operator', content: '用戶 IP 命中暗網位址，建議升級為限制帳號權限後續處置。' },
+    { ts: '2026-05-05 17:00', noteType: 'supervisor_note', actor: 'super01', actorRole: 'supervisor', content: '同意限制帳號權限。請經辦執行登入限制、出金限制、提幣限制，完成後送回覆核。' }
+  ],
+  'CAS20260505000021': [
+    { ts: '2026-05-05 16:00', noteType: 'operator_note', actor: 'admin01', actorRole: 'operator', content: '用戶命中資恐名單且為實質受益人。建議直接關戶清退。' },
+    { ts: '2026-05-06 10:00', noteType: 'supervisor_note', actor: 'super01', actorRole: 'supervisor', content: '同意關戶清退。請經辦執行流程並回報進度。' }
+  ],
+  'CAS20260420000099': [
+    { ts: '2026-04-10 16:50', noteType: 'operator_note', actor: 'admin01', actorRole: 'operator', content: '用戶高風險 IP 三日內交易金額達門檻（S29 T2）+ 暗網位址命中（S28）。初步認為交易模式異常但客戶為長期戶，建議先 EDD 補件、暫不申報 STR。' },
+    { ts: '2026-04-11 10:45', noteType: 'supervisor_note', actor: 'super01', actorRole: 'supervisor', content: '用戶曾於 2025 年第 4 季已有兩次 S29 命中紀錄，本次為第三次且金額高於前次 3 倍，僅 EDD 補件不足。請補充：(1) 與金管會制裁名單交叉比對結果；(2) 實質受益人查詢摘要；(3) 用戶近 90 天交易對手方分析；(4) 重新評估申報 STR。' },
+    { ts: '2026-04-11 17:00', noteType: 'operator_note', actor: 'admin01', actorRole: 'operator', content: '已補件：制裁名單交叉比對未直接命中但其交易對手方有 2 個地址出現於高風險灰名單；實質受益人查詢顯示與境外註冊公司關聯；交易對手方分析發現 30 日內有 8 個一次性錢包接收後立即轉出。重新評估後建議申報 STR。' },
+    { ts: '2026-04-12 09:45', noteType: 'supervisor_note', actor: 'super01', actorRole: 'supervisor', content: '同意申報 STR。考量交易模式高度可疑，先限制帳號權限避免後續資金移轉。請經辦執行登入限制、出金限制、提幣限制。' },
+    { ts: '2026-04-12 14:45', noteType: 'operator_note', actor: 'admin01', actorRole: 'operator', content: '已執行限制動作：登入限制（2026-04-12 13:20）、出金限制（13:25）、提幣限制（13:30）。已截圖留存。可送主管覆核。' },
+    { ts: '2026-04-13 09:20', noteType: 'supervisor_note', actor: 'super01', actorRole: 'supervisor', content: '經與法遵單位討論，本案風險程度已達關戶清退門檻（升降級為關戶清退）。請經辦執行關戶清退流程並回報各階段進度。' },
+    { ts: '2026-04-18 13:50', noteType: 'operator_note', actor: 'admin01', actorRole: 'operator', content: '關戶清退已完成：限制帳號權限（4/13）→ 發送通知（4/14）→ 用戶於 4/16 出席線下說明會→ 4/17 完成法幣結清匯出與虛擬資產提領 → 4/18 帳戶關閉。本案可結案並申報 STR。' },
+    { ts: '2026-04-20 15:55', noteType: 'supervisor_note', actor: 'super01', actorRole: 'supervisor', content: '經辦各階段執行確實，已收到金防部回函確認本案 STR 已申報（編號 STR-20260420-0017）。本案結案。' }
+  ]
+};
+
+/* case_change_log：一條 log 一個動作，記錄該動作當下相關欄位的「處理內容」快照。
+   寫入規則：
+   - 經辦「送主管覆核」：snapshot 含 investigation + operator_str_eval（若來源狀態為關戶清退流程中再加 closeout_progress）
+   - 主管「退回經辦／限制帳號權限／關戶清退／結案」：snapshot 含 supervisor_str_decision
+   - 「儲存」：snapshot = null（H 區自動過濾不顯示）
+   - 接案／併案／轉單：不寫 log
+*/
+const CHANGE_LOGS = {
+  'CAS20260504000013': [
+    { ts: '2026-05-04 14:00', actor: 'admin02', actorRole: 'operator', actionButton: '儲存', snapshot: null }
+  ],
+  'CAS20260503000010': [
+    { ts: '2026-05-03 14:30', actor: 'admin03', actorRole: 'operator', actionButton: '儲存', snapshot: null },
+    { ts: '2026-05-03 16:00', actor: 'admin03', actorRole: 'operator', actionButton: '送主管覆核', snapshot: {investigation:'無', operator_str_eval:'不申報'} }
+  ],
+  'CAS20260503000011': [
+    { ts: '2026-05-03 14:30', actor: 'admin01', actorRole: 'operator', actionButton: '儲存', snapshot: null },
+    { ts: '2026-05-03 17:00', actor: 'admin01', actorRole: 'operator', actionButton: '送主管覆核', snapshot: {investigation:'EDD', operator_str_eval:'不申報'} },
+    { ts: '2026-05-03 18:00', actor: 'super01', actorRole: 'supervisor', actionButton: '退回經辦', snapshot: {supervisor_str_decision:'需申報'} }
+  ],
+  'CAS20260502000007': [
+    { ts: '2026-05-02 16:00', actor: 'admin04', actorRole: 'operator', actionButton: '儲存', snapshot: null },
+    { ts: '2026-05-02 18:00', actor: 'admin04', actorRole: 'operator', actionButton: '送主管覆核', snapshot: {investigation:'無', operator_str_eval:'不申報'} },
+    { ts: '2026-05-03 09:00', actor: 'super01', actorRole: 'supervisor', actionButton: '退回經辦', snapshot: {supervisor_str_decision:'需申報'} },
+    { ts: '2026-05-03 12:00', actor: 'admin04', actorRole: 'operator', actionButton: '儲存', snapshot: null },
+    { ts: '2026-05-03 14:00', actor: 'admin04', actorRole: 'operator', actionButton: '送主管覆核', snapshot: {investigation:'無', operator_str_eval:'不申報'} }
+  ],
+  'CAS20260505000020': [
+    { ts: '2026-05-05 13:00', actor: 'admin01', actorRole: 'operator', actionButton: '儲存', snapshot: null },
+    { ts: '2026-05-05 15:00', actor: 'admin01', actorRole: 'operator', actionButton: '送主管覆核', snapshot: {investigation:'EDD', operator_str_eval:'需申報'} },
+    { ts: '2026-05-05 17:00', actor: 'super01', actorRole: 'supervisor', actionButton: '限制帳號權限', snapshot: {supervisor_str_decision:'需申報'} }
+  ],
+  'CAS20260505000021': [
+    { ts: '2026-05-05 14:00', actor: 'admin01', actorRole: 'operator', actionButton: '儲存', snapshot: null },
+    { ts: '2026-05-05 16:30', actor: 'admin01', actorRole: 'operator', actionButton: '送主管覆核', snapshot: {investigation:'EDD', operator_str_eval:'需申報'} },
+    { ts: '2026-05-06 10:00', actor: 'super01', actorRole: 'supervisor', actionButton: '關戶清退', snapshot: {supervisor_str_decision:'需申報'} },
+    { ts: '2026-05-06 11:20', actor: 'admin01', actorRole: 'operator', actionButton: '儲存', snapshot: null }
+  ],
+  /* v5 demo：最完整 log 範例（涵蓋所有 action_button、退回多輪、限制 → 關戶清退 升降級、closeout snapshot） */
+  'CAS20260420000099': [
+    { ts: '2026-04-10 11:15', actor: 'admin01', actorRole: 'operator', actionButton: '儲存', snapshot: null },
+    { ts: '2026-04-10 14:30', actor: 'admin01', actorRole: 'operator', actionButton: '儲存', snapshot: null },
+    { ts: '2026-04-10 17:00', actor: 'admin01', actorRole: 'operator', actionButton: '送主管覆核', snapshot: {investigation:'EDD', operator_str_eval:'不申報'} },
+    { ts: '2026-04-11 09:00', actor: 'super01', actorRole: 'supervisor', actionButton: '儲存', snapshot: null },
+    { ts: '2026-04-11 11:00', actor: 'super01', actorRole: 'supervisor', actionButton: '退回經辦', snapshot: {supervisor_str_decision:'需申報'} },
+    { ts: '2026-04-11 14:00', actor: 'admin01', actorRole: 'operator', actionButton: '儲存', snapshot: null },
+    { ts: '2026-04-11 17:30', actor: 'admin01', actorRole: 'operator', actionButton: '送主管覆核', snapshot: {investigation:'EDD', operator_str_eval:'需申報'} },
+    { ts: '2026-04-12 10:00', actor: 'super01', actorRole: 'supervisor', actionButton: '限制帳號權限', snapshot: {supervisor_str_decision:'需申報'} },
+    { ts: '2026-04-12 11:30', actor: 'admin01', actorRole: 'operator', actionButton: '儲存', snapshot: null },
+    { ts: '2026-04-12 15:00', actor: 'admin01', actorRole: 'operator', actionButton: '送主管覆核', snapshot: {investigation:'EDD', operator_str_eval:'需申報'} },
+    { ts: '2026-04-13 09:30', actor: 'super01', actorRole: 'supervisor', actionButton: '關戶清退', snapshot: {supervisor_str_decision:'需申報'} },
+    { ts: '2026-04-13 11:00', actor: 'admin01', actorRole: 'operator', actionButton: '儲存', snapshot: null },
+    { ts: '2026-04-15 10:00', actor: 'admin01', actorRole: 'operator', actionButton: '儲存', snapshot: null },
+    { ts: '2026-04-18 14:00', actor: 'admin01', actorRole: 'operator', actionButton: '送主管覆核', snapshot: {investigation:'EDD', operator_str_eval:'需申報', closeout_progress:'已結清並關戶'} },
+    { ts: '2026-04-20 16:00', actor: 'super01', actorRole: 'supervisor', actionButton: '結案', snapshot: {supervisor_str_decision:'需申報'} }
+  ]
+};
+
+let currentRole = 'operator';
+
+/* ════════════════════ Helpers ════════════════════ */
+function riskPill(r) {
+  return { high: '<span class="pill pill-red">高風險</span>', mid: '<span class="pill pill-orange">中風險</span>', low: '<span class="pill pill-green">低風險</span>' }[r] || '';
+}
+function tagClass(cat) { return { identity: 'identity', trade: 'trade', terror: 'terror' }[cat] || 'trade'; }
+function tagLabel(cat) { return { identity: '身分類', trade: '交易類', terror: '資恐類' }[cat] || ''; }
+function alertTypeLabel(t) { return t === 'realtime' ? '事中監控' : '事後監控'; }
+/* v5：判斷案件目前是否處於「經辦手上」狀態，可由主管轉單。v5 較 v4 擴增「限制帳號權限中」 */
+function canReassign(state) {
+  return ['經辦處理中', '案件調查中', '限制帳號權限中', '關戶清退流程中', '退回經辦'].includes(state);
+}
+
+/* S/T 樣態與規則說明（hover tooltip 用） */
+const S_DESC = {
+  S11: '疑似使用匿名、假名、人頭、虛設行號，或持用偽變造身分證明文件',
+  S12: '網路位置與客戶國籍、註冊所在國家或地區不同',
+  S14: '數個不同客戶帳號留存相同地址、電話或電子郵件，各客戶間無明顯關係',
+  S15: '客戶無合理原因頻繁變更客戶資料，或拒絕配合提供確認身分措施相關文件',
+  S21: '客戶大量或短期密集買賣及交換虛擬通貨，與其身分顯不相當或無合理原因',
+  S22: '新註冊或一定期間無交易之帳號突然有大量交易，與其身分顯不相當或無合理原因',
+  S23: '同一 IP 位址使用數個無關連之交易帳號進行交易，而無合理原因',
+  S25: '客戶買入或接收虛擬資產後，迅速轉出或交換，達特定筆數或金額',
+  S28: '客戶交易之 IP 位址、虛擬通貨來源位址與暗網、混幣器、高風險國家或地區相關',
+  S29: '客戶來自或交易 IP 位址屬高風險或高避稅風險之國家或地區，而頻繁大量交易',
+  S31: '客戶本人或其實質受益人為外國政府或國際組織認定或追查之恐怖活動或資恐相關個人、法人或團體',
+  S32: '客戶本人或其實質受益人為外國政府或國際組織認定或追查之資助武擴目標性金融制裁之個人、法人或團體'
+};
+const T_DESC = {
+  S14_T1: '留存相同資料之客戶數量達統一門檻',
+  S15_T1: '一個月內變更個人資料次數達統一門檻',
+  S21_T1: '法幣兌虛擬貨幣 3 日內累積金額（依當日風險等級對應門檻）',
+  S21_T2: '幣幣交易 3 日內累積金額（依當日風險等級對應門檻）',
+  S22_T2: '靜止戶 24 小時內交易金額（依當日風險等級對應門檻）',
+  S23_T1: '同一 IP 8 小時內無關連帳號數量達統一門檻',
+  S25_T3: '24 小時內快進快出配對交易達特定筆數（依當日風險等級對應門檻）',
+  S25_T5: '24 小時內快進快出配對交易累積金額（依當日風險等級對應門檻）',
+  S29_T2: '高風險 IP 三日內交易金額（依當日風險等級對應門檻）'
+};
+function renderTriggerWithTip(s, t) {
+  const sDesc = S_DESC[s] || '';
+  const tDesc = t ? (T_DESC[`${s}_${t}`] || '') : '純布林型，命中即觸發';
+  return `<span class="s-tooltip-wrap">${s}${t ? ' '+t : ''}<span class="s-tooltip-box"><div class="tip-line"><b>${s}</b>　${sDesc}</div><div class="tip-line"><b>${t || '純布林型'}</b>　${tDesc}</div></span></span>`;
+}
+
+/* v5：依樣態時間窗口計算警示區間日期字串 */
+/* 規則：
+   - 有時間窗口的樣態（24h/3 日/1 月/6 月）統一格式 `YYYY-MM-DD - YYYY-MM-DD` 帶 dash
+   - 事中觸發型樣態（即時觸發、無視窗概念，例如 S31/S32 命中名單）顯示「警示觸發當日」單日不帶 dash
+*/
+function computeAlertWindow(a) {
+  if (!a || !a.producedAt) return '—';
+  const producedDate = a.producedAt.slice(0, 10);  /* YYYY-MM-DD */
+  /* 事中觸發型（無視窗概念）：S31 / S32 命中名單，realtime + terror 類別 */
+  if (a.category === 'terror' || (a.alertType === 'realtime' && !a.tCode)) {
+    return producedDate;
+  }
+  /* 依樣態判定窗口長度（demo 簡化） */
+  const winMap = {
+    S14_T1: 0,   /* 統一門檻型 */
+    S15_T1: 30,  /* 1 月 */
+    S21_T1: 3, S21_T2: 3,
+    S22_T2: 1,   /* 24h */
+    S23_T1: 1,
+    S25_T3: 1, S25_T5: 1,
+    S28: 1,
+    S29_T2: 3
+  };
+  const key = a.tCode ? `${a.sCode}_${a.tCode}` : a.sCode;
+  const days = winMap[key] !== undefined ? winMap[key] : 3;
+  const end = new Date(producedDate);
+  const start = new Date(producedDate);
+  start.setDate(end.getDate() - Math.max(days - 1, 0));
+  const fmt = (d) => d.toISOString().slice(0, 10);
+  return `${fmt(start)} - ${fmt(end)}`;
+}
+function statePill(s) { return s; }
+function statePillModal(s) {
+  /* 詳情頁/Modal 仍可上色，列表純文字（依規格 3.4 顏色規則：清單僅風險等級上色） */
+  const m = {
+    '經辦處理中': 'pill-blue',
+    '案件調查中': 'pill-purple',
+    '主管覆核中': 'pill-orange',
+    '限制帳號權限中': 'pill-blue-deep',  /* v4 新增 */
+    '關戶清退流程中': 'pill-orange-deep', /* v4 新增 */
+    '退回經辦': 'pill-yellow',
+    '主管再次覆核中': 'pill-orange',
+    '已結案': 'pill-gray'
+  };
+  return `<span class="pill ${m[s] || 'pill-gray'}">${s}</span>`;
+}
+
+/* ════════════════════ Render Tab 1 警示清單 ════════════════════ */
+function renderAlertsTable() {
+  const tbody = document.getElementById('alerts-tbody');
+  tbody.innerHTML = ALERTS.map(a => `
+    <tr data-alert-id="${a.id}" data-user-id="${a.userId}">
+      <td class="col-checkbox"><input type="checkbox" class="alert-cb" data-id="${a.id}" data-user="${a.userId}" onchange="onAlertCheckChange()"></td>
+      <td class="mono">${a.id}</td>
+      <td>${a.userId}</td>
+      <td>${riskPill(a.userRisk)}</td>
+      <td>${tagLabel(a.category)}</td>
+      <td>${renderTriggerWithTip(a.sCode, a.tCode)}</td>
+      <td>${a.producedAt}</td>
+      <td>${alertTypeLabel(a.alertType)}</td>
+      <td class="sticky-right"><button class="btn btn-sm btn-outline" onclick="openAlertDetail('${a.id}')">查看</button></td>
+    </tr>
+  `).join('');
+}
+
+/* 警示詳情 Modal（Tab 1 點查看後彈出） */
+let _currentAlertId = null;
+function openAlertDetail(alertId) {
+  const a = ALERTS.find(x => x.id === alertId);
+  if (!a) return;
+  _currentAlertId = alertId;
+  document.getElementById('ad-title').textContent = `警示詳情 ｜ ${a.id}`;
+  document.getElementById('ad-body').innerHTML = `
+    <div class="detail-section">
+      <div class="detail-section-title">警示資訊</div>
+      <div class="kv-grid">
+        <div><div class="kv-item-label">警示編號</div><div class="kv-item-value mono">${a.id}</div></div>
+        <div><div class="kv-item-label">用戶 ID</div><div class="kv-item-value"><span class="user-id-link" onclick="openKyc('${a.userId}')">${a.userId}</span> ${a.userName || ''}</div></div>
+        <div><div class="kv-item-label">用戶風險等級</div><div class="kv-item-value">${riskPill(a.userRisk)}</div></div>
+        <div><div class="kv-item-label">樣態類別</div><div class="kv-item-value">${tagLabel(a.category)}</div></div>
+        <div><div class="kv-item-label">觸發樣態</div><div class="kv-item-value">${renderTriggerWithTip(a.sCode, a.tCode)}</div></div>
+        <div><div class="kv-item-label">警示類型</div><div class="kv-item-value">${alertTypeLabel(a.alertType)}</div></div>
+        <div><div class="kv-item-label">警示產出日期</div><div class="kv-item-value">${a.producedAt}</div></div>
+      </div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">命中明細</div>
+      <div class="kv-grid">
+        <div><div class="kv-item-label">當時門檻</div><div class="kv-item-value">$10,000,000</div></div>
+        <div><div class="kv-item-label">實際命中</div><div class="kv-item-value" style="color:#c0392b;">$12,340,000</div></div>
+        <div><div class="kv-item-label">超出比例</div><div class="kv-item-value" style="color:#c0392b;">+23.4%</div></div>
+        <div><div class="kv-item-label">警示區間</div><div class="kv-item-value">${computeAlertWindow(a)}</div></div>
+      </div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-section-title">交易明細</div>
+      <table class="tx-table">
+        <thead><tr><th>交易 ID</th><th>時間</th><th>類型</th><th>幣對 (幣別)</th><th>方向</th><th>金額 (TWD)</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">TX-20260502-0001</td><td>2026-05-02 09:20</td><td>限價單</td><td>BTC/USDT</td><td>買入</td><td>5,000,000</td></tr>
+          <tr><td class="mono">TX-20260503-0007</td><td>2026-05-03 14:05</td><td>限價單</td><td>ETH/USDT</td><td>買入</td><td>5,000,000</td></tr>
+          <tr><td class="mono">TX-20260504-0019</td><td>2026-05-04 10:30</td><td>限價單</td><td>BTC/USDT</td><td>買入</td><td>2,340,000</td></tr>
+        </tbody>
+      </table>
+    </div>
+  `;
+  document.getElementById('alert-detail-overlay').hidden = false;
+}
+function closeAlertDetail() {
+  document.getElementById('alert-detail-overlay').hidden = true;
+  _currentAlertId = null;
+}
+
+/* 從警示詳情 Modal 直接接案（單筆，v4 也走共用 confirm 彈窗） */
+function takeAlertFromDetail() {
+  if (!_currentAlertId) return;
+  const a = ALERTS.find(x => x.id === _currentAlertId);
+  if (!a) return;
+  /* 模擬一筆勾選，走 openActionConfirm 接案分支 */
+  const fakeChecked = [{ dataset: { id: a.id, user: a.userId } }];
+  closeAlertDetail();
+  openActionConfirm('take', fakeChecked);
+}
+
+/* ════════════════════ 接案/併案 互動 ════════════════════ */
+function onAlertCheckChange() {
+  const checked = Array.from(document.querySelectorAll('.alert-cb:checked'));
+  const count = checked.length;
+  const userIds = new Set(checked.map(cb => cb.dataset.user));
+  const sameUser = userIds.size <= 1;
+
+  // 變灰其他用戶
+  if (count > 0) {
+    const lockedUser = checked[0].dataset.user;
+    document.querySelectorAll('#alerts-tbody tr[data-user-id]').forEach(tr => {
+      if (tr.dataset.userId !== lockedUser) {
+        tr.classList.add('row-disabled');
+        const cb = tr.querySelector('.alert-cb');
+        if (cb) cb.disabled = true;
+      }
+    });
+  } else {
+    document.querySelectorAll('#alerts-tbody tr[data-user-id]').forEach(tr => {
+      tr.classList.remove('row-disabled');
+      const cb = tr.querySelector('.alert-cb');
+      if (cb) cb.disabled = false;
+    });
+  }
+
+  // 操作條
+  const bar = document.getElementById('action-bar');
+  document.getElementById('selected-count').textContent = count;
+  if (count === 0) {
+    bar.classList.remove('visible');
+  } else {
+    bar.classList.add('visible');
+    document.getElementById('btn-take-case').disabled = (count !== 1);
+    document.getElementById('btn-merge-case').disabled = (count < 2 || !sameUser);
+    document.getElementById('selected-error').hidden = sameUser;
+    if (!sameUser) document.getElementById('selected-error').textContent = '⚠ 僅可勾選同一用戶之警示';
+  }
+}
+
+function clearSelection() {
+  document.querySelectorAll('.alert-cb').forEach(cb => { cb.checked = false; cb.disabled = false; });
+  document.querySelectorAll('#alerts-tbody tr[data-user-id]').forEach(tr => tr.classList.remove('row-disabled'));
+  document.getElementById('alerts-select-all').checked = false;
+  onAlertCheckChange();
+}
+
+function toggleSelectAllAlerts(cb) {
+  document.querySelectorAll('.alert-cb:not(:disabled)').forEach(c => c.checked = cb.checked);
+  onAlertCheckChange();
+}
+
+function executeAction(type) {
+  const checked = Array.from(document.querySelectorAll('.alert-cb:checked'));
+  /* v4：接案／同類型併案／混合類型併案 共用 confirm 彈窗，依情境呈現不同文案 */
+  let scenario = 'take';
+  if (type === 'merge') {
+    const types = new Set(checked.map(c => {
+      const a = ALERTS.find(x => x.id === c.dataset.id);
+      return a ? a.alertType : '';
+    }));
+    scenario = (types.has('realtime') && types.has('batch')) ? 'mergeMixed' : 'mergeSame';
+  }
+  openActionConfirm(scenario, checked);
+}
+
+function doExecuteAction(type, checked) {
+  const ids = checked.map(c => c.dataset.id).join('、');
+  const action = type === 'take' ? '接案' : '併案';
+  const newCaseId = 'CAS' + new Date().toISOString().slice(0,10).replace(/-/g,'') + String(Math.floor(Math.random()*900000)+100000);
+  alert(`${action}成功！\n勾選警示：${ids}\n建立案件：${newCaseId}\n案件狀態：經辦處理中\n（demo 不實際建檔）`);
+  clearSelection();
+}
+
+/* v4：接案／併案 共用 confirm 彈窗 */
+let _pendingActionChecked = null;
+let _pendingActionType = null;
+function openActionConfirm(scenario, checked) {
+  _pendingActionChecked = checked;
+  _pendingActionType = scenario === 'take' ? 'take' : 'merge';
+  const msgEl = document.getElementById('action-confirm-msg');
+  const btnEl = document.getElementById('action-confirm-btn');
+  const n = checked.length;
+  if (scenario === 'take') {
+    msgEl.textContent = '確認後將建立案件，是否確認接案？';
+    btnEl.textContent = '確認接案';
+  } else if (scenario === 'mergeSame') {
+    msgEl.textContent = `將 ${n} 件警示併為同一案件，是否確認併案？`;
+    btnEl.textContent = '確認併案';
+  } else { // mergeMixed
+    msgEl.textContent = '勾選的警示同時包含事中監控與事後監控，是否確認併案？';
+    btnEl.textContent = '確認併案';
+  }
+  document.getElementById('action-confirm-overlay').hidden = false;
+}
+function closeActionConfirm(confirmed) {
+  document.getElementById('action-confirm-overlay').hidden = true;
+  if (confirmed && _pendingActionChecked) {
+    doExecuteAction(_pendingActionType, _pendingActionChecked);
+  }
+  _pendingActionChecked = null;
+  _pendingActionType = null;
+}
+
+/* ════════════════════ Render Tab 2/3 案件清單 ════════════════════ */
+/* mode: 'active'（Tab 2 進行中，無結案日期欄）｜ 'all'（Tab 3 所有案件，含結案日期 + 案件狀態） */
+function renderCases(list, tbodyId, mode) {
+  const tbody = document.getElementById(tbodyId);
+  tbody.innerHTML = list.map(c => {
+    const triggerHtml = c.triggers.map(t => `<div style="font-size:11px;line-height:1.7;">${renderTriggerWithTip(t.s, t.t)}</div>`).join('');
+    const cats = [...new Set(c.triggers.map(t => tagLabel(t.cat)))];
+    const categoryCell = cats.length === 1 ? cats[0] : cats.length > 1 ? `<span title="${cats.join('、')}">混合 (${cats.length})</span>` : '—';
+    /* 本案警示編號清單欄已移除，僅於 Modal A 區顯示 */
+    const isClosedRecord = c.state === '已結案' || c.closedAt;
+    const closedAtCell = mode === 'all' ? `<td>${c.closedAt || '—'}</td>` : '';
+    const stateCell = `<td>${statePill(c.state || '已結案')}</td>`; // Tab 2/3 都顯示 案件狀態 欄
+    return `<tr>
+      <td class="mono">${c.id}</td>
+      <td>${c.userId}</td>
+      <td>${riskPill(c.userRisk)}</td>
+      <td>${c.accountStatus}</td>
+      <td>${c.userLevel}</td>
+      <td>${categoryCell}</td>
+      <td><div class="trigger-list">${triggerHtml}</div></td>
+      <td>${c.alertType}</td>
+      <td>${c.producedAt}</td>
+      ${closedAtCell}
+      <td>${c.operator}</td>
+      <td>${c.operatorProcessedAt || '—'}</td>
+      <td>${c.operatorSubmittedAt || '—'}</td>
+      <td>${c.supervisorReviewedAt || '—'}</td>
+      <td>${c.operatorResubmittedAt || '—'}</td>
+      <td>${c.supervisorRereviewedAt || '—'}</td>
+      <td>${c.investigation}</td>
+      ${stateCell}
+      <td>${c.auditResult || '—'}</td>
+      <td>${renderCloseoutProgress(c.closeoutProgress)}</td>
+      <td>${c.strReport || '—'}</td>
+      <td class="sticky-right">
+        <button class="btn btn-sm btn-outline" onclick="openCaseDetail('${c.id}',${isClosedRecord})">查看</button>
+        ${(currentRole === 'supervisor' && canReassign(c.state)) ? `<button class="btn btn-sm btn-outline" style="margin-left:4px;" onclick="openReassignModal('${c.id}')">轉單</button>` : ''}
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+/* v4：關戶清退進度單選顯示（4 選 1，含時間戳） */
+function renderCloseoutProgress(p) {
+  if (!p) return '—';
+  if (typeof p === 'object' && !Array.isArray(p) && p.value) {
+    return `<div style="font-size:11px;line-height:1.5;"><span style="color:#888;">${p.ts || ''}</span> ${p.value}</div>`;
+  }
+  /* 向下兼容舊資料格式（陣列） */
+  if (Array.isArray(p) && p.length) {
+    const last = p[p.length - 1];
+    return `<div style="font-size:11px;line-height:1.5;"><span style="color:#888;">${last.ts}</span> ${last.item}</div>`;
+  }
+  if (typeof p === 'string' && p) return p;
+  return '—';
+}
+
+/* ════════════════════ 案件詳情 Modal ════════════════════ */
+function openCaseDetail(caseId, isClosed) {
+  const c = (isClosed ? CASES_CLOSED : CASES_ACTIVE).find(x => x.id === caseId);
+  if (!c) return;
+  const kyc = KYC_DATA[c.userId] || {};
+  document.getElementById('cd-title').textContent = `案件詳情 ｜ ${c.id}`;
+
+  const hasReturn = c.state === '退回經辦' || (c.state === '主管再次覆核中');
+  const isClosedNow = isClosed;
+  /* v4：經辦只能編輯自己的案件 */
+  const isMyCase = currentRole === 'operator' && c.operator === 'admin01'; // demo 預設 admin01
+
+  // v5 編輯權限：限制帳號權限中改為經辦可編輯；D 區不再覆蓋限制帳號權限中
+  const cEditable = !isClosedNow && isMyCase && (c.state === '經辦處理中' || c.state === '案件調查中' || c.state === '退回經辦' || c.state === '限制帳號權限中');
+  const dEditable = !isClosedNow && currentRole === 'supervisor' && (c.state === '主管覆核中' || c.state === '主管再次覆核中');
+  /* v5：關戶清退進度仍只在「關戶清退流程中」狀態下開放給該案件之經辦編輯 */
+  const closeoutEditable = !isClosedNow && isMyCase && c.state === '關戶清退流程中';
+
+  const triggerHtml = c.triggers.map(t => `<span style="display:inline-block;margin:2px 6px 2px 0;font-size:12px;">${renderTriggerWithTip(t.s, t.t)} <span style="color:#999;">${tagLabel(t.cat)}</span></span>`).join('');
+
+  // B 區 警示明細（v5：5 個 KV、警示區間、幣對 (幣別)、標題列右側產出時間）
+  const bArea = c.alertIds.map((aid, i) => {
+    const trig = c.triggers[i] || {};
+    const fakeAlert = {
+      sCode: trig.s || '',
+      tCode: trig.t || '',
+      category: trig.cat || '',
+      alertType: c.alertType && c.alertType.indexOf('事中') !== -1 ? 'realtime' : 'batch',
+      producedAt: c.producedAt
+    };
+    const window = computeAlertWindow(fakeAlert);
+    return `
+    <div class="alert-detail-card" id="alert-detail-${i}">
+      <div class="alert-detail-header" onclick="this.parentElement.classList.toggle('expanded')">
+        <div><span class="mono" style="font-weight:700;">${aid}</span> &nbsp; <span style="font-size:12px;">${renderTriggerWithTip(trig.s||'', trig.t||'')}</span> <span class="alert-produced-at">·  警示產出日期 ${c.producedAt || '—'}</span></div>
+        <span class="toggle-arrow">▶</span>
+      </div>
+      <div class="alert-detail-body">
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:10px;">
+          <div><div class="kv-item-label">當時門檻</div><div class="kv-item-value">$10,000,000</div></div>
+          <div><div class="kv-item-label">實際命中</div><div class="kv-item-value" style="color:#c0392b;">$12,340,000</div></div>
+          <div><div class="kv-item-label">超出比例</div><div class="kv-item-value" style="color:#c0392b;">+23.4%</div></div>
+          <div><div class="kv-item-label">警示區間</div><div class="kv-item-value" style="font-size:11px;">${window}</div></div>
+          <div><div class="kv-item-label">類別</div><div class="kv-item-value">${tagLabel(trig.cat||'trade')}</div></div>
+        </div>
+        <table class="tx-table">
+          <thead><tr><th>交易 ID</th><th>時間</th><th>類型</th><th>幣對 (幣別)</th><th>方向</th><th>金額</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">TX-20260502-0001</td><td>2026-05-02 09:20</td><td>限價單</td><td>BTC/USDT</td><td>買入</td><td>5,000,000</td></tr>
+            <tr><td class="mono">TX-20260503-0007</td><td>2026-05-03 14:05</td><td>限價單</td><td>ETH/USDT</td><td>買入</td><td>5,000,000</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+  }).join('');
+
+  // 表單欄位 disabled 屬性
+  const dis = (editable) => editable ? '' : 'disabled';
+  const closeoutDis = closeoutEditable ? '' : 'disabled';
+  /* v4：單選關戶清退進度 */
+  const closeoutObj = (c.closeoutProgress && typeof c.closeoutProgress === 'object' && !Array.isArray(c.closeoutProgress)) ? c.closeoutProgress : null;
+  const closeoutCurrent = closeoutObj ? closeoutObj.value : '';
+  const closeoutTsStr = closeoutObj ? closeoutObj.ts : '';
+
+  // C 區（v4：附件範例擴及全狀態；關戶清退進度改單選；附件 chip 帶 ✕）
+  const showAttachments = ['經辦處理中','案件調查中','主管覆核中','限制帳號權限中','關戶清退流程中','退回經辦','主管再次覆核中'].includes(c.state) || isClosedNow;
+  const attachExample = (() => {
+    if (!showAttachments) return '';
+    const oneFile = c.state === '經辦處理中';
+    const showDel = cEditable; // 可編輯狀態下顯示 ✕
+    const delIcon = showDel ? '<span class="chip-del" onclick="event.stopPropagation();this.parentElement.remove();" title="刪除">✕</span>' : '';
+    const chips = oneFile
+      ? `<span class="attachment-chip" onclick="alert('demo 不實際下載')">📎 用戶交易摘要.pdf${delIcon}</span>`
+      : `<span class="attachment-chip" onclick="alert('demo 不實際下載')">📎 KYC補件_20260503.pdf${delIcon}</span><span class="attachment-chip" onclick="alert('demo 不實際下載')">📎 對手方分析.png${delIcon}</span>`;
+    return `<div style="margin-top:8px;">${chips}</div>`;
+  })();
+  const cForm = `
+    <div class="form-section ${cEditable?'':'readonly'}">
+      <div class="form-row">
+        <div class="form-section-label">上傳附件 (非必填，PDF/PNG/JPG，可多檔，每檔上限 10 MB)</div>
+        <div class="upload-box">＋ 點擊或拖曳檔案至此上傳<div style="font-size:10px;color:#aaa;margin-top:4px;">檔案大小限制：每檔 10 MB</div></div>
+        ${attachExample}
+      </div>
+      <div class="form-row">
+        <div class="form-section-label">調查措施 *</div>
+        <div class="radio-group inline">
+          <label class="radio-item ${cEditable?'':'disabled'}"><input type="radio" name="investigation" value="無" ${c.investigation==='無'?'checked':''} ${dis(cEditable)}> 無</label>
+          <label class="radio-item ${cEditable?'':'disabled'}"><input type="radio" name="investigation" value="RFI" ${c.investigation==='RFI'?'checked':''} ${dis(cEditable)}> RFI</label>
+          <label class="radio-item ${cEditable?'':'disabled'}"><input type="radio" name="investigation" value="EDD" ${c.investigation==='EDD'?'checked':''} ${dis(cEditable)}> EDD</label>
+        </div>
+        <div style="margin-top:4px;font-size:10px;color:#999;">勾選 RFI/EDD → 案件調查中；勾「無」→ 直接送主管覆核</div>
+      </div>
+      <div class="form-row">
+        <div class="form-section-label">經辦評估是否申報 STR *</div>
+        <div class="radio-group inline">
+          <label class="radio-item ${cEditable?'':'disabled'}"><input type="radio" name="op_str" ${c.strReport==='需申報'?'checked':''} ${dis(cEditable)}> 是，應申報</label>
+          <label class="radio-item ${cEditable?'':'disabled'}"><input type="radio" name="op_str" ${c.strReport==='不申報'?'checked':''} ${dis(cEditable)}> 否，不申報</label>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-section-label">關戶清退進度 ${closeoutEditable ? '<span style="color:#999;font-weight:400;font-size:10px;">（單選，變更會寫 log）</span>' : '<span style="color:#aaa;font-weight:400;font-size:10px;">（主管按「關戶清退」進入流程後才開放）</span>'}</div>
+        <div class="radio-group">
+          <label class="radio-item ${closeoutEditable?'':'disabled'}"><input type="radio" name="closeout_v4" value="已限制帳號權限" ${closeoutCurrent==='已限制帳號權限'?'checked':''} ${closeoutDis}> 已限制帳號權限</label>
+          <label class="radio-item ${closeoutEditable?'':'disabled'}"><input type="radio" name="closeout_v4" value="已發送通知" ${closeoutCurrent==='已發送通知'?'checked':''} ${closeoutDis}> 已發送通知</label>
+          <label class="radio-item ${closeoutEditable?'':'disabled'}"><input type="radio" name="closeout_v4" value="已結清並關戶" ${closeoutCurrent==='已結清並關戶'?'checked':''} ${closeoutDis}> 已結清並關戶</label>
+          <label class="radio-item ${closeoutEditable?'':'disabled'}"><input type="radio" name="closeout_v4" value="逾期未結清" ${closeoutCurrent==='逾期未結清'?'checked':''} ${closeoutDis}> 逾期未結清</label>
+        </div>
+        ${closeoutTsStr ? `<div style="margin-top:4px;font-size:10px;color:#888;">最後變更時間：${closeoutTsStr}</div>` : ''}
+      </div>
+      <div class="form-row">
+        <div class="form-section-label">經辦處理說明 <span style="color:#aaa;font-weight:400;font-size:10px;">（v5 採獨立送出，進入永遠空白；歷次內容請看 G 區）</span></div>
+        <div class="note-submit-wrap">
+          <textarea class="form-textarea" id="c-note-textarea" ${dis(cEditable)} placeholder="輸入本次處理說明"></textarea>
+          ${cEditable ? `<button class="note-submit-btn" aria-label="送出說明" title="送出說明（送出後寫入紀錄）" onclick="submitNote('${c.id}','operator_note')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button>` : ''}
+        </div>
+      </div>
+      ${cEditable || closeoutEditable ? `<div class="form-actions">
+        <button class="btn btn-outline" onclick="onOperatorAction('${c.id}','save')">儲存</button>
+        <button class="btn btn-primary" onclick="onOperatorAction('${c.id}','submit')">送主管覆核</button>
+      </div>` : ''}
+    </div>
+  `;
+
+  // D 區（v5：textarea 改獨立送出、STR 校驗縮為結案才必填、5 顆按鈕在 dEditable 狀態下都可按）
+  const auditValue = c.auditResult && c.auditResult !== '無' ? c.auditResult : '無';
+  const auditEmpty = !c.auditResult || c.auditResult === '無';
+  const dForm = `
+    <div class="form-section ${dEditable?'':'readonly'}">
+      <div class="form-row">
+        <div class="form-section-label">主管覆核說明 <span style="color:#aaa;font-weight:400;font-size:10px;">（v5 採獨立送出，進入永遠空白；歷次內容請看 G 區）</span></div>
+        <div class="note-submit-wrap">
+          <textarea class="form-textarea" id="d-note-textarea" ${dis(dEditable)} placeholder="建議填寫退回原因／覆核結論／工具性退回備註"></textarea>
+          ${dEditable ? `<button class="note-submit-btn" aria-label="送出說明" title="送出說明（送出後寫入紀錄）" onclick="submitNote('${c.id}','supervisor_note')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg></button>` : ''}
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-section-label">主管覆核是否申報 STR <span style="color:#aaa;font-weight:400;font-size:10px;">（v5：按結案前必填，其他動作不校驗）</span></div>
+        <div class="radio-group inline">
+          <label class="radio-item ${dEditable?'':'disabled'}"><input type="radio" name="sup_str" value="需申報" ${c.strReport==='需申報'?'checked':''} ${dis(dEditable)}> 是，應申報</label>
+          <label class="radio-item ${dEditable?'':'disabled'}"><input type="radio" name="sup_str" value="不申報" ${c.strReport==='不申報'?'checked':''} ${dis(dEditable)}> 否，不申報</label>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-section-label">審核結果 <span style="color:#aaa;font-weight:400;font-size:10px;">（唯讀顯示，由按下的處置按鈕自動填入）</span></div>
+        <div class="audit-result-display ${auditEmpty?'empty':''}" id="d-audit-result-display">${auditValue}</div>
+      </div>
+      ${dEditable ? `<div class="form-actions" style="flex-wrap:wrap;gap:6px;">
+        <button class="btn btn-warning" onclick="onSupervisorAction('${c.id}','retreat')">退回經辦</button>
+        <button class="btn" style="background:#fde5cc;color:#ba4a00;border:1px solid #f0bb88;" onclick="onSupervisorAction('${c.id}','limit')">限制帳號權限</button>
+        <button class="btn" style="background:#fdecea;color:#c0392b;border:1px solid #f5c6c2;" onclick="onSupervisorAction('${c.id}','closeout')">關戶清退</button>
+        <button class="btn btn-outline" onclick="onSupervisorAction('${c.id}','save')">儲存</button>
+        <button class="btn btn-success" onclick="onSupervisorAction('${c.id}','close')">結案</button>
+      </div>` : ''}
+    </div>
+  `;
+
+  // F 區（v4 重新設計：每筆顯示案件編號＋結案日新到舊；初始 10 筆＋載入更多按鈕；案件編號純文字不可點）
+  const fArea = `<div id="f-history-list"></div>
+  <div class="f-load-more-row" id="f-load-more-row"><button class="f-load-more-btn" onclick="loadMoreHistory()">載入更多</button></div>
+  <div class="f-end-msg" id="f-end-msg" style="display:none;">已顯示 1 年內所有紀錄</div>`;
+
+  /* v4：A 區轉單按鈕（主管 + 經辦手上的 4 狀態：經辦處理中/案件調查中/關戶清退流程中/退回經辦） */
+  const aReassignBtn = (currentRole === 'supervisor' && canReassign(c.state)) ? `<button class="btn btn-sm btn-outline" style="margin-left:auto;" onclick="openReassignModal('${c.id}')">轉單</button>` : '';
+  document.getElementById('cd-body').innerHTML = `
+    <div class="detail-section">
+      <div class="detail-section-title" style="display:flex;align-items:center;justify-content:space-between;">
+        <span>A 區 ｜ 案件資訊</span>
+        ${aReassignBtn}
+      </div>
+      <div class="kv-grid">
+        <div><div class="kv-item-label">案件編號</div><div class="kv-item-value mono">${c.id}</div></div>
+        <div><div class="kv-item-label">案件產出日期</div><div class="kv-item-value">${c.producedAt}</div></div>
+        ${isClosedNow ? `<div><div class="kv-item-label">結案日期</div><div class="kv-item-value">${c.closedAt}</div></div>` : `<div><div class="kv-item-label">案件狀態</div><div class="kv-item-value">${c.state}</div></div>`}
+        <div><div class="kv-item-label">用戶 ID</div><div class="kv-item-value"><span class="user-id-link" onclick="openKyc('${c.userId}')">${c.userId}</span> ${c.userName}</div></div>
+        <div><div class="kv-item-label">用戶風險等級</div><div class="kv-item-value">${riskPill(c.userRisk)}</div></div>
+        <div><div class="kv-item-label">KYC 狀態</div><div class="kv-item-value">${kyc.kycStatus || '已驗證'}</div></div>
+        <div><div class="kv-item-label">用戶帳戶狀態</div><div class="kv-item-value">${c.accountStatus}</div></div>
+        <div><div class="kv-item-label">用戶會員等級</div><div class="kv-item-value">${c.userLevel}</div></div>
+        <div><div class="kv-item-label">註冊日期</div><div class="kv-item-value">${kyc.registeredAt || '—'}</div></div>
+        <div><div class="kv-item-label">經辦</div><div class="kv-item-value">${c.operator}</div></div>
+        <div><div class="kv-item-label">主管</div><div class="kv-item-value">super01</div></div>
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-section-title">B 區 ｜ 警示明細彙整 (預設全收起，逐筆展開看交易明細)</div>
+      ${bArea}
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div class="detail-section">
+        <div class="detail-section-title">C 區 ｜ 經辦表單 ${cEditable ? '<span class="pill pill-blue" style="margin-left:6px;">可編輯</span>' : '<span class="pill pill-gray" style="margin-left:6px;">唯讀</span>'}</div>
+        ${cForm}
+      </div>
+      <div class="detail-section">
+        <div class="detail-section-title">D 區 ｜ 主管表單 ${dEditable ? '<span class="pill pill-red" style="margin-left:6px;">可編輯</span>' : '<span class="pill pill-gray" style="margin-left:6px;">唯讀</span>'}</div>
+        ${dForm}
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-section-title">F 區 ｜ 一年內判定紀錄 (該用戶名下歷史案件)</div>
+      ${fArea}
+    </div>
+  `;
+
+  /* v5：G/H 區放到 cd-footer（detail-panel flex column 底部，永遠不會被滾動） */
+  document.getElementById('cd-footer').innerHTML = `
+    <div id="g-section-container">${renderGSectionInner(c.id)}</div>
+    <div id="h-section-container">${renderHSectionInner(c.id)}</div>
+  `;
+
+  document.getElementById('case-detail-overlay').hidden = false;
+  /* v4：F 區一年內判定紀錄改為 10 筆＋載入更多 */
+  _historyContext = { caseId: c.id, userId: c.userId, loaded: 0, perPage: 10 };
+  loadMoreHistory();
+}
+
+/* ════════════════════ v5 G 區｜處理說明紀錄（展開後 height: 210px 捲動） ════════════════════ */
+function renderGSectionInner(caseId) {
+  const logs = (NOTE_LOGS[caseId] || []).slice().sort((a, b) => b.ts.localeCompare(a.ts));
+  const rows = logs.length > 0 ? logs.map(l => `
+    <tr>
+      <td>${l.ts}</td>
+      <td>${l.actorRole === 'operator' ? '<span class="pill pill-blue">經辦</span>' : '<span class="pill pill-red">主管</span>'}</td>
+      <td>${l.actor}</td>
+      <td class="col-content">${escapeHtml(l.content)}</td>
+    </tr>
+  `).join('') : `<tr><td colspan="4" class="record-empty">尚無歷次說明紀錄</td></tr>`;
+  return `
+    <div class="record-section" id="g-section">
+      <div class="record-section-header" onclick="this.parentElement.classList.toggle('expanded')">
+        <div class="record-section-title">G 區 ｜ 處理說明紀錄</div>
+        <span class="record-section-arrow">▶</span>
+      </div>
+      <div class="record-section-body">
+        <table class="record-table">
+          <thead><tr><th style="width:140px;">時間</th><th style="width:70px;">角色</th><th style="width:90px;">操作者</th><th>內容</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+/* ════════════════════ v5 H 區｜案件處理紀錄 ════════════════════ */
+/* 欄位顯示對應（snapshot 欄位 → 顯示用名稱） */
+const FIELD_LABELS = {
+  'investigation': '調查措施',
+  'operator_str_eval': '經辦評估是否申報 STR',
+  'supervisor_str_decision': '主管覆核是否申報 STR',
+};
+
+/* v5：H 區處理內容渲染時過濾 closeout_progress（後端 snapshot 仍寫入保留稽核軌跡，僅前端 UI 不顯示）
+       v5：多筆欄位整併為單行、以「、」分隔（原本每筆獨立一個 .change-item div、分行顯示） */
+const H_HIDDEN_KEYS = new Set(['closeout_progress']);
+function formatSnapshot(snapshot) {
+  if (!snapshot) return '';
+  const parts = Object.keys(snapshot)
+    .filter(k => !H_HIDDEN_KEYS.has(k))
+    .map(k => {
+      const label = FIELD_LABELS[k] || k;
+      return `<span class="change-item"><span style="color:#888;">${label}：</span>${escapeHtml(snapshot[k])}</span>`;
+    });
+  return parts.join('、');
+}
+
+function renderHSectionInner(caseId) {
+  const allLogs = (CHANGE_LOGS[caseId] || []).slice();
+  /* H 區永遠過濾掉「儲存」紀錄，無其他 filter */
+  const filtered = allLogs
+    .filter(l => l.actionButton !== '儲存')
+    .sort((a, b) => b.ts.localeCompare(a.ts));
+
+  const rows = filtered.length > 0 ? filtered.map(l => {
+    return `<tr>
+      <td>${l.ts}</td>
+      <td>${l.actorRole === 'operator' ? '<span class="pill pill-blue">經辦</span>' : '<span class="pill pill-red">主管</span>'}</td>
+      <td>${l.actor}</td>
+      <td>${l.actionButton}</td>
+      <td class="col-changes">${formatSnapshot(l.snapshot)}</td>
+    </tr>`;
+  }).join('') : `<tr><td colspan="5" class="record-empty">尚無紀錄</td></tr>`;
+
+  return `
+    <div class="record-section" id="h-section">
+      <div class="record-section-header" onclick="this.parentElement.classList.toggle('expanded')">
+        <div class="record-section-title">H 區 ｜ 案件處理紀錄</div>
+        <span class="record-section-arrow">▶</span>
+      </div>
+      <div class="record-section-body">
+        <table class="record-table">
+          <thead><tr><th style="width:140px;">時間</th><th style="width:70px;">角色</th><th style="width:100px;">操作者</th><th style="width:130px;">動作按鈕</th><th>處理內容</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function escapeHtml(s) {
+  if (s == null) return '';
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function closeCaseDetail() { document.getElementById('case-detail-overlay').hidden = true; }
+
+/* ════════════════════ v5 經辦動作（C 區儲存／送主管覆核） ════════════════════ */
+function onOperatorAction(caseId, action) {
+  /* v5：textarea 非空時擋住處置 */
+  const cNote = document.getElementById('c-note-textarea');
+  if (cNote && cNote.value.trim() !== '') {
+    alert('您有未送出的處理說明，請先按「送出說明」或清空欄位後再執行此動作');
+    return;
+  }
+  switch (action) {
+    case 'save':
+      alert('已儲存（暫存草稿不改變狀態；經辦處理日期同步更新）');
+      break;
+    case 'submit':
+      alert('案件 → 主管覆核中（依調查措施判定下一狀態）\n（demo 不實際更新）');
+      closeCaseDetail();
+      break;
+  }
+}
+
+/* ════════════════════ v5 主管動作（D 區 5 顆按鈕） ════════════════════ */
+let _pendingCloseCaseId = null;
+function onSupervisorAction(caseId, action) {
+  /* v5：textarea 非空時擋住處置動作（含儲存） */
+  const dNote = document.getElementById('d-note-textarea');
+  if (dNote && dNote.value.trim() !== '') {
+    alert('您有未送出的覆核說明，請先按「送出說明」或清空欄位後再執行此動作');
+    return;
+  }
+  /* v5：STR 校驗縮為僅結案才必填，其他動作（退回／限制／關戶清退／儲存）皆不校驗 */
+  if (action === 'close') {
+    const sup_str = document.querySelector('input[name="sup_str"]:checked');
+    if (!sup_str) {
+      alert('請先選擇「主管覆核是否申報 STR」');
+      return;
+    }
+  }
+  switch (action) {
+    case 'retreat':
+      alert('案件 → 退回經辦\n（demo 不實際更新狀態）');
+      closeCaseDetail();
+      break;
+    case 'limit':
+      alert('案件 → 限制帳號權限中\n審核結果＝限制帳號權限\n（v5：案件回經辦手上由經辦執行限制動作後送回；demo 不實際更新）');
+      closeCaseDetail();
+      break;
+    case 'closeout':
+      alert('案件 → 關戶清退流程中\n審核結果＝關戶清退\n等待經辦填關戶清退進度後送回\n（demo 不實際更新）');
+      closeCaseDetail();
+      break;
+    case 'save':
+      alert('已儲存（暫存草稿不改變狀態；主管覆核日期同步更新）');
+      break;
+    case 'close':
+      _pendingCloseCaseId = caseId;
+      document.getElementById('close-confirm-overlay').hidden = false;
+      break;
+  }
+}
+
+/* ════════════════════ v5 送出說明（C/D textarea 旁的按鈕） ════════════════════ */
+function submitNote(caseId, noteType) {
+  const textareaId = noteType === 'operator_note' ? 'c-note-textarea' : 'd-note-textarea';
+  const ta = document.getElementById(textareaId);
+  if (!ta) return;
+  const content = ta.value.trim();
+  if (content === '') {
+    alert('請輸入說明內容後再送出');
+    return;
+  }
+  const roleLabel = noteType === 'operator_note' ? '經辦處理說明' : '主管覆核說明';
+  const actor = currentRole === 'operator' ? 'admin01' : 'super01';
+  /* demo：寫入記憶體中的 NOTE_LOGS，並重新渲染 G 區 */
+  if (!NOTE_LOGS[caseId]) NOTE_LOGS[caseId] = [];
+  const now = new Date();
+  const ts = now.toISOString().slice(0,10) + ' ' + now.toTimeString().slice(0,5);
+  NOTE_LOGS[caseId].push({ ts, noteType, actor, actorRole: currentRole, content });
+  ta.value = '';
+  alert(`已送出${roleLabel}（demo 寫入記憶體；正式版寫入 case_note_log 表）`);
+  /* 重新渲染 G 區計數與內容 */
+  rerenderRecordSections(caseId);
+}
+
+/* 重新渲染 G／H 區（送出說明後呼叫） */
+function rerenderRecordSections(caseId) {
+  const gContainer = document.getElementById('g-section-container');
+  const hContainer = document.getElementById('h-section-container');
+  if (gContainer) gContainer.innerHTML = renderGSectionInner(caseId);
+  if (hContainer) hContainer.innerHTML = renderHSectionInner(caseId);
+}
+function closeConfirmClose(confirmed) {
+  document.getElementById('close-confirm-overlay').hidden = true;
+  if (confirmed && _pendingCloseCaseId) {
+    alert(`案件 ${_pendingCloseCaseId} → 已結案\n（demo 不實際更新）`);
+    closeCaseDetail();
+  }
+  _pendingCloseCaseId = null;
+}
+
+/* ════════════════════ v4 主管轉單 ════════════════════ */
+let _pendingReassignCaseId = null;
+function openReassignModal(caseId) {
+  _pendingReassignCaseId = caseId;
+  document.getElementById('reassign-overlay').hidden = false;
+}
+function confirmReassign(confirmed) {
+  document.getElementById('reassign-overlay').hidden = true;
+  if (confirmed && _pendingReassignCaseId) {
+    const sel = document.getElementById('reassign-select');
+    const newOp = sel.value;
+    alert(`案件 ${_pendingReassignCaseId} 已轉單給 ${newOp}\n狀態與時間戳不變，僅更新 operator\n後端寫入 case_reassign_logs（demo 不實際寫入）`);
+  }
+  _pendingReassignCaseId = null;
+}
+
+/* ════════════════════ v4 F 區一年內判定紀錄（10 筆+載入更多） ════════════════════ */
+const HISTORY_DATA = [
+  /* 該用戶名下歷史已結案案件，依結案日由新到舊 */
+  { caseId: 'CAS20260328000031', closedAt: '2026-03-28', operator: 'admin01', supervisor: 'super01', strReport: '不申報', triggers: 'S21 T1', summary: '經查該用戶為境外長期居住之台籍人士，交易量與其申報收入相符，判定非可疑交易。', txs: [
+    { id:'TX-20260326-0011', time:'2026-03-26 16:45', kind:'市價單', pair:'ETH/USDT', dir:'買入', amt:'4,500,000 TWD' },
+    { id:'TX-20260327-0008', time:'2026-03-27 09:10', kind:'限價單', pair:'BTC/USDT', dir:'買入', amt:'2,800,000 TWD' }
+  ] },
+  { caseId: 'CAS20260315000019', closedAt: '2026-03-15', operator: 'admin02', supervisor: 'super01', strReport: '不申報', triggers: 'S22 T2', summary: '靜止戶突然交易，經 RFI 補件後確認為用戶生活金流變化，無異常。' },
+  { caseId: 'CAS20260302000012', closedAt: '2026-03-02', operator: 'admin03', supervisor: 'super02', strReport: '不申報', triggers: 'S15 T1', summary: '個人資料變更次數達門檻，經查為新婚改名與住址遷移，已驗證屬實。' },
+  { caseId: 'CAS20260218000007', closedAt: '2026-02-18', operator: 'admin01', supervisor: 'super01', strReport: '需申報', triggers: 'S21 T1、S25 T3', summary: '用戶於短時間內多次大額轉入後立即轉出至多個不同外部錢包，交易模式疑似洗錢行為。已通報主管並提交 STR。', txs: [
+    { id:'TX-20260214-0023', time:'2026-02-14 18:00', kind:'限價單', pair:'ETH/USDT', dir:'買入', amt:'2,000,000 TWD' },
+    { id:'TX-20260214-0041', time:'2026-02-14 22:10', kind:'轉入', pair:'BTC', dir:'接收', amt:'1,200,000 TWD' }
+  ] },
+  { caseId: 'CAS20260205000003', closedAt: '2026-02-05', operator: 'admin04', supervisor: 'super02', strReport: '不申報', triggers: 'S29 T2', summary: '高風險 IP 交易，經查為用戶出國旅遊期間操作，已驗證身分。' },
+  { caseId: 'CAS20260128000018', closedAt: '2026-01-28', operator: 'admin02', supervisor: 'super01', strReport: '不申報', triggers: 'S23 T1', summary: '同 IP 多帳號，經查為家族共用同一 Wi-Fi，已備註說明。' },
+  { caseId: 'CAS20260115000010', closedAt: '2026-01-15', operator: 'admin01', supervisor: 'super01', strReport: '不申報', triggers: 'S21 T2', summary: '幣幣交易達門檻，經查為市場套利策略，模式合理。' },
+  { caseId: 'CAS20251220000045', closedAt: '2025-12-20', operator: 'admin03', supervisor: 'super02', strReport: '不申報', triggers: 'S14 T1', summary: '同地址多帳號，經查為公司合夥人各自建立帳號，無關聯異常。' },
+  { caseId: 'CAS20251208000022', closedAt: '2025-12-08', operator: 'admin01', supervisor: 'super01', strReport: '不申報', triggers: 'S25 T5', summary: '快進快出累積金額達門檻，經查為用戶調倉操作，無異常。' },
+  { caseId: 'CAS20251125000017', closedAt: '2025-11-25', operator: 'admin04', supervisor: 'super01', strReport: '不申報', triggers: 'S22 T2', summary: '靜止戶交易，已 EDD 補件確認資金來源合法。' },
+  { caseId: 'CAS20251112000006', closedAt: '2025-11-12', operator: 'admin02', supervisor: 'super02', strReport: '需申報', triggers: 'S31', summary: '命中制裁名單，已限制帳號權限並通報。' },
+  { caseId: 'CAS20251029000028', closedAt: '2025-10-29', operator: 'admin01', supervisor: 'super01', strReport: '不申報', triggers: 'S12', summary: 'IP 國籍不符，經查為用戶外派工作期間操作，已驗證。' }
+];
+let _historyContext = null;
+function loadMoreHistory() {
+  if (!_historyContext) return;
+  const list = document.getElementById('f-history-list');
+  const btn = document.getElementById('f-load-more-row');
+  const endMsg = document.getElementById('f-end-msg');
+  const start = _historyContext.loaded;
+  const end = Math.min(start + _historyContext.perPage, HISTORY_DATA.length);
+  const slice = HISTORY_DATA.slice(start, end);
+  /* v5：所有案件 F 區皆改為「查看」按鈕跳轉到歷史案件 Modal，不再展開交易明細，亦不顯示摘要說明 */
+  const html = slice.map((h, idx) => {
+    const i = start + idx;
+    return `<div class="history-card" id="history-${i}">
+      <div class="history-card-title" style="display:flex;align-items:center;justify-content:space-between;">
+        <span>案件編號：<span class="mono" style="font-weight:700;color:#2c3e50;">${h.caseId}</span> ｜ 結案日期：${h.closedAt} ｜ 經辦: ${h.operator} ｜ 主管: ${h.supervisor} ｜ 申報 STR：${h.strReport} ｜ 涉及樣態：${h.triggers}</span>
+        <button class="btn btn-sm btn-outline" onclick="openHistoryCaseStacked('${h.caseId}')">查看</button>
+      </div>
+    </div>`;
+  }).join('');
+  list.insertAdjacentHTML('beforeend', html);
+  _historyContext.loaded = end;
+  if (end >= HISTORY_DATA.length) {
+    btn.style.display = 'none';
+    endMsg.style.display = 'block';
+  }
+}
+
+/* ════════════════════ v5 demo：歷史案件堆疊 Modal ════════════════════ */
+/* 點 F 區「查看歷史案件」按鈕後動態建立一個新 Modal 覆蓋在現有 Modal 上方，可無限堆疊 */
+const _modalStack = [];
+
+function buildHistoryCaseStub(h, parentUserId, parentUserName, parentUserRisk, parentAccountStatus, parentUserLevel) {
+  /* 從 HISTORY_DATA 一筆紀錄反推一個 case 物件，用於歷史案件 Modal 渲染（唯讀展示）。
+     用戶相關欄位（userId/userName/userRisk/accountStatus/userLevel）沿用「父案件」（即點查看的當前案件）
+     的值，因為 F 區歷史紀錄本來就是「該用戶名下歷史已結案案件」。 */
+  const trigs = (h.triggers || '').split(/[、,]/).map(t => t.trim()).filter(Boolean).map(t => {
+    const parts = t.split(/\s+/);
+    const s = parts[0] || 'S21';
+    const tCode = parts[1] || '';
+    let cat = 'trade';
+    if (s.startsWith('S1')) cat = 'identity';
+    if (s.startsWith('S3')) cat = 'terror';
+    return { s, t: tCode, cat };
+  });
+  return {
+    id: h.caseId,
+    userId: parentUserId || ('H' + h.caseId.slice(-4)),
+    userName: parentUserName || '(歷史案件用戶)',
+    userRisk: parentUserRisk || (h.strReport === '需申報' ? 'high' : 'mid'),
+    accountStatus: parentAccountStatus || '已關戶',
+    userLevel: parentUserLevel || 'Level 2',
+    triggers: trigs.length ? trigs : [{s:'S21',t:'T1',cat:'trade'}],
+    alertType: '事後監控',
+    producedAt: h.closedAt + ' 09:00',
+    closedAt: h.closedAt + ' 16:00',
+    operator: h.operator,
+    operatorProcessedAt: h.closedAt + ' 10:00',
+    operatorSubmittedAt: h.closedAt + ' 14:00',
+    supervisorReviewedAt: h.closedAt + ' 16:00',
+    operatorResubmittedAt: '',
+    supervisorRereviewedAt: '',
+    alertIds: ['ALT' + h.caseId.replace('CAS','').slice(0,12)],
+    investigation: '無',
+    state: '已結案',
+    auditResult: h.strReport === '需申報' ? '限制帳號權限' : '暫無異常',
+    closeoutProgress: '',
+    strReport: h.strReport,
+    summary: h.summary
+  };
+}
+
+function openHistoryCaseStacked(historyCaseId) {
+  /* v5：限制只能鑽一層，已開啟一層歷史 Modal 就不再開新層 */
+  if (_modalStack.length >= 1) return;
+  const h = HISTORY_DATA.find(x => x.caseId === historyCaseId);
+  if (!h) { alert('查無歷史案件 ' + historyCaseId); return; }
+  /* 沿用「父案件」（當前正在看的案件）的用戶資訊建立 stub */
+  const parentCaseId = _historyContext && _historyContext.caseId;
+  const parentCase = parentCaseId ? [...CASES_ACTIVE, ...CASES_CLOSED].find(c => c.id === parentCaseId) : null;
+  const stub = buildHistoryCaseStub(
+    h,
+    parentCase ? parentCase.userId : null,
+    parentCase ? parentCase.userName : null,
+    parentCase ? parentCase.userRisk : null,
+    parentCase ? parentCase.accountStatus : null,
+    parentCase ? parentCase.userLevel : null
+  );
+
+  /* 策略：透過暫時把 stub push 進 CASES_CLOSED → 用 openCaseDetail 把主 modal 渲染成 stub
+     的 closed 案件詳情 → 抓主 modal 的 HTML → 還原主 modal 狀態 → 放入新堆疊 overlay。
+     這樣歷史 Modal 顯示內容跟一般已結案案件詳情完全一致；stub.id 非 CAS20260420000099，
+     所以 F 區會走原本 arrow-expand 樣式（無「查看」按鈕）。 */
+  const mainOverlay = document.getElementById('case-detail-overlay');
+  const wasMainOpen = !mainOverlay.hidden;
+  const savedTitle = document.getElementById('cd-title').textContent;
+  const savedBodyHTML = document.getElementById('cd-body').innerHTML;
+  const savedFooterHTML = document.getElementById('cd-footer').innerHTML;
+  const savedHistoryContext = _historyContext;
+
+  CASES_CLOSED.push(stub);
+  let titleText = '', bodyHTML = '', footerHTML = '';
+  let stubContext = null;
+  try {
+    openCaseDetail(stub.id, true);
+    /* 只用 openCaseDetail 內部的 loadMoreHistory 載入的前 10 筆，剩下交給堆疊 Modal 自己的「載入更多」處理 */
+    stubContext = { ..._historyContext };
+    titleText = document.getElementById('cd-title').textContent;
+    bodyHTML = document.getElementById('cd-body').innerHTML;
+    footerHTML = document.getElementById('cd-footer').innerHTML;
+  } finally {
+    /* 還原主 modal 狀態 */
+    document.getElementById('cd-title').textContent = savedTitle;
+    document.getElementById('cd-body').innerHTML = savedBodyHTML;
+    document.getElementById('cd-footer').innerHTML = savedFooterHTML;
+    _historyContext = savedHistoryContext;
+    mainOverlay.hidden = !wasMainOpen;
+    const idx = CASES_CLOSED.findIndex(c => c.id === stub.id);
+    if (idx >= 0) CASES_CLOSED.splice(idx, 1);
+  }
+
+  /* 把 captured HTML 中 F 區的固定 ID 與「載入更多」onclick 換成堆疊專用版本，
+     避免和主 modal 的 ID 衝突，並讓 載入更多按鈕呼叫專屬函式 */
+  const sid = 'stk' + Date.now();
+  const stkListId = 'f-history-list-' + sid;
+  const stkBtnRowId = 'f-load-more-row-' + sid;
+  const stkEndMsgId = 'f-end-msg-' + sid;
+  bodyHTML = bodyHTML
+    .replace(/id="f-history-list"/g, `id="${stkListId}"`)
+    .replace(/id="f-load-more-row"/g, `id="${stkBtnRowId}"`)
+    .replace(/id="f-end-msg"/g, `id="${stkEndMsgId}"`)
+    .replace(/onclick="loadMoreHistory\(\)"/g, `onclick="loadMoreHistoryForStacked()"`);
+
+  /* 建立堆疊 overlay */
+  const overlay = document.createElement('div');
+  overlay.className = 'detail-overlay';
+  overlay.style.zIndex = '250';
+  overlay.innerHTML = `
+    <div class="detail-panel">
+      <div class="detail-header">
+        <h2>(歷史) ${titleText}</h2>
+        <button class="detail-close" onclick="closeTopStackedModal()">×</button>
+      </div>
+      <div class="detail-body">${bodyHTML}</div>
+      <div class="detail-footer">${footerHTML}</div>
+    </div>
+  `;
+  /* 反灰 F 區「查看」按鈕（限制只能鑽一層） */
+  overlay.querySelectorAll('.history-card button').forEach(btn => {
+    if ((btn.getAttribute('onclick') || '').includes('openHistoryCaseStacked')) {
+      btn.disabled = true;
+      btn.removeAttribute('onclick');
+      btn.title = '已位於歷史案件詳情頁，無法再往下鑽';
+    }
+  });
+  /* 存 context 與 DOM 引用，供堆疊版「載入更多」使用 */
+  overlay._stackedCtx = {
+    ...stubContext,
+    listEl: overlay.querySelector('#' + stkListId),
+    btnEl: overlay.querySelector('#' + stkBtnRowId),
+    endMsgEl: overlay.querySelector('#' + stkEndMsgId),
+  };
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) closeTopStackedModal(); });
+  document.body.appendChild(overlay);
+  _modalStack.push(overlay);
+}
+
+function closeTopStackedModal() {
+  const last = _modalStack.pop();
+  if (last && last.parentNode) last.parentNode.removeChild(last);
+}
+
+/* v5：堆疊歷史 Modal 內的「載入更多」按鈕專用函式（避免和主 modal _historyContext 衝突） */
+function loadMoreHistoryForStacked() {
+  const top = _modalStack[_modalStack.length - 1];
+  if (!top || !top._stackedCtx) return;
+  const ctx = top._stackedCtx;
+  const start = ctx.loaded;
+  const end = Math.min(start + ctx.perPage, HISTORY_DATA.length);
+  const slice = HISTORY_DATA.slice(start, end);
+  const html = slice.map((h, idx) => {
+    const i = start + idx;
+    return `<div class="history-card" id="stk-history-${i}">
+      <div class="history-card-title" style="display:flex;align-items:center;justify-content:space-between;">
+        <span>案件編號：<span class="mono" style="font-weight:700;color:#2c3e50;">${h.caseId}</span> ｜ 結案日期：${h.closedAt} ｜ 經辦: ${h.operator} ｜ 主管: ${h.supervisor} ｜ 申報 STR：${h.strReport} ｜ 涉及樣態：${h.triggers}</span>
+        <button class="btn btn-sm btn-outline" disabled title="已位於歷史案件詳情頁，無法再往下鑽">查看</button>
+      </div>
+    </div>`;
+  }).join('');
+  if (ctx.listEl) ctx.listEl.insertAdjacentHTML('beforeend', html);
+  ctx.loaded = end;
+  if (end >= HISTORY_DATA.length) {
+    if (ctx.btnEl) ctx.btnEl.style.display = 'none';
+    if (ctx.endMsgEl) ctx.endMsgEl.style.display = 'block';
+  }
+}
+
+/* ════════════════════ KYC Modal ════════════════════ */
+function openKyc(userId) {
+  const k = KYC_DATA[userId] || {};
+  document.getElementById('kyc-title-text').innerHTML = `KYC #${parseInt(userId)+30} <span class="pill pill-green">流程結束</span>`;
+  document.getElementById('kyc-sub').textContent = `會員 #${userId} ｜ 自然人 ｜ ${k.name || ''}`;
+  document.getElementById('kyc-member-id').textContent = userId;
+  document.getElementById('kyc-cdd').textContent = k.cdd || '已通過';
+  document.getElementById('kyc-edd').textContent = k.edd || '－';
+  document.getElementById('kyc-detail-uid').textContent = userId;
+  document.getElementById('kyc-avatar').textContent = (k.name || 'U').charAt(0);
+  document.getElementById('kyc-overlay').hidden = false;
+}
+function closeKyc() { document.getElementById('kyc-overlay').hidden = true; }
+
+/* ════════════════════ Tab 切換 ════════════════════ */
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.toggle('active', p.id === 'tab-' + tab));
+}
+
+function toggleFilter(id) {
+  document.getElementById(id).classList.toggle('collapsed');
+}
+
+/* ════════════════════ 身分切換 (Demo) ════════════════════ */
+function switchRole(role) {
+  currentRole = role;
+  document.getElementById('nav-operator').classList.toggle('active', role === 'operator');
+  document.getElementById('nav-supervisor').classList.toggle('active', role === 'supervisor');
+  document.body.classList.toggle('role-supervisor', role === 'supervisor');
+  document.body.classList.toggle('role-operator', role === 'operator');
+  const ind = document.getElementById('role-indicator');
+  if (role === 'operator') {
+    ind.className = 'role-indicator operator';
+    ind.textContent = '👤 經辦：admin01';
+  } else {
+    ind.className = 'role-indicator supervisor';
+    ind.textContent = '👨‍💼 主管：super01';
+  }
+  /* v4：主管視角 Tab 1 列表的 checkbox 也要隱藏 */
+  document.querySelectorAll('#tbl-alerts td.col-checkbox').forEach(td => td.style.display = role === 'supervisor' ? 'none' : '');
+  /* v4：重新渲染 Tab 2/3 表格以更新「轉單」按鈕顯示 */
+  if (typeof renderCases === 'function') {
+    renderCases(CASES_ACTIVE, 'cases-active-tbody', 'active');
+    const ALL_CASES = [...CASES_ACTIVE, ...CASES_CLOSED.map(c => ({...c, state: '已結案'}))];
+    renderCases(ALL_CASES, 'cases-closed-tbody', 'all');
+  }
+  /* v4：未接案警示彈窗（經辦／主管皆彈） */
+  setTimeout(openAlertPopup, 300);
+}
+
+/* ════════════════════ 未接案警示彈窗（v4：經辦／主管皆彈，文案一致） ════════════════════ */
+function openAlertPopup() {
+  const today = new Date().toISOString().slice(0,10);
+  const skipKey = 'alertPopupSkip_' + currentRole + '_' + today;
+  if (localStorage.getItem(skipKey) === '1') return;
+  if (ALERTS.length === 0) return;
+  document.getElementById('popup-count').textContent = ALERTS.length;
+  document.getElementById('alert-popup').hidden = false;
+}
+function closeAlertPopup() {
+  if (document.getElementById('popup-skip-today').checked) {
+    const today = new Date().toISOString().slice(0,10);
+    localStorage.setItem('alertPopupSkip_' + currentRole + '_' + today, '1');
+  }
+  document.getElementById('alert-popup').hidden = true;
+}
+
+/* ════════════════════ 初始化 ════════════════════ */
+window.addEventListener('DOMContentLoaded', () => {
+  document.body.classList.add('role-operator'); /* v4：初始為經辦視角 */
+  renderAlertsTable();
+  renderCases(CASES_ACTIVE, 'cases-active-tbody', 'active');
+  // Tab 3 「所有案件」= 進行中 + 已結案 合併
+  const ALL_CASES = [...CASES_ACTIVE, ...CASES_CLOSED.map(c => ({...c, state: '已結案'}))];
+  renderCases(ALL_CASES, 'cases-closed-tbody', 'all');
+  // Tab badge 已移除，不再寫入計數
+  setTimeout(openAlertPopup, 500);
+});
+</script>
+
+</body>
+</html>

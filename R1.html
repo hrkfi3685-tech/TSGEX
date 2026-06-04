@@ -1,0 +1,3665 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>兌換碼管理後台 — TSG EX GROUP</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --gold-deep:  #b8922a;
+  --gold-mid:   #c9a84c;
+  --gold-light: #e0c060;
+  --gold-pale:  #f5e9c4;
+  --gold-wash:  #fdf8ee;
+  --cream:      #faf5e8;
+  --sand:       #ede0c4;
+  --bg:         #f7f0e0;
+  --white:      #ffffff;
+  --text-dark:  #1c1a14;
+  --text-mid:   #4a4030;
+  --text-muted: #9a8a6a;
+  --border:     #e8d9b0;
+  --shadow-sm:  0 1px 4px rgba(120,90,20,0.08);
+  --shadow-md:  0 4px 20px rgba(120,90,20,0.10);
+  --red:        #C0392B;
+  --red-bg:     #FDF0EF;
+  --green:      #3A7D4F;
+  --green-bg:   #EAF6EE;
+  --blue:       #1A5276;
+  --blue-bg:    #E8F4FE;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Noto Sans TC',sans-serif;background:linear-gradient(135deg,#fdf6ec 0%,#faecd8 40%,#f5e4cb 100%);min-height:100vh;color:#2D2416;}
+
+/* ── Topbar ── */
+#topbar{background:rgba(255,252,245,.88);backdrop-filter:blur(8px);border-bottom:1px solid #E8C97A;padding:0 36px;position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:14px;height:62px;}
+.logo-box{width:36px;height:36px;border-radius:8px;background:linear-gradient(135deg,#F0C96B,#C9A040);display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:0 2px 8px #F0C96B80;flex-shrink:0;}
+.logo-title{font-weight:800;font-size:15px;color:#8B6D1F;letter-spacing:.5px;}
+.logo-sub{font-size:10px;color:#A89070;letter-spacing:2px;}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:18px;}
+.topbar-user{font-size:12px;color:#6B5B3E;text-align:right;}
+.topbar-user strong{font-weight:700;color:#8B6D1F;}
+.topbar-badge{background:linear-gradient(135deg,#C9A040,#F0C96B);color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:.5px;}
+
+/* ── Layout ── */
+#layout{display:flex;min-height:calc(100vh - 62px);}
+#sidebar{width:220px;flex-shrink:0;background:rgba(255,252,245,.95);border-right:1px solid #EDE0C8;padding:20px 0;}
+#main{flex:1;padding:28px 36px;max-width:1440px;}
+
+/* ── Sidebar ── */
+.sidebar-section-label{font-size:10px;font-weight:700;color:#A89070;letter-spacing:1.5px;text-transform:uppercase;padding:0 20px;margin:16px 0 6px;}
+.sidebar-item{padding:0 12px;margin-bottom:2px;}
+.sidebar-link{width:100%;display:flex;align-items:center;gap:10px;padding:10px 12px;border:none;background:none;border-radius:10px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;font-size:13px;font-weight:500;color:#6B5B3E;transition:all .15s;text-align:left;}
+.sidebar-link:hover{background:#FFF3CC;color:#8B6D1F;}
+.sidebar-link.active{background:linear-gradient(135deg,#FFF3CC,#FFE89A);color:#8B6D1F;font-weight:700;box-shadow:0 2px 8px #C9A04030;}
+.sidebar-icon{font-size:16px;width:20px;text-align:center;flex-shrink:0;}
+.sidebar-link.danger{color:#C0392B;}
+.sidebar-link.danger:hover{background:#FDF0EF;}
+
+/* ── Tab Panels ── */
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+/* ── Cards ── */
+.card{background:#fff;border-radius:14px;box-shadow:0 2px 16px rgba(180,140,60,.10);border:1px solid #EDE0C8;margin-bottom:20px;}
+.card-header{display:flex;align-items:center;gap:10px;padding:14px 20px;border-bottom:1px solid #EDE0C8;background:#FFF8E7;border-radius:14px 14px 0 0;}
+.card-header .bar{width:4px;height:18px;background:#C9A040;border-radius:2px;flex-shrink:0;}
+.card-header .title{font-weight:700;font-size:14px;color:#8B6D1F;letter-spacing:.5px;flex:1;}
+.card-body{padding:20px;}
+
+/* ── KPI Grid ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:24px;}
+.kpi-card{background:#fff;border-radius:12px;border:1px solid #EDE0C8;padding:16px 18px;box-shadow:var(--shadow-sm);}
+.kpi-val{font-size:28px;font-weight:800;color:#8B6D1F;letter-spacing:-1px;line-height:1;}
+.kpi-lbl{font-size:11px;color:#A89070;margin-top:5px;font-weight:600;letter-spacing:.3px;}
+.kpi-sub{font-size:11px;margin-top:3px;font-weight:600;}
+.kpi-card.red .kpi-val{color:#C0392B;}
+.kpi-card.green .kpi-val{color:#3A7D4F;}
+.kpi-card.blue .kpi-val{color:#1A5276;}
+
+/* ── Notice ── */
+.notice{display:flex;align-items:flex-start;gap:10px;background:#FFFAED;border:1px solid #E8C97A;border-radius:10px;padding:11px 18px;margin-bottom:20px;font-size:12.5px;color:#8B6D1F;line-height:1.6;}
+.notice.red{background:#FFF5F5;border-color:#F0A0A0;color:#C0392B;}
+.notice.green{background:#F0FFF5;border-color:#80C080;color:#3A7D4F;}
+
+/* ── Step Wizard ── */
+.step-bar{display:flex;align-items:center;gap:0;margin-bottom:28px;}
+.step-item{display:flex;align-items:center;gap:8px;flex:1;}
+.step-circle{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0;border:2px solid #EDE0C8;background:#fff;color:#A89070;transition:all .3s;}
+.step-circle.done{background:linear-gradient(135deg,#C9A040,#F0C96B);border-color:#C9A040;color:#fff;}
+.step-circle.active{background:linear-gradient(135deg,#8B6D1F,#C9A040);border-color:#8B6D1F;color:#fff;box-shadow:0 0 0 4px #C9A04030;}
+.step-label{font-size:12px;font-weight:600;color:#A89070;}
+.step-label.active{color:#8B6D1F;}
+.step-label.done{color:#C9A040;}
+.step-connector{flex:1;height:2px;background:#EDE0C8;margin:0 8px;}
+.step-connector.done{background:linear-gradient(90deg,#C9A040,#F0C96B);}
+
+.step-content{display:none;}
+.step-content.active{display:block;}
+
+/* ── Form Elements ── */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+.form-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;}
+.form-group{display:flex;flex-direction:column;gap:6px;}
+.form-group.full{grid-column:1/-1;}
+.form-label{font-size:12px;font-weight:700;color:#8B6D1F;letter-spacing:.3px;}
+.form-label .req{color:#C0392B;margin-left:2px;}
+.form-control{padding:10px 14px;border:1.5px solid #E8D9B0;border-radius:8px;font-size:13px;font-family:'Noto Sans TC',sans-serif;color:#2D2416;background:#fff;transition:border-color .15s;outline:none;}
+.form-control:focus{border-color:#C9A040;box-shadow:0 0 0 3px #C9A04020;}
+.form-control::placeholder{color:#C8B890;}
+select.form-control{cursor:pointer;}
+.form-hint{font-size:11px;color:#A89070;line-height:1.5;}
+
+/* ── Type selector ── */
+.type-selector{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:4px;}
+.type-card{border:2px solid #EDE0C8;border-radius:12px;padding:14px 12px;cursor:pointer;transition:all .2s;background:#fff;text-align:center;}
+.type-card:hover{border-color:#C9A040;background:#FFF8E7;}
+.type-card.selected{border-color:#C9A040;background:linear-gradient(135deg,#FFF8E7,#FFF3CC);box-shadow:0 0 0 3px #C9A04020;}
+.type-card .type-icon{font-size:28px;margin-bottom:8px;}
+.type-card .type-name{font-weight:700;font-size:14px;color:#8B6D1F;}
+.type-card .type-desc{font-size:11px;color:#A89070;margin-top:4px;line-height:1.5;}
+
+/* ── Fiat estimate box ── */
+.fiat-estimate{background:linear-gradient(135deg,#FFF8E7,#FFF0CC);border:2px solid #C9A040;border-radius:12px;padding:16px 20px;display:flex;align-items:center;gap:16px;margin-top:12px;}
+.fiat-est-label{font-size:11px;color:#A89070;font-weight:600;}
+.fiat-est-val{font-size:32px;font-weight:800;color:#8B6D1F;letter-spacing:-1px;line-height:1;}
+.fiat-est-warn{font-size:11px;color:#C0392B;font-weight:600;margin-top:2px;}
+.fiat-est-icon{font-size:36px;flex-shrink:0;}
+
+/* ── Risk warning overlay ── */
+.risk-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;align-items:center;justify-content:center;}
+.risk-overlay.show{display:flex;}
+.risk-modal{background:#fff;border-radius:18px;padding:32px;max-width:480px;width:90%;border-top:5px solid #C0392B;}
+.risk-modal h2{font-size:20px;font-weight:800;color:#C0392B;margin-bottom:8px;}
+.risk-modal p{font-size:13px;color:#4a4030;line-height:1.7;margin-bottom:16px;}
+.modal-2fa{display:flex;flex-direction:column;gap:10px;}
+.modal-2fa input{padding:12px 14px;border:2px solid #E8D9B0;border-radius:8px;font-size:15px;font-family:'Noto Sans TC',sans-serif;letter-spacing:4px;text-align:center;}
+.modal-2fa input:focus{border-color:#C9A040;outline:none;}
+
+/* ── Checkbox Matrix ── */
+.check-matrix{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.check-item{display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border:1.5px solid #EDE0C8;border-radius:10px;cursor:pointer;transition:all .15s;}
+.check-item:hover{border-color:#C9A040;background:#FFFAED;}
+.check-item.checked{border-color:#C9A040;background:linear-gradient(135deg,#FFF8E7,#FFF3CC);}
+.check-item input[type=checkbox]{accent-color:#C9A040;width:16px;height:16px;flex-shrink:0;margin-top:2px;}
+.check-item-body .lbl{font-size:13px;font-weight:600;color:#4a4030;}
+.check-item-body .desc{font-size:11px;color:#A89070;margin-top:2px;line-height:1.5;}
+.check-item-body .sub-control{margin-top:8px;}
+
+/* ── Buttons ── */
+.btn{padding:10px 22px;border-radius:8px;border:none;font-family:'Noto Sans TC',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px;}
+.btn-gold{background:linear-gradient(135deg,#C9A040,#F0C96B);color:#fff;box-shadow:0 2px 8px #C9A04040;}
+.btn-gold:hover{filter:brightness(1.05);transform:translateY(-1px);}
+.btn-outline{background:#fff;border:1.5px solid #E8D9B0;color:#6B5B3E;}
+.btn-outline:hover{border-color:#C9A040;color:#8B6D1F;background:#FFFAED;}
+.btn-red{background:linear-gradient(135deg,#C0392B,#E74C3C);color:#fff;box-shadow:0 2px 8px #C0392B40;}
+.btn-red:hover{filter:brightness(1.05);}
+.btn-sm{padding:6px 14px;font-size:12px;border-radius:6px;}
+.btn-group{display:flex;gap:10px;justify-content:flex-end;margin-top:24px;padding-top:20px;border-top:1px solid #EDE0C8;}
+
+/* ── Code preview ── */
+.code-preview-box{background:#2D2416;border-radius:10px;padding:16px;font-family:monospace;font-size:14px;letter-spacing:2px;color:#F0C96B;line-height:2;word-break:break-all;}
+.code-row{display:flex;align-items:center;justify-content:space-between;padding:4px 8px;border-radius:6px;transition:background .15s;}
+.code-row:hover{background:rgba(255,255,255,.05);}
+
+/* ── Table ── */
+.tbl-wrap{overflow-x:auto;}
+table.data-table{width:100%;border-collapse:collapse;font-size:13px;}
+table.data-table th{background:#FFF8E7;color:#8B6D1F;font-weight:700;font-size:11px;letter-spacing:.5px;padding:10px 14px;text-align:left;border-bottom:2px solid #EDE0C8;white-space:nowrap;}
+table.data-table td{padding:10px 14px;border-bottom:1px solid #F3EAD8;color:#4a4030;vertical-align:middle;}
+table.data-table tr:last-child td{border-bottom:none;}
+table.data-table tr:nth-child(even) td{background:#FDFAF3;}
+table.data-table tr:hover td{background:#FFF8E7;}
+
+/* ── Badges ── */
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+.badge-token{background:#FFF3CC;color:#8B6D1F;border:1px solid #E8C97A;}
+.badge-coupon{background:#E8F4FE;color:#1A5276;border:1px solid #A0C4E8;}
+.badge-active{background:#EAF6EE;color:#3A7D4F;}
+.badge-paused{background:#FFF3CC;color:#8B6D1F;}
+.badge-completed{background:#D4EBDC;color:#1F6F3F;border:1px solid #B8DDC4;}
+.badge-expired{background:#F0F0F0;color:#888;}
+.badge-cancelled{background:#FDF0EF;color:#C0392B;}
+.badge-void{background:#FDF0EF;color:#C0392B;}
+.badge-kyc1{background:#FFF8E7;color:#8B6D1F;}
+.badge-kyc2{background:linear-gradient(135deg,#C9A040,#F0C96B);color:#fff;}
+.badge-pending-review{background:linear-gradient(135deg,#FFF0CC,#FFE89A);color:#8B6D1F;border:1px solid #E8C97A;}
+.badge-rejected{background:#FDF0EF;color:#C0392B;border:1px solid #F0A0A0;}
+.reviewed-tag{display:inline-block;color:#3A7D4F;font-size:12px;font-weight:700;}
+
+/* ── Role switcher ── */
+.role-switcher{display:flex;align-items:center;gap:6px;background:#FFF8E7;border:1px solid #E8C97A;border-radius:8px;padding:4px 8px;font-size:11px;font-weight:600;color:#8B6D1F;}
+.role-switcher select{border:none;background:none;font-family:'Noto Sans TC',sans-serif;font-size:11px;font-weight:700;color:#8B6D1F;cursor:pointer;outline:none;padding:2px 4px;}
+.role-badge{display:inline-block;padding:2px 7px;border-radius:10px;font-size:9px;font-weight:700;letter-spacing:.3px;}
+.role-badge.operator{background:#E8F4FE;color:#1A5276;border:1px solid #A0C4E8;}
+.role-badge.approver{background:linear-gradient(135deg,#C9A040,#F0C96B);color:#fff;}
+
+/* ── Review action button ── */
+.btn-review{background:#fff;color:#8B6D1F;border:1.5px solid #C9A040;padding:5px 14px;font-size:12px;border-radius:6px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;font-weight:700;transition:all .15s;}
+.btn-review:hover{background:linear-gradient(135deg,#FFF8E7,#FFF3CC);}
+.btn-review.reject{color:#C0392B;border-color:#C0392B;}
+.btn-review.reject:hover{background:#FDF0EF;}
+
+/* ── Codes List Drawer (wider) ── */
+.drawer.wide{width:680px;right:-680px;}
+.drawer.wide.open{right:0;}
+.codes-list-toolbar{display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap;}
+.codes-list-toolbar input{flex:1;min-width:160px;padding:7px 12px;border:1.5px solid #E8D9B0;border-radius:6px;font-size:12px;outline:none;font-family:'Noto Sans TC',sans-serif;}
+.codes-list-toolbar input:focus{border-color:#C9A040;}
+.codes-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;max-height:480px;overflow-y:auto;padding:4px;border:1px solid #EDE0C8;border-radius:8px;background:#FBF8EF;}
+.code-cell{display:flex;align-items:center;gap:6px;background:#fff;border:1px solid #EDE0C8;border-radius:6px;padding:6px 10px;font-family:monospace;font-size:12px;}
+.code-cell .ci{font-size:10px;color:#A89070;min-width:22px;}
+.code-cell .ct{flex:1;color:#5C4A1E;font-weight:600;letter-spacing:1px;}
+.code-cell .cs{font-size:9px;padding:1px 6px;border-radius:8px;}
+.code-cell .cs.used{background:#EAF6EE;color:#3A7D4F;}
+.code-cell .cs.unused{background:#FFF8E7;color:#8B6D1F;}
+.code-cell .cb{background:none;border:none;color:#C9A040;cursor:pointer;font-size:10px;padding:2px 4px;}
+.code-cell .cb:hover{color:#8B6D1F;}
+
+/* ── Mini modal (edit expiry / reject reason) ── */
+.mini-modal{background:#fff;border-radius:14px;padding:24px;max-width:440px;width:90%;border-top:5px solid #C9A040;}
+.mini-modal.danger{border-top-color:#C0392B;}
+.mini-modal h3{font-size:17px;font-weight:800;color:#8B6D1F;margin-bottom:8px;}
+.mini-modal.danger h3{color:#C0392B;}
+.mini-modal p{font-size:13px;color:#4a4030;line-height:1.6;margin-bottom:14px;}
+.mini-modal .row{display:flex;gap:10px;margin-top:14px;}
+.mini-modal .row .btn{flex:1;justify-content:center;}
+.mini-modal textarea{width:100%;border:1.5px solid #E8D9B0;border-radius:8px;padding:10px;font-family:'Noto Sans TC',sans-serif;font-size:13px;outline:none;resize:vertical;min-height:80px;}
+.mini-modal textarea:focus{border-color:#C9A040;}
+.mini-modal input[type=date]{padding:10px 14px;border:1.5px solid #E8D9B0;border-radius:8px;font-size:14px;font-family:'Noto Sans TC',sans-serif;outline:none;width:100%;}
+.mini-modal input[type=date]:focus{border-color:#C9A040;}
+
+/* ── KPI variants ── */
+.kpi-card.pending .kpi-val{color:#C9A040;}
+.kpi-card.rejected .kpi-val{color:#C0392B;}
+
+/* ── 2FA compact (review modal) ── */
+.tfa-compact{display:flex;gap:6px;justify-content:center;margin:10px 0 6px;}
+.tfa-compact input{width:38px;height:46px;border:2px solid #EDE0C8;border-radius:8px;font-size:20px;font-weight:800;text-align:center;font-family:'Noto Sans TC',sans-serif;color:#8B6D1F;outline:none;}
+.tfa-compact input:focus{border-color:#C9A040;box-shadow:0 0 0 3px #C9A04020;}
+
+/* ── Review modal info grid ── */
+.info-grid{display:grid;grid-template-columns:120px 1fr;gap:8px 12px;font-size:13px;}
+.info-grid .lbl{color:#A89070;font-weight:600;}
+.info-grid .val{color:#2D2416;font-weight:700;}
+.info-grid .val.mono{font-family:monospace;}
+
+/* ── Inline code chip ── */
+.code-chip{display:inline-flex;align-items:center;gap:6px;background:#5C4A1E;color:#F0C96B;padding:3px 8px;border-radius:6px;font-family:monospace;font-size:11px;font-weight:700;letter-spacing:1px;}
+.code-chip button{background:#C9A040;color:#2D2416;border:none;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:800;cursor:pointer;font-family:'Noto Sans TC',sans-serif;}
+.code-chip button:hover{background:#F0C96B;}
+.code-link{color:#1A5276;font-weight:600;font-size:12px;text-decoration:underline;cursor:pointer;background:none;border:none;font-family:'Noto Sans TC',sans-serif;padding:0;}
+.code-link:hover{color:#8B6D1F;}
+
+/* ── Pagination ── */
+.pager{display:flex;justify-content:center;align-items:center;gap:6px;padding:12px;font-size:12px;color:#6B5B3E;}
+.pager button{min-width:30px;height:28px;border:1px solid #E8D9B0;border-radius:6px;background:#fff;cursor:pointer;font-size:12px;color:#6B5B3E;font-family:'Noto Sans TC',sans-serif;}
+.pager button:hover:not(:disabled){border-color:#C9A040;color:#8B6D1F;}
+.pager button.cur{background:linear-gradient(135deg,#C9A040,#F0C96B);color:#fff;border-color:#C9A040;font-weight:700;}
+.pager button:disabled{opacity:.4;cursor:not-allowed;}
+.row-pending{background:#FFFBEB !important;}
+
+/* ── Emergency stop ── */
+.emergency-btn{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:8px;border:2px solid #C0392B;background:#FDF0EF;color:#C0392B;font-family:'Noto Sans TC',sans-serif;font-size:12px;font-weight:800;cursor:pointer;transition:all .15s;letter-spacing:.3px;}
+.emergency-btn:hover{background:#C0392B;color:#fff;box-shadow:0 2px 12px #C0392B60;}
+.emergency-btn.stopped{border-color:#888;background:#F0F0F0;color:#888;cursor:not-allowed;}
+
+/* ── Progress bar ── */
+.progress-wrap{background:#EDE0C8;border-radius:10px;height:8px;overflow:hidden;}
+.progress-bar{height:100%;border-radius:10px;background:linear-gradient(90deg,#C9A040,#F0C96B);transition:width .4s;}
+
+/* ── Donut chart container ── */
+.chart-container{position:relative;width:200px;height:200px;flex-shrink:0;}
+.chart-legend-list{flex:1;display:flex;flex-direction:column;gap:10px;justify-content:center;}
+.legend-row{display:flex;align-items:center;gap:10px;}
+.legend-dot{width:12px;height:12px;border-radius:3px;flex-shrink:0;}
+.legend-lbl{font-size:12px;color:#6B5B3E;font-weight:600;flex:1;}
+.legend-val{font-size:13px;font-weight:800;color:#2D2416;}
+.legend-pct{font-size:11px;color:#A89070;}
+
+/* ── Audit log ── */
+.audit-row{display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid #F3EAD8;}
+.audit-row:last-child{border-bottom:none;}
+.audit-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px;}
+.audit-time{font-size:11px;color:#A89070;white-space:nowrap;flex-shrink:0;width:130px;}
+.audit-text{font-size:12.5px;color:#4a4030;line-height:1.5;flex:1;}
+.audit-user{font-size:11px;color:#8B6D1F;font-weight:600;}
+
+/* ── Search bar ── */
+.search-bar{display:flex;gap:10px;align-items:center;margin-bottom:20px;flex-wrap:wrap;}
+.search-bar .form-control{flex:1;min-width:200px;}
+
+/* ── Confirm summary ── */
+.confirm-grid{display:grid;grid-template-columns:1fr 1fr;gap:0;}
+.confirm-row{display:flex;padding:10px 0;border-bottom:1px solid #F3EAD8;}
+.confirm-row:last-child{border-bottom:none;}
+.confirm-key{font-size:12px;color:#A89070;font-weight:600;width:140px;flex-shrink:0;}
+.confirm-val{font-size:13px;color:#2D2416;font-weight:600;}
+
+/* ── 2FA input ── */
+.twofa-wrap{display:flex;gap:8px;justify-content:center;margin:16px 0;}
+.twofa-digit{width:48px;height:56px;border:2px solid #EDE0C8;border-radius:10px;font-size:24px;font-weight:800;text-align:center;font-family:'Noto Sans TC',sans-serif;color:#8B6D1F;outline:none;transition:border-color .15s;}
+.twofa-digit:focus{border-color:#C9A040;box-shadow:0 0 0 3px #C9A04020;}
+
+/* ── Responsive ── */
+@media(max-width:900px){
+  #sidebar{display:none;}
+  .form-grid{grid-template-columns:1fr;}
+  .form-grid-3{grid-template-columns:1fr;}
+  .check-matrix{grid-template-columns:1fr;}
+  .type-selector{grid-template-columns:1fr;}
+}
+
+/* ── Page header ── */
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;flex-wrap:wrap;gap:12px;}
+.page-title{font-size:20px;font-weight:800;color:#8B6D1F;letter-spacing:.5px;}
+.page-breadcrumb{font-size:11px;color:#A89070;margin-top:2px;}
+.page-breadcrumb .sep{margin:0 5px;color:#C8B890;}
+.page-breadcrumb .current{color:#C9A040;font-weight:600;}
+
+/* ── Inline toggle ── */
+.toggle-wrap{display:flex;align-items:center;gap:8px;}
+.toggle-switch{width:38px;height:20px;background:#EDE0C8;border-radius:10px;position:relative;cursor:pointer;transition:background .2s;flex-shrink:0;}
+.toggle-switch.on{background:linear-gradient(135deg,#C9A040,#F0C96B);}
+.toggle-knob{width:16px;height:16px;background:#fff;border-radius:50%;position:absolute;top:2px;left:2px;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2);}
+.toggle-switch.on .toggle-knob{left:20px;}
+.toggle-label{font-size:12px;color:#6B5B3E;font-weight:600;}
+
+/* ── Coin tag ── */
+.coin-tag{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700;border:1px solid;}
+.coin-usdt{background:#EAF9F0;color:#1A9850;border-color:#8DCEAB;}
+.coin-btc{background:#FFF3E0;color:#E65100;border-color:#FFCC80;}
+.coin-eth{background:#EDE7F6;color:#4527A0;border-color:#B39DDB;}
+.coin-usdc{background:#E3F2FD;color:#0D47A1;border-color:#90CAF9;}
+.coin-bnb{background:#FFF8DC;color:#7A5D00;border-color:#F0C96B;}
+
+.mb16{margin-bottom:16px;}
+.mb20{margin-bottom:20px;}
+.mt16{margin-top:16px;}
+.flex{display:flex;}
+.flex-center{display:flex;align-items:center;}
+.gap8{gap:8px;}
+.gap12{gap:12px;}
+.gap16{gap:16px;}
+.flex-wrap{flex-wrap:wrap;}
+.ml-auto{margin-left:auto;}
+.text-red{color:#C0392B;}
+.text-green{color:#3A7D4F;}
+.text-gold{color:#8B6D1F;}
+.fw700{font-weight:700;}
+.fs11{font-size:11px;}
+.fs12{font-size:12px;}
+.fs13{font-size:13px;}
+
+
+/* ── Master pause banner ── */
+.master-pause-bar{display:none;background:linear-gradient(135deg,#C0392B,#E74C3C);color:#fff;padding:10px 20px;border-radius:10px;margin-bottom:16px;align-items:center;gap:12px;font-weight:700;font-size:13px;}
+.master-pause-bar.show{display:flex;}
+.master-pause-bar .btn-resume{background:rgba(255,255,255,.2);border:1.5px solid rgba(255,255,255,.5);color:#fff;padding:5px 14px;border-radius:6px;font-family:'Noto Sans TC',sans-serif;font-size:12px;font-weight:700;cursor:pointer;}
+.master-pause-bar .btn-resume:hover{background:rgba(255,255,255,.35);}
+
+/* ── Anomaly indicator ── */
+.anomaly-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;display:inline-block;}
+.anomaly-ok{background:#3A7D4F;}
+.anomaly-warn{background:#C9A040;animation:pulse-gold 1.5s infinite;}
+.anomaly-alert{background:#C0392B;animation:pulse-red 1s infinite;}
+@keyframes pulse-gold{0%,100%{box-shadow:0 0 0 0 #C9A04060;}50%{box-shadow:0 0 0 5px #C9A04000;}}
+@keyframes pulse-red{0%,100%{box-shadow:0 0 0 0 #C0392B60;}50%{box-shadow:0 0 0 6px #C0392B00;}}
+
+/* ── Detail drawer ── */
+.drawer-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:500;}
+.drawer-overlay.show{display:block;}
+.drawer{position:fixed;top:0;right:-480px;width:480px;height:100vh;background:#fff;box-shadow:-4px 0 30px rgba(120,90,20,.15);z-index:501;transition:right .3s ease;overflow-y:auto;display:flex;flex-direction:column;}
+.drawer.open{right:0;}
+.drawer-header{padding:20px 24px;border-bottom:1px solid #EDE0C8;background:#FFF8E7;display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.drawer-header .title{font-weight:800;font-size:15px;color:#8B6D1F;flex:1;}
+.drawer-close{background:none;border:none;font-size:20px;color:#A89070;cursor:pointer;padding:4px;}
+.drawer-body{padding:24px;flex:1;overflow-y:auto;}
+.drawer-section{margin-bottom:20px;}
+.drawer-section-title{font-size:11px;font-weight:700;color:#A89070;letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid #F3EAD8;}
+.drawer-row{display:flex;padding:7px 0;border-bottom:1px solid #F9F5EE;}
+.drawer-row:last-child{border-bottom:none;}
+.drawer-key{font-size:12px;color:#A89070;font-weight:600;width:120px;flex-shrink:0;}
+.drawer-val{font-size:12px;color:#2D2416;font-weight:600;flex:1;}
+
+/* ── Audit filter ── */
+.audit-filter-bar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
+/* ── Batch multi-select ── */
+.ms-wrap{position:relative;}
+.ms-trigger{display:flex;align-items:center;min-height:38px;padding:5px 10px;border:1px solid #D4B896;border-radius:8px;background:#FFFDF5;cursor:pointer;gap:6px;flex-wrap:wrap;}
+.ms-trigger:hover{border-color:#C9A040;}
+.ms-tag{display:inline-flex;align-items:center;gap:3px;background:#F5E9C8;color:#5C3D11;padding:2px 8px 2px 10px;border-radius:20px;font-size:11px;font-weight:600;line-height:1.6;}
+.ms-tag .ms-x{cursor:pointer;font-size:14px;line-height:1;opacity:.5;margin-left:1px;}
+.ms-tag .ms-x:hover{opacity:1;color:#C0392B;}
+.ms-placeholder{color:#A89070;font-size:13px;user-select:none;}
+.ms-arrow{margin-left:auto;color:#A89070;font-size:12px;transition:transform .2s;flex-shrink:0;user-select:none;}
+.ms-arrow.open{transform:rotate(180deg);}
+.ms-dropdown{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#FFFDF5;border:1px solid #D4B896;border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.14);z-index:300;max-height:230px;overflow-y:auto;}
+.ms-item{display:flex;align-items:center;gap:10px;padding:8px 14px;cursor:pointer;transition:background .12s;}
+.ms-item:hover{background:#FFF8E7;}
+.ms-item input[type=checkbox]{accent-color:#C9A040;width:15px;height:15px;cursor:pointer;flex-shrink:0;}
+.ms-item-id{font-size:11px;color:#A89070;font-family:monospace;white-space:nowrap;}
+.ms-item-tag{font-size:12px;color:#3D2B0E;flex:1;}
+.ms-status-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.ms-footer{padding:7px 14px;font-size:11px;color:#C0392B;cursor:pointer;border-top:1px solid #E8D5B0;text-align:center;}
+.ms-footer:hover{background:#FFF0EE;border-radius:0 0 10px 10px;}
+
+/* ── Export card ── */
+.export-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+
+
+/* ── Redeem Link & QR ── */
+.qr-link-box{background:#FFF8E7;border:1px solid #EDE0C8;border-radius:8px;padding:12px 14px;display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.qr-link-text{font-family:monospace;font-size:11px;color:#5C4A1E;flex:1;word-break:break-all;line-height:1.5;}
+.qr-copy-btn{background:#8B6D1F;color:#FFF8E7;border:none;border-radius:6px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;white-space:nowrap;}
+.qr-copy-btn:hover{background:#C9A040;}
+.qr-center{display:flex;flex-direction:column;align-items:center;gap:10px;}
+.qr-canvas-wrap{background:#fff;border:1px solid #EDE0C8;border-radius:8px;padding:12px;display:inline-block;}
+.qr-dl-btn{background:none;border:1px solid #C9A040;color:#8B6D1F;border-radius:6px;padding:6px 18px;font-size:11px;font-weight:700;cursor:pointer;}
+.qr-dl-btn:hover{background:#FFF8E7;}
+.qr-expire{font-size:11px;color:#A89070;text-align:center;}
+
+.redeem-code-box{background:#5C4A1E;border-radius:8px;padding:14px 18px;display:flex;align-items:center;gap:12px;margin-bottom:14px;}
+.redeem-code-label{font-size:10px;font-weight:700;color:#C9A040;letter-spacing:1px;text-transform:uppercase;white-space:nowrap;}
+.redeem-code-text{font-family:monospace;font-size:18px;font-weight:900;color:#F0C96B;letter-spacing:3px;flex:1;text-align:center;}
+.redeem-code-copy{background:#C9A040;color:#2D2416;border:none;border-radius:6px;padding:6px 12px;font-size:11px;font-weight:800;cursor:pointer;flex-shrink:0;}
+.redeem-code-copy:hover{background:#F0C96B;}
+
+/* ── Code mode toggle ── */
+.mode-toggle{display:flex;gap:0;border:1.5px solid #C9A040;border-radius:8px;overflow:hidden;margin-bottom:0;}
+.mode-btn{flex:1;padding:10px 0;text-align:center;font-size:13px;font-weight:700;cursor:pointer;background:#FFF8E7;color:#A89070;transition:all .2s;border:none;}
+.mode-btn.active{background:#8B6D1F;color:#F0C96B;}
+.mode-btn:first-child{border-right:1.5px solid #C9A040;}
+.single-code-box{background:#FFF8E7;border:1.5px solid #C9A040;border-radius:8px;padding:14px 16px;margin-top:12px;}
+
+/* ── Balance Check ── */
+.balance-check{border-radius:10px;padding:16px 20px;margin-bottom:20px;border:2px solid;}
+.balance-check.ok{background:#F0FBF4;border-color:#3A7D4F;}
+.balance-check.warn{background:#FFF8E7;border-color:#C9A040;}
+.balance-check.block{background:#FEF0EE;border-color:#C0392B;}
+.balance-check-title{font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;}
+.balance-check.ok .balance-check-title{color:#3A7D4F;}
+.balance-check.warn .balance-check-title{color:#C9A040;}
+.balance-check.block .balance-check-title{color:#C0392B;}
+.balance-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid rgba(0,0,0,.06);}
+.balance-row:last-child{border-bottom:none;}
+.balance-row-label{font-size:12px;color:#6B5B3E;}
+.balance-row-val{font-size:13px;font-weight:800;font-family:monospace;}
+.balance-row-val.green{color:#3A7D4F;}
+.balance-row-val.gold{color:#8B6D1F;}
+.balance-row-val.red{color:#C0392B;}
+.balance-verdict{margin-top:10px;padding:8px 12px;border-radius:6px;font-size:12px;font-weight:700;text-align:center;}
+.balance-verdict.ok{background:#3A7D4F;color:#fff;}
+.balance-verdict.warn{background:#C9A040;color:#fff;}
+.balance-verdict.block{background:#C0392B;color:#fff;}
+</style>
+</head>
+<body>
+
+<!-- ── Topbar ── -->
+<div id="topbar">
+  <div class="logo-box"></div>
+  <div>
+    <div class="logo-title">TSG EX GROUP</div>
+    <div class="logo-sub">COUPON MGMT SYSTEM</div>
+  </div>
+  <div class="topbar-right">
+    <div style="font-size:10px;color:#A89070;text-align:right;line-height:1.4;border-right:1px solid #E8C97A;padding-right:14px;">
+      <div style="color:#8B6D1F;font-weight:700;">系統時區</div>
+      <div>Asia/Taipei (UTC+8)</div>
+    </div>
+    <div class="topbar-user" id="topbar-user-info">
+      <strong id="topbar-user-name">操作角色</strong>
+      <div style="font-size:10px;color:#A89070" id="topbar-user-meta">192.168.1.45　最後登入 10:32 · <span id="topbar-user-dept">行銷部</span></div>
+    </div>
+    <span class="topbar-badge">2FA 已驗證</span>
+    <div class="role-switcher" title="切換 demo 角色（模擬 RBAC）">
+      <span style="font-size:10px;color:#A89070;">角色</span>
+      <select id="role-select" onchange="setRole(this.value)">
+        <option value="operator">操作角色</option>
+        <option value="approver">審核角色</option>
+      </select>
+      <span class="role-badge operator" id="role-badge">操作</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── Layout ── -->
+<div id="layout">
+
+<!-- ── Sidebar ── -->
+<nav id="sidebar">
+  <div class="sidebar-section-label">兌換碼作業</div>
+  <div class="sidebar-item">
+    <button class="sidebar-link active" onclick="switchTab('create',event)">
+      <span>建立兌換碼</span>
+    </button>
+  </div>
+  <div class="sidebar-item">
+    <button class="sidebar-link" onclick="switchTab('batches',event)">
+      <span>批次管理</span>
+    </button>
+  </div>
+  <div class="sidebar-item">
+    <button class="sidebar-link" onclick="switchTab('detail',event)">
+      <span>兌換明細查詢</span>
+    </button>
+  </div>
+
+</nav>
+
+<!-- ── Main ── -->
+<div id="main">
+
+<!-- ════════════════════════ TAB: 建立兌換碼 ════════════════════════ -->
+<div id="tab-create" class="tab-panel active">
+  <div class="page-header">
+    <div>
+      <div class="page-title">建立兌換碼批次</div>
+      <div class="page-breadcrumb">首頁 <span class="sep">›</span> 兌換碼管理 <span class="sep">›</span> <span class="current">建立新批次</span></div>
+    </div>
+  </div>
+
+  <!-- Step bar -->
+  <div class="step-bar" id="step-bar">
+    <div class="step-item">
+      <div class="step-circle active" id="sc1">1</div>
+      <div class="step-label active" id="sl1">基礎設定</div>
+    </div>
+    <div class="step-connector" id="conn1"></div>
+    <div class="step-item">
+      <div class="step-circle" id="sc2">2</div>
+      <div class="step-label" id="sl2">風控條件</div>
+    </div>
+    <div class="step-connector" id="conn2"></div>
+    <div class="step-item">
+      <div class="step-circle" id="sc3">3</div>
+      <div class="step-label" id="sl3">確認 &amp; 2FA</div>
+    </div>
+  </div>
+
+  <!-- ── STEP 1 ── -->
+  <div id="step1" class="step-content active">
+    <div class="card mb20">
+      <div class="card-header">
+        <div class="bar"></div>
+        <div class="title">Step 1 ── 幣種與面額設定</div>
+      </div>
+      <div class="card-body">
+
+        <!-- Type selector -->
+        <div class="form-group mb20">
+          <div class="form-label">兌換碼類型 <span class="req">*</span></div>
+          <div class="type-selector" style="grid-template-columns:1fr;">
+            <div class="type-card selected" id="type-token" onclick="selectType('token')">
+              <div class="type-name">可提現代幣（Token）</div>
+              <div class="type-desc">兌換後直接入帳，用戶可自由提現<br>風控層級：高</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 派發模式 -->
+        <div class="form-group mb20">
+          <div class="form-label">派發模式 <span class="req">*</span></div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+            <div class="type-card selected" id="mode-multi" onclick="setMode('multi')" style="text-align:left;padding:14px;">
+              <div class="type-name" style="font-size:13px;">🎫 多碼單用</div>
+              <div class="type-desc">批量產生唯一碼，每碼限一人</div>
+            </div>
+            <div class="type-card" id="mode-single" onclick="setMode('single')" style="text-align:left;padding:14px;">
+              <div class="type-name" style="font-size:13px;">🔗 一碼多用</div>
+              <div class="type-desc">共用一組固定碼，限定兌換人次</div>
+            </div>
+            <div class="type-card" id="mode-csv" onclick="setMode('csv')" style="text-align:left;padding:14px;">
+              <div class="type-name" style="font-size:13px;">📋 CSV 指定配對</div>
+              <div class="type-desc">匯入名單，UID ↔ 兌換碼一對一綁定，名單外用戶無法兌換</div>
+            </div>
+          </div>
+          <div id="csv-mode-box" style="display:none;margin-top:12px;padding:16px;background:#FFF8E7;border:1.5px solid #C9A040;border-radius:10px;">
+
+            <!-- 已載入檔案標籤列 -->
+            <div id="csv-file-tags" style="display:none;margin-bottom:10px;">
+              <div style="font-size:11px;color:#A89070;margin-bottom:5px;">已載入的檔案：</div>
+              <div id="csv-tags-wrap"></div>
+            </div>
+
+            <!-- 上傳按鈕 -->
+            <label id="csv-upload-label" style="display:flex;align-items:center;gap:8px;padding:8px 14px;background:#fff;border:1.5px dashed #C9A040;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;color:#8B6D1F;width:fit-content;margin-bottom:8px;">
+              📂 <span id="csv-upload-text">選擇 CSV 檔案（UID + 兌換碼對應表）</span>
+              <input type="file" accept=".csv" style="display:none;" onchange="mockCsvLoad(this)">
+            </label>
+
+            <div style="font-size:10px;color:#A89070;line-height:1.8;padding:7px 11px;background:#FDFAF3;border-radius:6px;border:1px solid #EDE0C8;margin-bottom:10px;">
+              格式每行一筆，逗號分隔：UID, 序號　<span style="font-family:monospace;background:#EDE0C8;padding:1px 5px;border-radius:3px;margin:0 3px;">例：8291047, KOL26-A3BX-K9WM</span>　系統自動略過標題列與空白行
+            </div>
+
+            <!-- 驗證結果（第一份） -->
+            <div id="csv-result-1" style="display:none;padding:12px 14px;background:#fff;border:1px solid #EDE0C8;border-radius:8px;margin-bottom:10px;">
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;">
+                <div style="text-align:center;padding:8px;border-radius:7px;border:1px solid #EDE0C8;"><div id="csv-r1-valid" style="font-size:18px;font-weight:800;color:#3A7D4F;">—</div><div style="font-size:10px;color:#A89070;margin-top:2px;">有效筆數</div></div>
+                <div style="text-align:center;padding:8px;border-radius:7px;border:1px solid #EDE0C8;"><div id="csv-r1-invalid" style="font-size:18px;font-weight:800;color:#C0392B;">—</div><div style="font-size:10px;color:#A89070;margin-top:2px;">格式錯誤，跳過</div></div>
+                <div style="text-align:center;padding:8px;border-radius:7px;border:1px solid #EDE0C8;"><div id="csv-r1-total" style="font-size:18px;font-weight:800;color:#8B6D1F;">—</div><div style="font-size:10px;color:#A89070;margin-top:2px;">原始筆數</div></div>
+              </div>
+              <div id="csv-r1-warn" style="display:none;font-size:11px;color:#8B6D1F;background:#FFF8E7;border:1px solid #E8C97A;border-radius:6px;padding:8px 10px;margin-bottom:10px;line-height:1.6;"></div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="btn btn-sm" style="background:#1A5276;color:#fff;border:none;" onclick="showSupplementUpload()">➕ 補充上傳第二份 CSV</button>
+                <button id="csv-confirm-btn-1" class="btn btn-outline btn-sm" onclick="">以 — 筆確認建立</button>
+              </div>
+            </div>
+
+            <!-- 補充上傳（第二份） -->
+            <div id="csv-supplement-area" style="display:none;margin-bottom:10px;">
+              <label style="display:flex;align-items:center;gap:8px;padding:8px 14px;background:#E8F4FE;border:1.5px dashed #1A5276;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;color:#1A5276;width:fit-content;">
+                ➕ 選擇補充 CSV 檔案
+                <input type="file" accept=".csv" style="display:none;" onchange="mockCsvLoad2(this)">
+              </label>
+              <div style="font-size:10px;color:#A89070;margin-top:5px;">補充名單會與現有名單合併，重複的 UID 自動去重</div>
+            </div>
+
+            <!-- 合併結果（第二份後） -->
+            <div id="csv-result-2" style="display:none;padding:12px 14px;background:#fff;border:1px solid #EDE0C8;border-radius:8px;margin-bottom:10px;">
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px;">
+                <div style="text-align:center;padding:8px;border-radius:7px;border:1px solid #EDE0C8;"><div id="csv-r2-valid" style="font-size:18px;font-weight:800;color:#3A7D4F;">—</div><div style="font-size:10px;color:#A89070;margin-top:2px;">合併後有效</div></div>
+                <div style="text-align:center;padding:8px;border-radius:7px;border:1px solid #EDE0C8;"><div id="csv-r2-invalid" style="font-size:18px;font-weight:800;color:#C0392B;">—</div><div style="font-size:10px;color:#A89070;margin-top:2px;">格式錯誤，跳過</div></div>
+                <div style="text-align:center;padding:8px;border-radius:7px;border:1px solid #EDE0C8;"><div id="csv-r2-dup" style="font-size:18px;font-weight:800;color:#1A5276;">—</div><div style="font-size:10px;color:#A89070;margin-top:2px;">重複已去重</div></div>
+              </div>
+              <div id="csv-r2-msg" style="font-size:11px;color:#3A7D4F;background:#EAF6EE;border:1px solid #B8DDC4;border-radius:6px;padding:8px 10px;margin-bottom:10px;font-weight:700;"></div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button class="btn btn-sm" style="background:#1A5276;color:#fff;border:none;" onclick="showSupplementUpload()">➕ 再補充一份</button>
+                <button id="csv-confirm-btn-2" class="btn btn-outline btn-sm" onclick="">以 — 筆確認建立</button>
+              </div>
+            </div>
+
+            <!-- 最終確認狀態 -->
+            <div id="csv-confirmed" style="display:none;padding:12px 14px;background:#EAF6EE;border:1px solid #B8DDC4;border-radius:8px;">
+              <div style="font-size:12px;font-weight:700;color:#3A7D4F;margin-bottom:4px;" id="csv-confirmed-text">✓ 已確認</div>
+              <div style="font-size:11px;color:#3A7D4F;">⚡ 數量已自動帶入，無需手動填寫</div>
+              <button class="btn btn-outline btn-sm" style="margin-top:8px;" onclick="resetCsv()">重新上傳</button>
+            </div>
+          </div>
+          <div id="single-code-box" class="single-code-box" style="display:none;">
+            <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+              <div class="form-group" style="flex:1;min-width:160px;margin-bottom:0;">
+                <div class="form-label">固定兌換碼（自訂或自動產生）</div>
+                <div style="display:flex;gap:8px;">
+                  <input type="text" class="form-control" id="inp-single-code" placeholder="例：ABCD-EFGH-WXYZ" maxlength="30" style="font-family:monospace;letter-spacing:2px;text-transform:uppercase;" oninput="sanitizeSingleCodeInput(this)">
+                  <button class="btn btn-outline btn-sm" onclick="genSingleCode()" style="white-space:nowrap;">自動產生</button>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:5px;">
+                  <div id="single-code-hint" style="font-size:11px;color:#A89070;">僅允許 A-Z（排除 I L O）、2-9，以 - 分隔</div>
+                  <div id="single-code-counter" style="font-size:11px;color:#A89070;">0 / 30</div>
+                </div>
+              </div>
+              <div class="form-group" style="width:160px;margin-bottom:0;">
+                <div class="form-label">最大兌換人次 <span class="req">*</span></div>
+                <input type="number" class="form-control" id="inp-single-limit" placeholder="例：1000" oninput="calcFiat()">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-grid mb20" id="qty-grid">
+          <div class="form-group">
+            <div class="form-label">幣種 <span class="req">*</span></div>
+            <select class="form-control" id="sel-coin" onchange="calcFiat()">
+              <option value="">── 請選擇幣種 ──</option>
+              <option value="USDT">USDT（Tether）</option>
+              <option value="USDC">USDC（USD Coin）</option>
+              <option value="BTC">BTC（Bitcoin）</option>
+              <option value="ETH">ETH（Ethereum）</option>
+              <option value="BNB">BNB（Binance Coin）</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <div class="form-label">單碼面額（每張）<span class="req">*</span></div>
+            <input type="number" class="form-control" id="inp-amount" placeholder="例：100 / 0.00100000" step="0.00000001" oninput="limitDecimals(this,8);calcFiat()">
+            <div class="form-hint">最多支援小數點後 8 位（如 BTC: 0.00100000）</div>
+          </div>
+          <div class="form-group" id="qty-field">
+            <div class="form-label">生成數量（張）<span class="req">*</span></div>
+            <input type="number" class="form-control" id="inp-qty" placeholder="例：500" min="1" max="100000" oninput="calcFiat()">
+          </div>
+          <div class="form-group">
+            <div class="form-label">有效期限 <span class="req">*</span> <span style="font-size:11px;color:#A89070;font-weight:500;">(以 Asia/Taipei UTC+8 當日 23:59:59 為界)</span></div>
+            <input type="date" class="form-control" id="inp-expire">
+            <div class="form-hint" style="color:#C9A040;">⚠ 若為跨時區 KOL 合作，請以對方時區換算後設定；建議比活動結束時點早 1 日，避開 UTC 與當地時差爭議。</div>
+          </div>
+          <div class="form-group full">
+            <div class="form-label">渠道標籤（用途說明）<span class="req">*</span></div>
+            <input type="text" class="form-control" id="inp-tag" placeholder="例：2026台北區塊鏈週-線下KOL合作">
+            <div class="form-hint">此欄位為必填，方便後續追蹤各行銷渠道轉化率與 ROI</div>
+          </div>
+        </div>
+
+        <!-- Fiat estimate -->
+        <div id="fiat-box" style="display:none;">
+          <div class="fiat-estimate">
+            
+            <div style="flex:1;">
+              <div class="fiat-est-label">等值法幣估算（TWD）</div>
+              <div class="fiat-est-val" id="fiat-val">—</div>
+              <div class="fiat-est-warn" id="fiat-warn" style="display:none;">超過單批次上限 NT$1,000,000 TWD，送出後將觸發主管審批</div>
+            </div>
+            <div style="text-align:right;">
+              <div class="fs11" style="color:#A89070;">單碼面額</div>
+              <div class="fw700 text-gold" id="fiat-unit">—</div>
+              <div class="fs11" style="color:#A89070;margin-top:4px;">總張數</div>
+              <div class="fw700 text-gold" id="fiat-qty-disp">—</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Code format settings (多碼單用 only) -->
+        <div id="multi-code-section">
+        <div class="card mb16">
+          <div class="card-header"><div class="bar"></div><div class="title">兌換碼格式設定</div></div>
+          <div class="card-body">
+            <div style="display:flex;gap:16px;flex-wrap:wrap;">
+              <div class="form-group" style="flex:1;min-width:200px;">
+                <div class="form-label">格式範本</div>
+                <select class="form-control" id="set-format" onchange="regenPrev()">
+                  <option value="4-4-4">XXXX-XXXX-XXXX（12 碼）</option>
+                  <option value="6-6">XXXXXX-XXXXXX（12 碼）</option>
+                  <option value="4-4-4-4">XXXX-XXXX-XXXX-XXXX（16 碼）</option>
+                </select>
+              </div>
+              <div class="form-group" style="flex:1;min-width:200px;">
+                <div class="form-label">前綴標識（選填）</div>
+                <input type="text" class="form-control" id="set-prefix" placeholder="例：KOL26、MAY、VIP" maxlength="10" style="text-transform:uppercase;font-family:monospace;letter-spacing:2px;" oninput="updatePrefix()">
+                <div class="form-hint">自動轉大寫，產生後不可修改</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Preview codes -->
+        <div class="card mt16" style="background:#1C1A14;">
+          <div class="card-header" style="background:#2D2416;border-color:#4a4030;">
+            <div class="bar" style="background:#F0C96B;"></div>
+            <div class="title" style="color:#F0C96B;">系統自動產生碼預覽（已過濾混淆字元 I L O 0 1，並自動排除重複碼）</div>
+            <button class="btn btn-sm" style="background:#4a4030;color:#F0C96B;border:1px solid #8B6D1F;" onclick="regenPrev()">重新產生</button>
+          </div>
+          <div class="card-body" style="background:#1C1A14;border-radius:0 0 14px 14px;">
+            <div class="code-preview-box" id="code-preview">
+              <!-- generated by JS -->
+            </div>
+            <div style="margin-top:10px;display:flex;gap:10px;">
+              <button class="btn btn-sm" style="background:#4a4030;color:#F0C96B;border:1px solid #8B6D1F;" onclick="copyAllCodes()">一鍵複製清單</button>
+              <span class="fs11" style="color:#A89070;align-self:center;">顯示 5 筆預覽，實際生成依設定數量 · 全批次保證不重複</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+        </div><!-- /multi-code-section -->
+    <div class="btn-group">
+      <button class="btn btn-gold" onclick="goStep(2)">下一步：設定風控條件 →</button>
+    </div>
+  </div>
+
+  <!-- ── STEP 2 ── -->
+  <div id="step2" class="step-content">
+    <div class="card mb20">
+      <div class="card-header">
+        <div class="bar"></div>
+        <div class="title">Step 2 ── 風控條件配置矩陣</div>
+      </div>
+      <div class="card-body">
+        <div class="notice mb16">
+          
+          <div>每組條件為互斥單選；可組合不同維度（如 KYC + 裝置 + 生命週期）。針對可提現 Token，建議至少設定 KYC2 + 裝置限制 + 流水解鎖。</div>
+        </div>
+
+        <div class="form-group mb20">
+          <div class="form-label">帳戶身分認證（KYC）要求</div>
+          <div class="check-matrix">
+            <label class="check-item checked" id="chk-kyc2-wrap">
+              <input type="radio" name="kyc-level" id="chk-kyc2" value="kyc2" checked onchange="toggleRadio(this)">
+              <div class="check-item-body">
+                <div class="lbl">僅限 KYC2 實名認證用戶</div>
+                <div class="desc">需完成身分證 + 人臉辨識，有效防止免洗帳號（推薦用於 Token）</div>
+              </div>
+            </label>
+            <label class="check-item" id="chk-kyc1-wrap">
+              <input type="radio" name="kyc-level" id="chk-kyc1" value="kyc1" onchange="toggleRadio(this)">
+              <div class="check-item-body">
+                <div class="lbl">接受 KYC1（信箱驗證即可）</div>
+                <div class="desc">門檻較低，適合大量推廣的活動</div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group mb20">
+          <div class="form-label">IP 與裝置限制</div>
+          <div class="check-matrix" style="grid-template-columns:repeat(3,1fr);">
+            <label class="check-item" id="chk-devlimit-none-wrap">
+              <input type="radio" name="device-limit" id="chk-devlimit-none" value="none" onchange="toggleRadio(this)">
+              <div class="check-item-body">
+                <div class="lbl">不限制</div>
+                <div class="desc">不做 IP / 裝置綁定（風險最高，僅建議純品牌曝光活動）</div>
+              </div>
+            </label>
+            <label class="check-item checked" id="chk-ip-wrap">
+              <input type="radio" name="device-limit" id="chk-ip" value="ip" checked onchange="toggleRadio(this)">
+              <div class="check-item-body">
+                <div class="lbl">同一 IP 僅可兌換一次</div>
+                <div class="desc">防止同個網路環境下批量刷取（一般推薦）</div>
+              </div>
+            </label>
+            <label class="check-item" id="chk-dev-wrap">
+              <input type="radio" name="device-limit" id="chk-dev" value="device" onchange="toggleRadio(this)">
+              <div class="check-item-body">
+                <div class="lbl">同一裝置僅可兌換一次</div>
+                <div class="desc">Device fingerprint 綁定，已涵蓋同 IP 場景，最嚴格</div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group mb20">
+          <div class="form-label">帳戶生命週期限制</div>
+          <div class="check-matrix" style="grid-template-columns:repeat(3,1fr);">
+            <label class="check-item checked" id="chk-life-any-wrap">
+              <input type="radio" name="lifecycle" id="chk-life-any" value="any" checked onchange="toggleRadio(this)">
+              <div class="check-item-body">
+                <div class="lbl">不限</div>
+                <div class="desc">所有用戶皆可兌換（預設）</div>
+              </div>
+            </label>
+            <label class="check-item" id="chk-new-wrap">
+              <input type="radio" name="lifecycle" id="chk-new" value="new" onchange="toggleRadio(this)">
+              <div class="check-item-body">
+                <div class="lbl">僅限新用戶</div>
+                <div class="desc">
+                  <div>適合新人優惠活動</div>
+                  <div class="sub-control">
+                    <input type="number" class="form-control" style="width:80px;display:inline-block;padding:4px 8px;font-size:12px;" placeholder="3" min="1" max="90" id="inp-new-days"> 天內註冊
+                  </div>
+                </div>
+              </div>
+            </label>
+            <label class="check-item" id="chk-old-wrap">
+              <input type="radio" name="lifecycle" id="chk-old" value="old" onchange="toggleRadio(this)">
+              <div class="check-item-body">
+                <div class="lbl">老用戶召回專用</div>
+                <div class="desc">
+                  <div>限制超過 N 天未登入的用戶</div>
+                  <div class="sub-control">
+                    <input type="number" class="form-control" style="width:80px;display:inline-block;padding:4px 8px;font-size:12px;" placeholder="30" min="1" id="inp-old-days"> 天未登入
+                  </div>
+                </div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group mb20">
+          <div class="form-label">兌換次數限制</div>
+          <div class="check-matrix" style="grid-template-columns:repeat(3,1fr);">
+            <label class="check-item checked" id="chk-freq-none-wrap">
+              <input type="radio" name="redeem-freq" id="chk-freq-none" value="none" checked onchange="toggleRadio(this)">
+              <div class="check-item-body">
+                <div class="lbl">不限</div>
+                <div class="desc">不對單帳號做兌換次數限制</div>
+              </div>
+            </label>
+            <label class="check-item" id="chk-once-wrap">
+              <input type="radio" name="redeem-freq" id="chk-once" value="once" onchange="toggleRadio(this)">
+              <div class="check-item-body">
+                <div class="lbl">每個帳戶限兌換一次</div>
+                <div class="desc">跨活動全域生效，防止同帳號重複領取（推薦用於 Token）</div>
+              </div>
+            </label>
+            <label class="check-item" id="chk-dailylimit-wrap">
+              <input type="radio" name="redeem-freq" id="chk-dailylimit" value="daily" onchange="toggleRadio(this)">
+              <div class="check-item-body">
+                <div class="lbl">單帳號每日兌換上限</div>
+                <div class="desc">
+                  <div>24 小時內最多 N 次，可避免單帳號短時間重複領取</div>
+                  <div class="sub-control" style="display:flex;gap:6px;align-items:center;margin-top:6px;">
+                    <input type="number" class="form-control" style="width:70px;padding:4px 8px;font-size:12px;" placeholder="1" min="1" id="inp-dailylimit">
+                    <span class="fs12" style="color:#A89070;">次 / 24 小時</span>
+                  </div>
+                </div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group mb20">
+          <div class="form-label">流水（交易量）解鎖條件</div>
+          <div class="check-matrix">
+            <label class="check-item" id="chk-vol-wrap">
+              <input type="checkbox" id="chk-vol" onchange="toggleCheck(this); syncVolTimer();">
+              <div class="check-item-body">
+                <div class="lbl">需達成交易量後才可提現</div>
+                <div class="desc">
+                  <div>適合需先完成交易量才允許提現的活動，防止直接提現套利。未勾選時，兌換後立即可提現。</div>
+                  <div class="sub-control" style="display:flex;gap:6px;align-items:center;margin-top:6px;flex-wrap:wrap;">
+                    <input type="number" class="form-control" style="width:100px;padding:4px 8px;font-size:12px;" placeholder="10000" id="inp-vol" disabled>
+                    <span class="fs12" style="color:#A89070;">TWD 交易量，須於</span>
+                    <input type="number" class="form-control" style="width:70px;padding:4px 8px;font-size:12px;" placeholder="72" min="1" id="inp-voltimer" disabled>
+                    <span class="fs12" style="color:#A89070;">小時內完成，逾時自動回收</span>
+                  </div>
+                </div>
+              </div>
+            </label>
+            <div class="check-item" style="border:none;background:transparent;"></div>
+          </div>
+        </div>
+
+
+        <div class="section-divider" style="margin:24px 0 20px;border-top:2px dashed #EDE0C8;padding-top:20px;">
+          <div class="form-label" style="font-size:13px;color:#8B6D1F;font-weight:800;margin-bottom:16px;">核心安全與防刷</div>
+          <div class="check-matrix">
+            <label class="check-item" id="chk-blacklist-wrap">
+              <input type="checkbox" id="chk-blacklist" onchange="toggleCheck(this)" checked>
+              <div class="check-item-body">
+                <div class="lbl">黑名單排除限制</div>
+                <div class="desc">自動排除已標記為「風險帳號」、「惡意刷單」或「IP 異常」的用戶，不允許兌換</div>
+              </div>
+            </label>
+            <label class="check-item" id="chk-geo-wrap">
+              <input type="checkbox" id="chk-geo" onchange="toggleCheck(this)">
+              <div class="check-item-body">
+                <div class="lbl">地理位置 / 國家限制</div>
+                <div class="desc">
+                  <div>僅允許指定國家（依 IP 或註冊手機國碼）兌換，防止境外機房集體刷取</div>
+                  <div class="sub-control" style="margin-top:6px;">
+                    <input type="text" class="form-control" style="width:180px;display:inline-block;padding:4px 8px;font-size:12px;" placeholder="TW, HK, SG" id="inp-geo">
+                    <span class="fs12" style="color:#A89070;margin-left:4px;">國碼（逗號分隔）</span>
+                  </div>
+                </div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div class="section-divider" style="margin:4px 0 20px;border-top:2px dashed #EDE0C8;padding-top:20px;">
+          <div class="form-label" style="font-size:13px;color:#8B6D1F;font-weight:800;margin-bottom:16px;">營運與核銷控制</div>
+          <div class="check-matrix">
+            <label class="check-item" id="chk-mutex-wrap">
+              <input type="checkbox" id="chk-mutex" onchange="toggleCheck(this)">
+              <div class="check-item-body">
+                <div class="lbl">帳戶層級互斥限制（活動防撞）</div>
+                <div class="desc">
+                  <div>已參加指定活動的用戶，不可再兌換此碼，防止福利疊加</div>
+                  <div class="sub-control" style="margin-top:6px;">
+                    <input type="text" class="form-control" style="width:200px;display:inline-block;padding:4px 8px;font-size:12px;" placeholder="BATCH-2026-048, BATCH-2026-045" id="inp-mutex">
+                    <span class="fs12" style="color:#A89070;margin-left:4px;">互斥批次 ID</span>
+                  </div>
+                </div>
+              </div>
+            </label>
+            <div class="check-item" style="border:none;background:transparent;"></div>
+          </div>
+          <div class="check-matrix" style="margin-top:10px;">
+            <label class="check-item" id="chk-ratecap-wrap">
+              <input type="checkbox" id="chk-ratecap" onchange="toggleCheck(this)">
+              <div class="check-item-body">
+                <div class="lbl">分批次釋放（發放速度控制）</div>
+                <div class="desc">
+                  <div>限制每小時 / 每天最多被兌換次數，防止秒殺並便於監控腳本刷取</div>
+                  <div class="sub-control" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px;">
+                    <input type="number" class="form-control" style="width:70px;padding:4px 8px;font-size:12px;" placeholder="50" min="1" id="inp-rate-hour">
+                    <span class="fs12" style="color:#A89070;">次 / 小時</span>
+                    <input type="number" class="form-control" style="width:70px;padding:4px 8px;font-size:12px;" placeholder="500" min="1" id="inp-rate-day">
+                    <span class="fs12" style="color:#A89070;">次 / 天</span>
+                  </div>
+                </div>
+              </div>
+            </label>
+            <div class="check-item" style="border:none;background:transparent;"></div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div class="form-label">額外備註標籤</div>
+          <input type="text" class="form-control" id="inp-note" placeholder="例：需達成 300,000 TWD 合約交易量後始可提現，有效期 30 天">
+        </div>
+
+      </div>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-outline" onclick="goStep(1)">← 返回</button>
+      <button class="btn btn-gold" onclick="goStep(3)">下一步：確認並送出 →</button>
+    </div>
+  </div>
+
+  <!-- ── STEP 3 ── -->
+  <div id="step3" class="step-content">
+    <div class="notice red mb20" id="high-risk-notice" style="display:none;">
+      
+      <div><strong>高風險警告：</strong>本批次總面額超過單批上限 <strong>NT$1,000,000 TWD</strong>，送出後系統將發送主管審批通知，並凍結批次至審批完成。</div>
+    </div>
+
+    <div class="card mb20">
+      <div class="card-header">
+        <div class="bar"></div>
+        <div class="title">Step 3 ── 確認設定摘要</div>
+      </div>
+      <div class="card-body">
+        <div id="confirm-summary" style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
+          <!-- filled by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Freeze Preview Card (only for Token) -->
+    <div class="card mb20" id="freeze-preview-card">
+      <div class="card-header">
+        <div class="bar" style="background:#C9A040;"></div>
+        <div class="title">本批次將凍結資金</div>
+      </div>
+      <div class="card-body" style="padding:18px 22px;">
+        <div style="display:flex;align-items:flex-end;gap:18px;flex-wrap:wrap;">
+          <div>
+            <div style="font-size:11px;color:#A89070;letter-spacing:1px;margin-bottom:4px;">凍結幣量</div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span id="freeze-coin-badge"></span>
+              <span id="freeze-coin-amt" style="font-size:22px;font-weight:800;color:#8B6D1F;font-family:monospace;">— —</span>
+              <span id="freeze-coin-unit" style="font-size:13px;font-weight:700;color:#A89070;">—</span>
+            </div>
+          </div>
+          <div style="font-size:18px;color:#C9A040;padding-bottom:4px;">≈</div>
+          <div>
+            <div style="font-size:11px;color:#A89070;letter-spacing:1px;margin-bottom:4px;">等值 TWD（凍結時匯率）</div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <span style="font-size:13px;font-weight:700;color:#A89070;">NT$</span>
+              <span id="freeze-twd-amt" style="font-size:22px;font-weight:800;color:#8B6D1F;font-family:monospace;">— —</span>
+              <span style="font-size:13px;font-weight:700;color:#A89070;">TWD</span>
+            </div>
+          </div>
+          <div style="margin-left:auto;font-size:11px;color:#A89070;text-align:right;line-height:1.6;">
+            送出後立即從公司熱錢包扣除並進入凍結池<br>
+            每筆兌換成功時，從凍結池釋出對應金額至用戶
+          </div>
+        </div>
+        <div style="margin-top:14px;padding:10px 12px;border-radius:6px;background:#FBF4E1;border-left:3px solid #C9A040;font-size:12px;color:#6B5B3E;line-height:1.7;">
+          <strong style="color:#8B6D1F;">凍結釋回機制：</strong>批次<strong>到期</strong>、<strong>緊急取消</strong>或<strong>主管否決</strong>時，凍結池中未被兌換的剩餘金額將於秒級自動釋回公司熱錢包，無需手動操作。釋回紀錄會同步寫入稽核日誌。
+        </div>
+      </div>
+    </div>
+
+    <!-- Balance Check -->
+    <div id="balance-check-block" class="balance-check ok mb20">
+      <div class="balance-check-title" id="bc-title">公司自有熱錢包餘額檢核</div>
+      <div class="balance-row">
+        <div class="balance-row-label">公司自有熱錢包可用餘額</div>
+        <div class="balance-row-val green" id="bc-wallet">—</div>
+      </div>
+      <div class="balance-row">
+        <div class="balance-row-label">本批次將凍結金額</div>
+        <div class="balance-row-val gold" id="bc-required">—</div>
+      </div>
+      <div class="balance-row">
+        <div class="balance-row-label">凍結後剩餘可用餘額</div>
+        <div class="balance-row-val" id="bc-remaining">—</div>
+      </div>
+      <div class="balance-row">
+        <div class="balance-row-label">全平台已凍結累計（所有未過期批次）</div>
+        <div class="balance-row-val gold" id="bc-frozen">—</div>
+      </div>
+      <div class="balance-verdict ok" id="bc-verdict">檢核中...</div>
+      <div style="margin-top:10px;font-size:11px;color:#A89070;line-height:1.6;border-top:1px dashed #EDE0C8;padding-top:8px;">
+        提醒：批次到期、取消或主管否決時，凍結池內未兌換部分會自動釋回熱錢包。系統不設定額外的「總金額上限」—— 凍結金額即為本批次發放上限。
+      </div>
+    </div>
+
+    <div class="card mb20">
+      <div class="card-header">
+        <div class="bar" style="background:#C0392B;"></div>
+        <div class="title">二階段驗證（2FA）</div>
+      </div>
+      <div class="card-body" style="text-align:center;">
+        <div style="font-size:13px;color:#6B5B3E;margin-bottom:12px;">請開啟 Authenticator App，輸入目前的 6 位數驗證碼</div>
+        <div class="twofa-wrap" id="twofa-inputs">
+          <input class="twofa-digit" maxlength="1" type="text" oninput="tfaMove(this,0)">
+          <input class="twofa-digit" maxlength="1" type="text" oninput="tfaMove(this,1)">
+          <input class="twofa-digit" maxlength="1" type="text" oninput="tfaMove(this,2)">
+          <input class="twofa-digit" maxlength="1" type="text" oninput="tfaMove(this,3)">
+          <input class="twofa-digit" maxlength="1" type="text" oninput="tfaMove(this,4)">
+          <input class="twofa-digit" maxlength="1" type="text" oninput="tfaMove(this,5)">
+        </div>
+        <div class="fs11" style="color:#A89070;">驗證碼每 30 秒刷新一次</div>
+      </div>
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-outline" onclick="goStep(2)">← 返回</button>
+      <button class="btn btn-red" onclick="submitBatch()">確認建立批次</button>
+    </div>
+  </div>
+
+</div><!-- /tab-create -->
+
+
+<!-- ════════════════════════ TAB: 批次管理 ════════════════════════ -->
+<div id="tab-batches" class="tab-panel">
+  <div class="page-header">
+    <div>
+      <div class="page-title">批次管理</div>
+      <div class="page-breadcrumb">首頁 <span class="sep">›</span> 兌換碼管理 <span class="sep">›</span> <span class="current">批次列表 &amp; 監控</span></div>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <button class="btn btn-red" id="master-pause-btn" onclick="toggleMasterPause()">全部暫停</button>
+      <button class="btn btn-gold" onclick="switchTab('create',null)">建立新批次</button>
+    </div>
+  </div>
+
+  <!-- 全部暫停提示條 -->
+  <div class="master-pause-bar" id="master-pause-bar">
+    <span style="flex:1;">全站兌換碼已全部暫停，所有進行中批次暫時無法兌換</span>
+    <button class="btn-resume" onclick="toggleMasterPause()">恢復全部</button>
+  </div>
+
+  <!-- KPI -->
+  <div class="kpi-grid" id="batch-kpi">
+    <div class="kpi-card pending">
+      <div class="kpi-val" id="kpi-pending">0</div>
+      <div class="kpi-lbl">待主管審核</div>
+      <div class="kpi-sub" style="color:#C9A040;">資金已凍結</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-val" id="kpi-total">0</div>
+      <div class="kpi-lbl">已生成（張）</div>
+      <div class="kpi-sub" style="color:#A89070;">本月累計</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-val" id="kpi-used">0</div>
+      <div class="kpi-lbl">已兌換（張）</div>
+      <div class="kpi-sub text-green" id="kpi-used-rate">兌換率 0%</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-val" id="kpi-remain" style="color:#C9A040;">0</div>
+      <div class="kpi-lbl">尚未兌換</div>
+      <div class="kpi-sub" style="color:#A89070;">有效中</div>
+    </div>
+    <div class="kpi-card rejected">
+      <div class="kpi-val" id="kpi-rejected">0</div>
+      <div class="kpi-lbl">已駁回 + 已取消</div>
+      <div class="kpi-sub text-red" id="kpi-rejected-sub">凍結金額已釋回</div>
+    </div>
+    <div class="kpi-card blue">
+      <div class="kpi-val" id="kpi-usd" style="color:#1A5276;">NT$0</div>
+      <div class="kpi-lbl">已兌換面額（TWD）</div>
+      <div class="kpi-sub" style="color:#1A5276;">本月</div>
+    </div>
+  </div>
+
+  <!-- 批次列表（精簡欄位，全寬） -->
+  <div class="card mb20">
+    <div class="card-header">
+      <div class="bar"></div>
+      <div class="title">批次列表</div>
+      <div style="margin-left:auto;display:flex;gap:8px;">
+        <select class="form-control" style="padding:5px 10px;font-size:12px;width:auto;" id="batch-filter" onchange="renderBatches()">
+          <option value="all">全部狀態</option>
+          <option value="pending_review">待主管審核</option>
+          <option value="active">進行中</option>
+          <option value="paused">已暫停</option>
+          <option value="completed">已完成</option>
+          <option value="expired">已過期</option>
+          <option value="cancelled">已取消</option>
+          <option value="rejected">已駁回</option>
+        </select>
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <table class="data-table" id="batch-table">
+        <thead>
+          <tr>
+            <th style="width:36px;">異常</th>
+            <th>批次 ID</th>
+            <th>渠道標籤</th>
+            <th>類型</th>
+            <th style="min-width:170px;">兌換碼</th>
+            <th style="min-width:140px;">兌換進度</th>
+            <th>到期日 <span style="font-size:9px;font-weight:400;color:#A89070;">(UTC+8)</span></th>
+            <th>狀態</th>
+            <th>審核</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="batch-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 下方兩欄：圓餅圖 + 稽核日誌 -->
+  <div style="display:grid;grid-template-columns:260px 1fr;gap:20px;align-items:start;" class="mb20">
+
+    <!-- 圓餅圖 -->
+    <div class="card">
+      <div class="card-header">
+        <div class="bar"></div>
+        <div class="title">批次狀態分佈</div>
+      </div>
+      <div class="card-body" style="display:flex;flex-direction:column;align-items:center;gap:16px;">
+        <div class="chart-container">
+          <canvas id="donut-chart"></canvas>
+        </div>
+        <div class="chart-legend-list" style="width:100%;">
+          <div class="legend-row"><div class="legend-dot" style="background:#E8C97A;"></div><div class="legend-lbl">待審核</div><div class="legend-val" id="lg-pending">0</div><div class="legend-pct" id="lg-pending-pct">0%</div></div>
+          <div class="legend-row"><div class="legend-dot" style="background:#3A7D4F;"></div><div class="legend-lbl">進行中</div><div class="legend-val" id="lg-active">0</div><div class="legend-pct" id="lg-active-pct">0%</div></div>
+          <div class="legend-row"><div class="legend-dot" style="background:#C9A040;"></div><div class="legend-lbl">已暫停</div><div class="legend-val" id="lg-paused">0</div><div class="legend-pct" id="lg-paused-pct">0%</div></div>
+          <div class="legend-row"><div class="legend-dot" style="background:#1F6F3F;"></div><div class="legend-lbl">已完成</div><div class="legend-val" id="lg-completed">0</div><div class="legend-pct" id="lg-completed-pct">0%</div></div>
+          <div class="legend-row"><div class="legend-dot" style="background:#CCC;"></div><div class="legend-lbl">已過期</div><div class="legend-val" id="lg-expired">0</div><div class="legend-pct" id="lg-expired-pct">0%</div></div>
+          <div class="legend-row"><div class="legend-dot" style="background:#C0392B;"></div><div class="legend-lbl">已取消/駁回</div><div class="legend-val" id="lg-cancelled">0</div><div class="legend-pct" id="lg-cancelled-pct">0%</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 稽核日誌 -->
+    <div class="card">
+      <div class="card-header">
+        <div class="bar" style="background:#1A5276;"></div>
+        <div class="title">稽核日誌（Audit Log）</div>
+        <span class="fs11 ml-auto" style="color:#A89070;">記錄所有操作人員帳號與 IP</span>
+      </div>
+      <div class="card-body">
+        <div class="audit-filter-bar">
+          <select class="form-control" style="width:auto;padding:5px 10px;font-size:12px;" id="audit-batch-filter" onchange="renderAuditLog()">
+            <option value="all">全部批次</option>
+            <option value="BATCH-2026-050">BATCH-2026-050</option>
+            <option value="BATCH-2026-048">BATCH-2026-048</option>
+            <option value="BATCH-2026-045">BATCH-2026-045</option>
+            <option value="BATCH-2026-041">BATCH-2026-041</option>
+            <option value="BATCH-2026-040">BATCH-2026-040</option>
+          </select>
+          <select class="form-control" style="width:auto;padding:5px 10px;font-size:12px;" id="audit-user-filter" onchange="renderAuditLog()">
+            <option value="all">全部人員</option>
+            <option value="operator">操作角色（操作）</option>
+            <option value="approver">審核角色（審核）</option>
+          </select>
+          <input type="date" class="form-control" style="width:auto;padding:5px 10px;font-size:12px;" id="audit-date-filter" onchange="renderAuditLog()">
+          <button class="btn btn-outline btn-sm" onclick="resetAuditFilter()">清除</button>
+          <span id="audit-count" class="fs11 ml-auto" style="color:#A89070;align-self:center;"></span>
+        </div>
+        <div id="audit-log"></div>
+        <div style="text-align:center;margin-top:12px;">
+          <button class="btn btn-outline btn-sm" id="audit-show-more" onclick="showMoreAudit()">顯示更多</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 跨批次合併導出（全寬） -->
+  <div class="card">
+    <div class="card-header">
+      <div class="bar" style="background:#3A7D4F;"></div>
+      <div class="title">跨批次合併導出</div>
+      <span class="fs11 ml-auto" style="color:#A89070;">可合併多個批次的兌換結果做 ROI 分析</span>
+    </div>
+    <div class="card-body">
+      <div class="export-grid">
+        <div class="form-group">
+          <div class="form-label">導出日期範圍（起）</div>
+          <input type="date" class="form-control" id="exp-start" title="以系統時區 Asia/Taipei (UTC+8) 為準">
+        </div>
+        <div class="form-group">
+          <div class="form-label">導出日期範圍（迄）</div>
+          <input type="date" class="form-control" id="exp-end" title="以系統時區 Asia/Taipei (UTC+8) 為準">
+        </div>
+        <div class="form-group" style="grid-column:1/-1;">
+          <div class="form-label">指定批次<span style="color:#A89070;font-weight:400;margin-left:6px;font-size:11px;">可多選 — 不選則依日期 / 關鍵字篩選全部</span></div>
+          <div class="ms-wrap" id="ms-wrap">
+            <div class="ms-trigger" id="ms-trigger" onclick="toggleMsDropdown(event)">
+              <span class="ms-placeholder" id="ms-placeholder">選擇批次…</span>
+              <span class="ms-arrow" id="ms-arrow">▾</span>
+            </div>
+            <div class="ms-dropdown" id="ms-dropdown" style="display:none;"></div>
+          </div>
+        </div>
+        <div class="form-group">
+          <div class="form-label">渠道標籤關鍵字<span style="color:#A89070;font-weight:400;margin-left:6px;font-size:11px;">（已選批次時忽略）</span></div>
+          <input type="text" class="form-control" id="exp-tag" placeholder="例：KOL、台北、召回">
+        </div>
+        <div class="form-group">
+          <div class="form-label">導出格式</div>
+          <select class="form-control" id="exp-format">
+            <option value="csv">CSV（兌換明細）</option>
+            <option value="xlsx" selected>Excel（含 ROI 分析頁）</option>
+            <option value="pdf">PDF 報告</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <button class="btn btn-gold" onclick="startExport()">開始導出</button>
+        <div id="export-progress" style="display:none;flex:1;flex-direction:column;">
+          <div class="fs12" style="color:#8B6D1F;margin-bottom:4px;" id="export-progress-label">準備中...</div>
+          <div class="progress-wrap"><div class="progress-bar" id="export-progress-bar" style="width:0%"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /tab-batches -->
+
+
+<!-- ════════════════════════ TAB: 兌換明細查詢 ════════════════════════ -->
+<div id="tab-detail" class="tab-panel">
+  <div class="page-header">
+    <div>
+      <div class="page-title">兌換明細查詢</div>
+      <div class="page-breadcrumb">首頁 <span class="sep">›</span> 兌換碼管理 <span class="sep">›</span> <span class="current">用戶兌換明細</span></div>
+    </div>
+  </div>
+  <div style="display:flex;gap:8px;margin-bottom:16px;">
+    <button id="subtab-btn-success" onclick="switchDetailTab('success')" style="padding:6px 20px;font-size:13px;border-radius:20px;border:1px solid #C9A040;background:#FBF3DC;color:#8B6D1F;cursor:pointer;font-family:inherit;font-weight:500;">成功兌換</button>
+    <button id="subtab-btn-fail" onclick="switchDetailTab('fail')" style="padding:6px 20px;font-size:13px;border-radius:20px;border:1px solid var(--color-border-secondary);background:transparent;color:var(--color-text-secondary);cursor:pointer;font-family:inherit;">失敗記錄 <span id="fail-count-badge" style="font-size:11px;background:#C0392B;color:#fff;padding:1px 7px;border-radius:8px;margin-left:3px;">0</span></button>
+  </div>
+  <div id="panel-success">
+
+  <div class="notice mb20" style="line-height:1.8;">
+    <div>
+      <strong style="color:#8B6D1F;">兌換碼狀態說明：</strong><br>
+      <span class="badge badge-completed" style="margin:4px 4px 0 0;">已提現</span>用戶已成功兌換提現　
+      <span class="badge badge-paused" style="margin:4px 4px 0 0;">未使用</span>券已發放，用戶尚未兌換　
+      <span class="badge badge-void" style="margin:4px 4px 0 0;">已刪除</span>任務被刪除，券永久失效　
+      <span class="badge badge-pending-review" style="margin:4px 4px 0 0;">暫停中</span>任務暫停，券暫時無法兌換　
+      <span class="badge badge-expired" style="margin:4px 4px 0 0;">已過期</span>兌換期限已到
+    </div>
+  </div>
+
+  <div class="card mb20">
+    <div class="card-header"><div class="bar"></div><div class="title">條件查詢</div></div>
+    <div class="card-body">
+      <div class="form-grid-3">
+        <div class="form-group">
+          <div class="form-label">用戶 UID</div>
+          <input type="text" class="form-control" id="det-uid" placeholder="例：UID_88291047">
+        </div>
+        <div class="form-group">
+          <div class="form-label">兌換碼</div>
+          <input type="text" class="form-control" id="det-code" placeholder="例：A3BX-K9WM-...">
+        </div>
+        <div class="form-group">
+          <div class="form-label">批次 ID</div>
+          <input type="text" class="form-control" id="det-batch" placeholder="例：BATCH-2026-042">
+        </div>
+        <div class="form-group">
+          <div class="form-label">兌換日期（起）</div>
+          <input type="date" class="form-control" id="det-start" title="以系統時區 Asia/Taipei (UTC+8) 為準">
+        </div>
+        <div class="form-group">
+          <div class="form-label">兌換日期（迄）</div>
+          <input type="date" class="form-control" id="det-end" title="以系統時區 Asia/Taipei (UTC+8) 為準">
+        </div>
+        <div class="form-group">
+          <div class="form-label">提現狀態</div>
+          <select class="form-control" id="det-withdraw" title="Token 本金提現狀態">
+            <option value="">全部</option>
+            <option value="已提現">已提現</option>
+            <option value="未使用">未使用</option>
+            <option value="已刪除">已刪除</option>
+            <option value="暫停中">暫停中</option>
+            <option value="已過期">已過期</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:16px;">
+        <button class="btn btn-gold" onclick="searchDetail()">查詢</button>
+        <button class="btn btn-outline" onclick="clearDetail()">清除</button>
+        <button class="btn btn-outline ml-auto" onclick="exportDetail()">導出 CSV</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <div class="bar"></div>
+      <div class="title">兌換明細列表</div>
+      <span class="fs11 ml-auto" style="color:#A89070;">共 <strong id="det-count">0</strong> 筆</span>
+    </div>
+    <div class="tbl-wrap">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>兌換時間</th>
+            <th>用戶 UID</th>
+            <th>兌換碼</th>
+            <th>批次</th>
+            <th>類型</th>
+            <th>幣種</th>
+            <th>面額</th>
+            <th>兌換 IP</th>
+            <th>KYC</th>
+            <th>提現狀態 <span style="font-weight:400;color:#A89070;cursor:help;" title="Token 本金提現狀態">ⓘ</span></th>
+            <th>提現時間</th>
+          </tr>
+        </thead>
+        <tbody id="detail-tbody">
+          <tr><td colspan="11" style="text-align:center;padding:40px;color:#A89070;">請輸入查詢條件後點擊查詢</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  </div><!-- /panel-success -->
+
+  <!-- ════ 失敗記錄面板 ════ -->
+  <div id="panel-fail" style="display:none;">
+    <div class="notice mb20" style="line-height:1.8;">
+      <div>
+        <strong style="color:#8B6D1F;">異常標籤說明：</strong>　
+        <span style="display:inline-block;background:#FEF2F2;color:#991B1B;font-size:11px;padding:1px 7px;border-radius:4px;font-weight:500;margin-right:6px;">異常</span>
+        符合下列任一條件：① 同 UID 10 分鐘內失敗 5 次以上　② 同 IP 跨 3 個以上不同 UID 失敗　③ 同 UID 連續 3 次以上「碼不存在」（疑暴力猜碼）
+      </div>
+    </div>
+    <div class="card mb20">
+      <div class="card-header"><div class="bar"></div><div class="title">條件查詢</div></div>
+      <div class="card-body">
+        <div class="form-grid-3">
+          <div class="form-group">
+            <div class="form-label">用戶 UID</div>
+            <input type="text" class="form-control" id="fail-uid" placeholder="例：UID_33201847">
+          </div>
+          <div class="form-group">
+            <div class="form-label">失敗原因</div>
+            <select class="form-control" id="fail-reason">
+              <option value="">全部</option>
+              <option value="notfound">碼不存在</option>
+              <option value="used">碼已使用</option>
+              <option value="expired">已過期</option>
+              <option value="paused">批次暫停</option>
+              <option value="cancelled">批次已取消</option>
+              <option value="kyc">KYC 不足</option>
+              <option value="ip">同 IP 超限</option>
+              <option value="dup">重複兌換</option>
+              <option value="csv">UID 不在名單</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <div class="form-label">批次 ID</div>
+            <input type="text" class="form-control" id="fail-batch" placeholder="例：BATCH-2026-048">
+          </div>
+          <div class="form-group">
+            <div class="form-label">日期（起）</div>
+            <input type="date" class="form-control" id="fail-start">
+          </div>
+          <div class="form-group">
+            <div class="form-label">日期（迄）</div>
+            <input type="date" class="form-control" id="fail-end">
+          </div>
+          <div class="form-group">
+            <div class="form-label">僅顯示異常</div>
+            <select class="form-control" id="fail-anomaly-filter">
+              <option value="">全部</option>
+              <option value="anomaly">僅異常</option>
+            </select>
+          </div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:16px;">
+          <button class="btn btn-gold" onclick="searchFailLog()">查詢</button>
+          <button class="btn btn-outline" onclick="clearFailLog()">清除</button>
+          <button class="btn btn-outline ml-auto" onclick="exportFailLog()">導出 CSV</button>
+        </div>
+      </div>
+    </div>
+    <div id="fail-summary-row" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;"></div>
+    <div id="fail-anomaly-banner" style="display:none;background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:12px;color:#991B1B;line-height:1.7;"></div>
+    <div class="card">
+      <div class="card-header">
+        <div class="bar"></div>
+        <div class="title">失敗記錄列表</div>
+        <span class="fs11 ml-auto" style="color:#A89070;">共 <strong id="fail-total-count">0</strong> 筆</span>
+      </div>
+      <div class="tbl-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>時間</th>
+              <th>用戶 UID</th>
+              <th>輸入的碼</th>
+              <th>失敗原因</th>
+              <th>批次 ID</th>
+              <th>IP</th>
+              <th>KYC</th>
+            </tr>
+          </thead>
+          <tbody id="fail-tbody">
+            <tr><td colspan="7" style="text-align:center;padding:40px;color:#A89070;">請輸入查詢條件後點擊查詢</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div><!-- /panel-fail -->
+
+</div><!-- /tab-detail -->
+
+
+
+
+</div><!-- /main -->
+</div><!-- /layout -->
+
+<!-- ── Batch Detail Drawer ── -->
+<div class="drawer-overlay" id="batch-drawer-overlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="batch-drawer">
+  <div class="drawer-header">
+    <div class="bar" style="width:4px;height:18px;background:#C9A040;border-radius:2px;flex-shrink:0;"></div>
+    <div class="title" id="drawer-title">批次詳情</div>
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+  </div>
+  <div class="drawer-body" id="drawer-body"></div>
+</div>
+
+<!-- ── Risk Modal ── -->
+<div class="risk-overlay" id="risk-overlay">
+  <div class="risk-modal">
+    <h2>高風險操作警告</h2>
+    <p>本批次總面額 <strong id="risk-amount" style="color:#C0392B;font-size:16px;"></strong> 超過系統設定上限 <strong>NT$1,000,000 TWD</strong>。<br>此操作需要主管授權。請輸入主管密碼或聯繫 CSO 進行二次確認。</p>
+    <div class="modal-2fa">
+      <input type="password" placeholder="主管密碼" id="risk-pwd" class="form-control">
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-outline" style="flex:1;" onclick="closeRisk()">取消</button>
+        <button class="btn btn-red" style="flex:1;" onclick="confirmRisk()">確認送出審批</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Success Toast ── -->
+<div id="toast" style="display:none;position:fixed;bottom:32px;right:32px;background:#3A7D4F;color:#fff;padding:14px 22px;border-radius:12px;font-weight:700;font-size:14px;box-shadow:0 4px 20px rgba(0,0,0,.2);z-index:9999;"></div>
+
+<script>
+/* ═══════════ DATA ═══════════ */
+const COIN_RATE = {USDT:31, USDC:31, BTC:2108000, ETH:117800, BNB:18600};  // 以 TWD 計價
+// 各幣別 UI 顯示精度（dp）— BTC/ETH/BNB 鏈上精度更高，UI 截到下列位數，避免顯示誤差與被 parseFloat 截
+const COIN_DP   = {USDT:4, USDC:4, BTC:8, ETH:8, BNB:8};
+const SAFE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'; // 排除 I L O 0 1
+
+/* ═══════════ 兌換碼去重 ═══════════ */
+// 全域已使用兌換碼集合（含既有批次 + 已生成預覽）
+const USED_CODES = new Set();
+// 本次預覽佔用代碼（重新產生時可釋放）
+let PREVIEW_USED = new Set();
+function isCodeUsed(code){ return USED_CODES.has(code) || PREVIEW_USED.has(code); }
+// 包裝任意碼產生器，自動重試直到取得唯一碼
+function genUniqueCode(generator, maxAttempts=50){
+  for(let i=0;i<maxAttempts;i++){
+    const c = generator();
+    if(!isCodeUsed(c)) return c;
+  }
+  console.warn('[兌換碼] 嘗試 '+maxAttempts+' 次仍碰撞，請擴大碼長度或字元集');
+  showToast('兌換碼空間不足，請延長碼長度','#C0392B');
+  return generator();
+}
+
+// Mock 公司自有熱錢包餘額（實際應從 API 取得）
+const WALLET_BALANCE = { USDT: 125000, USDC: 48000, BTC: 2.85, ETH: 22.5, BNB: 180 };
+// Mock 已凍結行銷預算累計
+const FROZEN_BUDGET  = { USDT: 18000,  USDC: 5000,  BTC: 0.15, ETH: 1.2,  BNB: 12 };
+
+const BATCH_DATA = [
+  // ★ 新增：兩個待主管審核中的批次（demo）
+  {id:'BATCH-2026-050',tag:'2026 SmartCon 香港峰會-現場兌換',type:'token',coin:'USDT',amt:200,total:150,used:0,status:'pending_review',mode:'multi',start:'2026-05-19',expire:'2026-06-20',creator:'operator',ip:'192.168.1.45',kyc:'KYC2',ipLimit:true,devLimit:true,volLimit:false,anomaly:'ok',anomalyMsg:'',redeemCode:null,frozenAmt:30000,frozenTWD:930000,submittedAt:'2026-05-19 09:15:32'},
+  {id:'BATCH-2026-048',tag:'2026台北區塊鏈週-線下KOL合作',type:'token',coin:'USDT',amt:100,total:200,used:143,status:'active',mode:'multi',start:'2026-05-15',expire:'2026-06-30',creator:'operator',ip:'192.168.1.45',kyc:'KYC2',ipLimit:true,devLimit:false,volLimit:false,anomaly:'warn',anomalyMsg:'同 IP 短時間兌換 3 次',redeemCode:null,frozenAmt:20000,frozenTWD:620000,reviewedBy:'審核角色',reviewedAt:'2026-05-15 11:20:05'},
+  {id:'BATCH-2026-045',tag:'合作KOL-Coindesk亞洲峰會',type:'token',coin:'USDT',amt:50,total:500,used:500,status:'completed',mode:'multi',start:'2026-04-20',expire:'2026-05-15',creator:'operator',ip:'192.168.1.45',kyc:'KYC2',ipLimit:true,devLimit:false,volLimit:false,anomaly:'ok',anomalyMsg:'',redeemCode:null,frozenAmt:25000,frozenTWD:775000,reviewedBy:'審核角色',reviewedAt:'2026-04-19 14:00:00'},
+  {id:'BATCH-2026-041',tag:'異常活動-緊急停止',type:'token',coin:'BTC',amt:0.001,total:50,used:4,status:'cancelled',mode:'multi',start:'2026-04-10',expire:'2026-04-30',creator:'operator',ip:'192.168.1.45',kyc:'KYC2',ipLimit:true,devLimit:false,volLimit:false,anomaly:'alert',anomalyMsg:'偵測到同一 IP 批量刷取',redeemCode:null,frozenAmt:0.05,frozenTWD:105400,reviewedBy:'審核角色',reviewedAt:'2026-04-09 17:00:00'},
+  {id:'BATCH-2026-040',tag:'錯誤面額-主管駁回',type:'token',coin:'USDT',amt:5000,total:100,used:0,status:'rejected',mode:'multi',start:'2026-04-05',expire:'2026-05-05',creator:'operator',ip:'192.168.1.72',kyc:'KYC2',ipLimit:true,devLimit:true,volLimit:true,anomaly:'ok',anomalyMsg:'',redeemCode:null,frozenAmt:0,frozenTWD:0,reviewedBy:'審核角色',reviewedAt:'2026-04-05 11:30:00',rejectReason:'單碼面額過高，超過本月行銷預算配額，請拆分為多批送審'},
+  {id:'BATCH-2026-036',tag:'三月新會員空投-BTC試水',type:'token',coin:'BTC',amt:0.0005,total:200,used:38,status:'expired',mode:'multi',start:'2026-03-01',expire:'2026-03-31',creator:'operator',ip:'192.168.1.72',kyc:'KYC2',ipLimit:true,devLimit:true,volLimit:false,anomaly:'ok',anomalyMsg:'達期後 81% 未兌換，凍結金額已自動釋回',redeemCode:null,frozenAmt:0.1,frozenTWD:210800,reviewedBy:'審核角色',reviewedAt:'2026-02-28 09:00:00'},
+];
+
+// 為多碼單用批次預生成兌換碼清單（demo 用，依 total 數量）
+function _generateBatchCodes(batch){
+  if(batch.mode==='single' || batch.codes) return;
+  const arr = [];
+  const pfx = batch.id.slice(-3); // 用批次末三碼當前綴
+  for(let i=0;i<batch.total;i++){
+    let parts = [];
+    for(let p=0;p<3;p++){
+      let g='';
+      for(let k=0;k<4;k++) g += SAFE_CHARS[Math.floor(Math.random()*SAFE_CHARS.length)];
+      parts.push(g);
+    }
+    arr.push({code: pfx+'-'+parts.join('-'), used: i<batch.used});
+  }
+  batch.codes = arr;
+}
+
+const AUDIT_DATA = [
+  {time:'2026-05-19 09:15:32',user:'operator',ip:'192.168.1.45',action:'建立批次 BATCH-2026-050（150張 USDT-200），凍結 30,000 USDT（≈NT$930,000），送主管審核',dot:'#C9A040'},
+  {time:'2026-05-18 10:32:14',user:'operator',ip:'192.168.1.45',action:'建立批次 BATCH-2026-048（200張 USDT-100）',dot:'#3A7D4F'},
+  {time:'2026-05-15 11:20:05',user:'approver',ip:'10.0.0.5',action:'審核通過 BATCH-2026-048（200張 USDT-100 = NT$620,000）',dot:'#3A7D4F'},
+  {time:'2026-04-05 11:30:00',user:'approver',ip:'10.0.0.5',action:'駁回 BATCH-2026-040 — 原因：單碼面額過高，超過本月行銷預算配額，請拆分為多批送審。已釋回 500,000 USDT 至熱錢包',dot:'#C0392B'},
+  {time:'2026-05-17 16:45:02',user:'approver',ip:'10.0.0.5',action:'審批通過 BATCH-2026-046（高風險，總額 NT$1,200,000 TWD）',dot:'#C9A040'},
+  {time:'2026-05-17 14:22:33',user:'operator',ip:'192.168.1.45',action:'緊急取消 BATCH-2026-041（偵測到異常兌換行為，54張已停用，凍結金額已釋回）',dot:'#C0392B'},
+];
+
+const DETAIL_DATA = [
+  {time:'2026-05-18 09:42:11',uid:'UID_88291047',code:'A3BX-K9WM-R7TZ',batch:'BATCH-2026-048',type:'token',coin:'USDT',amt:100,ip:'114.32.55.201',kyc:'KYC2',withdraw:'已提現',wtime:'2026-05-18 12:30:00'},
+  {time:'2026-05-17 19:30:22',uid:'UID_33204781',code:'P2WC-M7ER-B5NH',batch:'BATCH-2026-048',type:'token',coin:'USDT',amt:100,ip:'59.127.220.41',kyc:'KYC2',withdraw:'未使用',wtime:'—'},
+];
+
+// 載入既有資料中的代碼，避免新生成碼與歷史碼衝突
+BATCH_DATA.forEach(b => { if(b.redeemCode) USED_CODES.add(b.redeemCode); });
+DETAIL_DATA.forEach(d => { if(d.code) USED_CODES.add(d.code); });
+// ═══════════ RBAC（與空投任務 prototype 共用同一套）═══════════
+const ROLE_DEF = {
+  operator: { username:'operator', display:'操作角色', dept:'行銷部', ip:'192.168.1.45', kind:'operator', label:'操作' },
+  approver: { username:'approver', display:'審核角色', dept:'審核部', ip:'10.0.0.5',     kind:'approver', label:'審核' },
+};
+let CURRENT_USER = ROLE_DEF.operator;
+
+function setRole(key){
+  if(!ROLE_DEF[key]) return;
+  CURRENT_USER = ROLE_DEF[key];
+  // 更新 topbar
+  document.getElementById('topbar-user-name').textContent = CURRENT_USER.display;
+  document.getElementById('topbar-user-dept').textContent = CURRENT_USER.dept;
+  document.getElementById('topbar-user-meta').innerHTML = `${CURRENT_USER.ip}　最後登入 10:32 · <span id="topbar-user-dept">${CURRENT_USER.dept}</span>`;
+  const badge = document.getElementById('role-badge');
+  badge.textContent = CURRENT_USER.label;
+  badge.className = 'role-badge ' + (CURRENT_USER.kind==='approver'?'approver':'operator');
+  // 操作角色不能進入主管視角；審核角色不能建立批次
+  applyRoleVisibility();
+  // 重畫已開啟的視圖
+  if(document.getElementById('tab-batches').classList.contains('active')){
+    renderBatches();
+  }
+  showToast(`已切換角色：${CURRENT_USER.display}（${CURRENT_USER.label}）`);
+}
+
+function applyRoleVisibility(){
+  const isApprover = CURRENT_USER.kind === 'approver';
+  // 隱藏「建立兌換碼」側邊欄項目 + 頁面內「建立新批次」按鈕
+  document.querySelectorAll('.sidebar-link').forEach(b=>{
+    if(b.getAttribute('onclick')||''){
+      const t = b.getAttribute('onclick');
+      if(t.includes("'create'")){
+        b.style.opacity = isApprover ? '.35' : '';
+        b.style.pointerEvents = isApprover ? 'none' : '';
+        b.title = isApprover ? '審核角色無法建立批次（職責分離 SoD）' : '';
+      }
+    }
+  });
+  document.querySelectorAll('button.btn-gold').forEach(b=>{
+    if(b.textContent.includes('建立新批次')){
+      b.style.display = isApprover ? 'none' : '';
+    }
+  });
+  // 全部暫停 - 只有操作角色可用
+  const mp = document.getElementById('master-pause-btn');
+  if(mp) mp.style.display = isApprover ? 'none' : '';
+  // 審核角色預設停在批次管理
+  if(isApprover && document.getElementById('tab-create').classList.contains('active')){
+    switchTab('batches', null);
+  }
+}
+
+// ═══════════ 主管審核流程 ═══════════
+let currentReviewBatchId = null;
+
+function openReview(id){
+  const b = BATCH_DATA.find(x=>x.id===id);
+  if(!b){ showToast('找不到批次'); return; }
+  if(CURRENT_USER.kind !== 'approver'){ showToast('您不是審核角色','#C0392B'); return; }
+  if(b.creator === CURRENT_USER.username){ showToast('不能審核自己建立的批次（職責分離）','#C0392B'); return; }
+  currentReviewBatchId = id;
+
+  const isToken = b.type === 'token';
+  const isSingle = b.mode === 'single';
+  document.getElementById('review-batch-id').textContent = b.id;
+  document.getElementById('review-info').innerHTML = `
+    <span class="lbl">渠道標籤</span><span class="val">${b.tag}</span>
+    <span class="lbl">送審時間</span><span class="val mono">${b.submittedAt||'—'}</span>
+    <span class="lbl">建立人</span><span class="val">${b.creator} <span style="font-size:11px;color:#A89070;">(${b.ip})</span></span>
+    <span class="lbl">類型 / 模式</span><span class="val">${TYPE_LABEL[b.type]||b.type} · ${isSingle?'一碼多用':'多碼單用'}</span>
+    <span class="lbl">幣種 / 面額</span><span class="val">${fmtAmt(b.amt,b.coin)} ${b.coin} × ${b.total} 張</span>
+    <span class="lbl">凍結資金</span><span class="val" style="color:${isToken?'#C0392B':'#888'};">${isToken?`${fmtAmt(b.frozenAmt,b.coin)} ${b.coin}　≈　NT$${Math.round(b.frozenTWD).toLocaleString()} TWD`:'不適用（Coupon 不動帳）'}</span>
+    <span class="lbl">有效期限</span><span class="val">${b.start} ~ ${b.expire}</span>
+    <span class="lbl">風控條件</span><span class="val" style="font-weight:400;">${b.kyc}${b.ipLimit?' · IP 限制':''}${b.devLimit?' · 裝置限制':''}${b.volLimit?' · 流水解鎖':''}</span>
+  `;
+
+  // 兌換碼預覽
+  let codeHtml;
+  if(isSingle){
+    codeHtml = `<span class="code-chip">${b.redeemCode}<button onclick="copyRedeemCode('${b.redeemCode}')">複製</button></span>
+                <span style="font-size:11px;color:#A89070;margin-left:8px;">最多 ${b.total} 人次</span>`;
+  } else {
+    if(!b.codes) _generateBatchCodes(b);
+    const preview = b.codes.slice(0,5).map(c=>c.code).join('　');
+    codeHtml = `<div style="font-family:monospace;font-size:12px;color:#5C4A1E;line-height:1.8;">${preview}</div>
+                <button class="code-link" onclick="openCodesDrawer('${b.id}')" style="margin-top:6px;">查看完整清單（${b.total} 張）</button>`;
+  }
+  document.getElementById('review-code-preview').innerHTML = codeHtml;
+
+  // 重置 2FA
+  document.querySelectorAll('#review-tfa input').forEach(i=>i.value='');
+  document.getElementById('review-overlay').classList.add('show');
+}
+
+function reviewTfaMove(el, idx){
+  const inputs=[...document.querySelectorAll('#review-tfa input')];
+  el.value = el.value.replace(/[^0-9]/g,'');
+  if(el.value && idx<5) inputs[idx+1].focus();
+}
+
+function closeReview(){
+  document.getElementById('review-overlay').classList.remove('show');
+}
+
+function approveReview(){
+  const b = BATCH_DATA.find(x=>x.id===currentReviewBatchId);
+  if(!b) return;
+  const tfa = [...document.querySelectorAll('#review-tfa input')].map(i=>i.value).join('');
+  if(tfa.length<6){ showToast('請輸入完整 6 位主管 2FA 驗證碼','#C0392B'); return; }
+  b.status = 'active';
+  b.reviewedBy = CURRENT_USER.display;
+  b.reviewedAt = new Date().toLocaleString('sv').replace('T',' ').slice(0,19);
+  AUDIT_DATA.unshift({
+    time: b.reviewedAt,
+    user: CURRENT_USER.username,
+    ip: CURRENT_USER.ip,
+    action: `審核通過 ${b.id}（${b.tag}）— 凍結資金開始計入發放池`,
+    dot: '#3A7D4F'
+  });
+  closeReview();
+  renderBatches();
+  renderAuditLog();
+  showToast(`✓ ${b.id} 審核通過，已進入兌換佇列`);
+}
+
+function openRejectModal(){
+  if(!currentReviewBatchId){ return; }
+  document.getElementById('reject-reason').value = '';
+  document.getElementById('reject-overlay').classList.add('show');
+}
+function closeRejectModal(){
+  document.getElementById('reject-overlay').classList.remove('show');
+}
+
+function confirmReject(){
+  const reason = document.getElementById('reject-reason').value.trim();
+  if(!reason){ showToast('請填寫駁回原因','#C0392B'); return; }
+  const b = BATCH_DATA.find(x=>x.id===currentReviewBatchId);
+  if(!b) return;
+  // 釋回凍結資金
+  if(b.type === 'token' && b.frozenAmt > 0){
+    WALLET_BALANCE[b.coin] = (WALLET_BALANCE[b.coin]||0) + b.frozenAmt;
+    FROZEN_BUDGET[b.coin]  = Math.max(0, (FROZEN_BUDGET[b.coin]||0) - b.frozenAmt);
+  }
+  const releasedAmt = b.frozenAmt;
+  const releasedCoin = b.coin;
+  b.status = 'rejected';
+  b.reviewedBy = CURRENT_USER.display;
+  b.reviewedAt = new Date().toLocaleString('sv').replace('T',' ').slice(0,19);
+  b.rejectReason = reason;
+  b.frozenAmt = 0;
+  b.frozenTWD = 0;
+  AUDIT_DATA.unshift({
+    time: b.reviewedAt,
+    user: CURRENT_USER.username,
+    ip: CURRENT_USER.ip,
+    action: `駁回 ${b.id}（${b.tag}）— 原因：${reason}${releasedAmt>0?`　已釋回 ${fmtAmt(releasedAmt,releasedCoin)} ${releasedCoin}`:''}`,
+    dot: '#C0392B'
+  });
+  closeRejectModal();
+  closeReview();
+  renderBatches();
+  renderAuditLog();
+  showToast(`已駁回 ${b.id}，凍結金額秒級釋回`, '#C0392B');
+}
+
+// ═══════════ 改期審核 ═══════════
+let currentExpiryReviewId = null;
+function openExpiryReview(id){
+  const b = BATCH_DATA.find(x=>x.id===id);
+  if(!b || !b.pendingExpiryReview) return;
+  currentExpiryReviewId = id;
+  document.getElementById('expiry-review-batch-id').textContent = id;
+  document.getElementById('expiry-review-old').textContent = b.expire;
+  document.getElementById('expiry-review-new').textContent = b.pendingNewExpire;
+  document.getElementById('expiry-review-reject-reason').value = '';
+  document.getElementById('expiry-review-reject-box').style.display = 'none';
+  document.getElementById('expiry-review-overlay').classList.add('show');
+}
+function closeExpiryReview(){
+  document.getElementById('expiry-review-overlay').classList.remove('show');
+}
+function approveExpiryReview(){
+  const b = BATCH_DATA.find(x=>x.id===currentExpiryReviewId);
+  if(!b) return;
+  const old = b.expire;
+  b.expire = b.pendingNewExpire;
+  b.pendingExpiryReview = false;
+  b.pendingNewExpire = null;
+  AUDIT_DATA.unshift({time:nowStr(), user:CURRENT_USER.username, ip:CURRENT_USER.ip,
+    action:`改期審核通過 ${b.id}：${old} → ${b.expire}`, dot:'#3A7D4F'});
+  closeExpiryReview();
+  renderBatches(); renderAuditLog();
+  showToast(`✓ ${b.id} 改期已核准，到期日更新為 ${b.expire}`);
+}
+function toggleExpiryRejectBox(){
+  const box = document.getElementById('expiry-review-reject-box');
+  box.style.display = box.style.display === 'none' ? 'block' : 'none';
+}
+function rejectExpiryReview(){
+  const reason = document.getElementById('expiry-review-reject-reason').value.trim();
+  if(!reason){ showToast('請填寫駁回原因','#C0392B'); return; }
+  const b = BATCH_DATA.find(x=>x.id===currentExpiryReviewId);
+  if(!b) return;
+  b.pendingExpiryReview = false;
+  b.pendingNewExpire = null;
+  AUDIT_DATA.unshift({time:nowStr(), user:CURRENT_USER.username, ip:CURRENT_USER.ip,
+    action:`改期駁回 ${b.id}（維持 ${b.expire}）— 原因：${reason}`, dot:'#C0392B'});
+  closeExpiryReview();
+  renderBatches(); renderAuditLog();
+  showToast(`改期申請已駁回，到期日維持 ${b.expire}`, '#C0392B');
+}
+
+// ═══════════ 兌換碼清單抽屜 ═══════════
+let currentCodesBatchId = null;
+function openCodesDrawer(id){
+  const b = BATCH_DATA.find(x=>x.id===id);
+  if(!b) return;
+  if(b.mode === 'single'){
+    showToast('此批次為一碼多用，碼可直接在欄位查看複製');
+    return;
+  }
+  // 操作人視角且批次仍待審核時不開放
+  if(b.status === 'pending_review' && CURRENT_USER.kind === 'operator' && b.creator !== CURRENT_USER.username){
+    showToast('待主管核可後才可查看碼清單','#C0392B');
+    return;
+  }
+  if(!b.codes) _generateBatchCodes(b);
+  currentCodesBatchId = id;
+  document.getElementById('codes-drawer-title').textContent = `${b.id} ── 兌換碼清單`;
+  document.getElementById('codes-drawer-meta').innerHTML = `
+    <strong style="color:#8B6D1F;">${b.tag}</strong>　·　${b.coin} ${fmtAmt(b.amt,b.coin)} / 張　·　共 ${b.total} 張　·　已兌換 ${b.used} 張
+  `;
+  document.getElementById('codes-search').value = '';
+  document.getElementById('codes-filter').value = 'all';
+  renderCodesList();
+  document.getElementById('codes-drawer-overlay').classList.add('show');
+  document.getElementById('codes-drawer').classList.add('open');
+}
+
+function closeCodesDrawer(){
+  document.getElementById('codes-drawer-overlay').classList.remove('show');
+  document.getElementById('codes-drawer').classList.remove('open');
+}
+
+function renderCodesList(){
+  const b = BATCH_DATA.find(x=>x.id===currentCodesBatchId);
+  if(!b||!b.codes) return;
+  const q = document.getElementById('codes-search').value.trim().toUpperCase();
+  const f = document.getElementById('codes-filter').value;
+  let list = b.codes.filter(c=>{
+    if(q && !c.code.includes(q)) return false;
+    if(f==='used' && !c.used) return false;
+    if(f==='unused' && c.used) return false;
+    return true;
+  });
+  document.getElementById('codes-count').textContent = `顯示 ${list.length} / ${b.codes.length} 張`;
+  const isCsvBatch = (b.mode === 'csv');
+  document.getElementById('codes-grid').innerHTML = list.slice(0,400).map((c,i)=>`
+    <div class="code-cell">
+      <span class="ci">${i+1}</span>
+      ${isCsvBatch && c.uid ? `<span class="ct" style="font-size:10px;color:#8B6D1F;min-width:90px;max-width:90px;overflow:hidden;text-overflow:ellipsis;" title="${c.uid}">${c.uid}</span>` : ''}
+      <span class="ct">${c.code}</span>
+      <span class="cs ${c.used?'used':'unused'}">${c.used?'已兌換':'未使用'}</span>
+      <button class="cb" onclick="copyRedeemCode('${c.code}')">複製</button>
+    </div>
+  `).join('') + (list.length>400 ? `<div style="grid-column:1/-1;text-align:center;font-size:11px;color:#A89070;padding:8px;">前 400 張預覽 · 下載 CSV 取得完整清單</div>` : '');
+}
+
+function copyAllListCodes(){
+  const b = BATCH_DATA.find(x=>x.id===currentCodesBatchId);
+  if(!b||!b.codes) return;
+  const text = b.codes.map(c=>c.code).join('\n');
+  navigator.clipboard.writeText(text).then(()=>showToast(`已複製 ${b.codes.length} 筆兌換碼`));
+}
+
+function downloadCodesCSV(){
+  const b = BATCH_DATA.find(x=>x.id===currentCodesBatchId);
+  if(!b||!b.codes) return;
+  const isCsvMode = (b.mode === 'csv');
+  const header = isCsvMode ? '序號,用戶UID,兌換碼,狀態,批次ID,渠道標籤' : '序號,兌換碼,狀態,批次ID,渠道標籤';
+  const rows = b.codes.map((c,i)=> isCsvMode
+    ? `${i+1},${c.uid||''},${c.code},${c.used?'已兌換':'未使用'},${b.id},${b.tag}`
+    : `${i+1},${c.code},${c.used?'已兌換':'未使用'},${b.id},${b.tag}`
+  );
+  const csv = header + '\n' + rows.join('\n');
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${b.id}-codes.csv`;
+  a.click();
+  showToast('兌換碼清單 CSV 已下載');
+}
+
+// ═══════════ 操作鈕（暫停 / 恢復 / 修改有效期 / 撤回 ）═══════════
+function pauseBatch(id){
+  const b = BATCH_DATA.find(x=>x.id===id);
+  if(!b) return;
+  const isOverride = (CURRENT_USER.kind==='approver' && b.creator !== CURRENT_USER.username);
+  if(!confirm(`${isOverride?'⚠ 主管覆寫 — ':''}暫停批次「${id}」？此期間用戶無法兌換，可隨時恢復。`)) return;
+  b.status = 'paused';
+  AUDIT_DATA.unshift({time:nowStr(), user:CURRENT_USER.username, ip:CURRENT_USER.ip,
+    action:`暫停批次 ${id}（${b.tag}）${isOverride?' [主管覆寫]':''}`, dot:'#C9A040'});
+  renderBatches(); renderAuditLog();
+  showToast(`已暫停 ${id}${isOverride?'（主管覆寫）':''}`);
+}
+
+function resumeBatch(id){
+  const b = BATCH_DATA.find(x=>x.id===id);
+  if(!b) return;
+  const isOverride = (CURRENT_USER.kind==='approver' && b.creator !== CURRENT_USER.username);
+  b.status = 'active';
+  AUDIT_DATA.unshift({time:nowStr(), user:CURRENT_USER.username, ip:CURRENT_USER.ip,
+    action:`恢復批次 ${id}（${b.tag}）${isOverride?' [主管覆寫]':''}`, dot:'#3A7D4F'});
+  renderBatches(); renderAuditLog();
+  showToast(`已恢復 ${id}${isOverride?'（主管覆寫）':''}`);
+}
+
+let currentEditExpiryId = null;
+function editExpiry(id){
+  const b = BATCH_DATA.find(x=>x.id===id);
+  if(!b) return;
+  // 已有待審核改期 → 阻擋
+  if(b.pendingExpiryReview){
+    showToast('此批次已有改期申請待審核，請等候結果','#C0392B'); return;
+  }
+  currentEditExpiryId = id;
+  document.getElementById('edit-expiry-batch-id').textContent = id;
+  document.getElementById('edit-expiry-current').textContent = b.expire;
+
+  // 計算最後一筆兌換時間（從 DETAIL_DATA 找同批次最新紀錄）
+  const batchRecords = DETAIL_DATA.filter(d => d.batch === id);
+  let lastRedeemDate = null;
+  if(batchRecords.length > 0){
+    const sorted = batchRecords.slice().sort((a,b)=> b.time.localeCompare(a.time));
+    lastRedeemDate = sorted[0].time.slice(0,10); // yyyy-mm-dd
+  }
+  const lastRedeemEl = document.getElementById('edit-expiry-last-redeem');
+  if(lastRedeemDate){
+    lastRedeemEl.textContent = '最後兌換日期：' + lastRedeemDate;
+    lastRedeemEl.style.display = 'block';
+  } else {
+    lastRedeemEl.style.display = 'none';
+  }
+
+  // min：明天（不能改到今天或更早）
+  const today = new Date().toISOString().slice(0,10);
+  const inp = document.getElementById('edit-expiry-input');
+  inp.min = addDays(today, 1);
+  inp.value = '';
+
+  document.getElementById('edit-expiry-overlay').classList.add('show');
+}
+function addDays(dateStr, n){
+  const d = new Date(dateStr);
+  d.setDate(d.getDate() + n);
+  return d.toISOString().slice(0,10);
+}
+function closeEditExpiry(){ document.getElementById('edit-expiry-overlay').classList.remove('show'); }
+function confirmEditExpiry(){
+  const v = document.getElementById('edit-expiry-input').value;
+  if(!v){ showToast('請選擇新到期日','#C0392B'); return; }
+  const b = BATCH_DATA.find(x=>x.id===currentEditExpiryId);
+  if(!b) return;
+
+  const today = new Date().toISOString().slice(0,10);
+
+  // 驗證：不能改到今天或更早
+  if(v <= today){ showToast('新到期日必須晚於今天','#C0392B'); return; }
+  // 驗證：不能早於最後一筆兌換日
+  const batchRecords = DETAIL_DATA.filter(d => d.batch === b.id);
+  if(batchRecords.length > 0){
+    const sorted = batchRecords.slice().sort((a,c)=> c.time.localeCompare(a.time));
+    const lastRedeemDate = sorted[0].time.slice(0,10);
+    if(v < lastRedeemDate){ showToast('新到期日不能早於最後兌換日期 ' + lastRedeemDate,'#C0392B'); return; }
+  }
+
+  // 送出前確認警示
+  if(!confirm('此操作需主管覆核，確定送出改期申請？')) return;
+
+  // 送出後 → 待審核狀態（不立即修改 expire）
+  b.pendingExpiryReview = true;
+  b.pendingNewExpire = v;
+  AUDIT_DATA.unshift({time:nowStr(), user:CURRENT_USER.username, ip:CURRENT_USER.ip,
+    action:`送出改期申請 ${b.id}：${b.expire} → ${v}（待主管覆核）`, dot:'#C9A040'});
+  closeEditExpiry();
+  renderBatches(); renderAuditLog();
+  showToast(`${b.id} 改期申請已送出，等候主管覆核`);
+}
+
+function withdrawBatch(id){
+  const b = BATCH_DATA.find(x=>x.id===id);
+  if(!b) return;
+  if(b.creator !== CURRENT_USER.username){ showToast('只能撤回自己建立的批次','#C0392B'); return; }
+  if(!confirm(`確定撤回批次「${id}」？已凍結資金會立即釋回。`)) return;
+  // 釋回凍結
+  if(b.type==='token' && b.frozenAmt>0){
+    WALLET_BALANCE[b.coin] = (WALLET_BALANCE[b.coin]||0) + b.frozenAmt;
+    FROZEN_BUDGET[b.coin]  = Math.max(0, (FROZEN_BUDGET[b.coin]||0) - b.frozenAmt);
+  }
+  const releasedAmt = b.frozenAmt;
+  b.status = 'cancelled';
+  b.frozenAmt = 0; b.frozenTWD = 0;
+  AUDIT_DATA.unshift({time:nowStr(), user:CURRENT_USER.username, ip:CURRENT_USER.ip,
+    action:`操作人撤回（送審前）${id}${releasedAmt>0?`，釋回 ${fmtAmt(releasedAmt,b.coin)} ${b.coin}`:''}`,
+    dot:'#888'});
+  renderBatches(); renderAuditLog();
+  showToast(`${id} 已撤回`, '#888');
+}
+
+function nowStr(){ return new Date().toLocaleString('sv').replace('T',' ').slice(0,19); }
+
+
+/* ═══════════ NAVIGATION ═══════════ */
+function switchTab(name, evt){
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.sidebar-link').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  const src = evt&&evt.target ? evt.target.closest('.sidebar-link') : null;
+  if(src){ src.classList.add('active'); }
+  else { const b=document.querySelector(`.sidebar-link[onclick*="'${name}'"]`); if(b)b.classList.add('active'); }
+  if(name==='batches'){ renderBatches(); renderAuditLog(); renderDonut(); }
+  if(name==='detail'){ renderDetail(DETAIL_DATA); }
+}
+
+/* ═══════════ STEP WIZARD ═══════════ */
+let currentStep = 1;
+let codeType = 'token';
+let previewCodes = [];
+
+function goStep(n){
+  if(n===2 && !validateStep1()) return;
+  if(n===3){ buildConfirm(); renderBalanceCheck(); }
+  [1,2,3].forEach(i=>{
+    document.getElementById('step'+i).classList.toggle('active', i===n);
+    const sc=document.getElementById('sc'+i);
+    const sl=document.getElementById('sl'+i);
+    if(i<n){ sc.classList.add('done'); sc.classList.remove('active'); sl.classList.add('done'); sl.classList.remove('active'); }
+    else if(i===n){ sc.classList.add('active'); sc.classList.remove('done'); sl.classList.add('active'); sl.classList.remove('done'); }
+    else { sc.classList.remove('active','done'); sl.classList.remove('active','done'); }
+    if(i<3){ const c=document.getElementById('conn'+i); if(c) c.classList.toggle('done',i<n); }
+  });
+  currentStep=n;
+}
+
+function validateStep1(){
+  const coin = document.getElementById('sel-coin').value;
+  const amt  = parseFloat(document.getElementById('inp-amount').value);
+  const tag  = document.getElementById('inp-tag').value.trim();
+  const exp  = document.getElementById('inp-expire').value;
+  if(!coin){ showToast('請選擇幣種','#C0392B'); return false; }
+  if(!amt||amt<=0){ showToast('請輸入正確面額','#C0392B'); return false; }
+  if(codeMode==='multi'){
+    const qty = parseInt(document.getElementById('inp-qty').value);
+    if(!qty||qty<1){ showToast('請輸入生成數量','#C0392B'); return false; }
+  } else if(codeMode==='single'){
+    const limit = parseInt(document.getElementById('inp-single-limit').value);
+    if(!limit||limit<1){ showToast('請輸入最大兌換人次','#C0392B'); return false; }
+    const code = document.getElementById('inp-single-code').value.trim();
+    if(!code){ showToast('請輸入或產生固定兌換碼','#C0392B'); return false; }
+    if(!buildSingleCodeRegex().test(code)){
+      showToast('固定兌換碼格式錯誤，應為 ' + buildSingleCodeExample() + '（禁止使用 I L O 0 1）', '#C0392B');
+      return false;
+    }
+  } else if(codeMode==='csv'){
+    const qty = parseInt(document.getElementById('inp-qty').value);
+    if(!qty||qty<1){ showToast('請先上傳並確認 CSV 名單','#C0392B'); return false; }
+  }
+  if(!tag){ showToast('渠道標籤為必填','#C0392B'); return false; }
+  if(!exp){ showToast('請選擇有效期限','#C0392B'); return false; }
+  return true;
+}
+
+function selectType(t){
+  codeType = t;
+  document.getElementById('type-token').classList.toggle('selected', t==='token');
+  calcFiat();
+}
+
+/* ═══════════ FIAT CALC ═══════════ */
+function calcFiat(){
+  const coin = document.getElementById('sel-coin').value;
+  const amt  = parseFloat(document.getElementById('inp-amount').value)||0;
+  const qty  = codeMode==='single'
+    ? (parseInt(document.getElementById('inp-single-limit').value)||0)
+    : (parseInt(document.getElementById('inp-qty').value)||0);
+  if(!coin||!amt){ document.getElementById('fiat-box').style.display='none'; return; }
+  document.getElementById('fiat-box').style.display='flex';
+  const rate = COIN_RATE[coin]||1;
+  const unitTWD = amt * rate;
+  const totalTWD = unitTWD * qty;
+  document.getElementById('fiat-val').textContent = 'NT$'+totalTWD.toLocaleString(undefined,{maximumFractionDigits:2})+' TWD';
+  document.getElementById('fiat-unit').textContent = 'NT$'+unitTWD.toLocaleString(undefined,{maximumFractionDigits:2})+' TWD';
+  document.getElementById('fiat-qty-disp').textContent = qty.toLocaleString()+' 張';
+  const warn = document.getElementById('fiat-warn');
+  warn.style.display = totalTWD > 1000000 ? 'block' : 'none';
+  document.getElementById('fiat-val').style.color = totalTWD > 1000000 ? '#C0392B' : '#8B6D1F';
+}
+
+/* ═══════════ BALANCE CHECK ═══════════ */
+function renderBalanceCheck(){
+  const coin     = document.getElementById('sel-coin').value || 'USDT';
+  const amt      = parseFloat(document.getElementById('inp-amount').value) || 0;
+  const qty      = codeMode === 'single'
+    ? (parseInt(document.getElementById('inp-single-limit').value) || 0)
+    : (parseInt(document.getElementById('inp-qty').value) || 0);
+
+  const required = amt * qty;
+  const walletBal = WALLET_BALANCE[coin] || 0;
+  const frozen    = FROZEN_BUDGET[coin]  || 0;
+  const remaining = walletBal - required;
+
+  const fmt = v => fmtAmt(v, coin) + ' ' + coin;
+
+  document.getElementById('bc-wallet').textContent   = fmt(walletBal);
+  document.getElementById('bc-required').textContent = fmt(required);
+  document.getElementById('bc-frozen').textContent   = fmt(frozen);
+
+  // 凍結預覽卡（Token 永遠顯示）
+  const fpCard = document.getElementById('freeze-preview-card');
+  if(fpCard) fpCard.style.display = 'block';
+  // 幣別 badge（color tag）
+  document.getElementById('freeze-coin-badge').innerHTML = COIN_TAG[coin] || '';
+  document.getElementById('freeze-coin-amt').textContent = fmtAmt(required, coin);
+  document.getElementById('freeze-coin-unit').textContent = coin;
+  document.getElementById('freeze-twd-amt').textContent  =
+    (required * (COIN_RATE[coin]||1)).toLocaleString(undefined,{minimumFractionDigits:2, maximumFractionDigits:2});
+
+  document.getElementById('bc-remaining').textContent = fmt(Math.abs(remaining));
+
+  let state, verdict, remClass;
+  if(remaining >= walletBal * 0.1){
+    state = 'ok'; verdict = '檢核通過 PASS — 餘額充足，可執行凍結';
+    remClass = 'balance-row-val green';
+  } else if(remaining >= 0){
+    state = 'warn'; verdict = '餘額偏低 WARNING — 凍結後熱錢包剩餘不足 10%，請確認';
+    remClass = 'balance-row-val gold';
+  } else {
+    state = 'block'; verdict = '系統阻擋 BLOCKED — 公司自有熱錢包餘額不足，無法凍結';
+    remClass = 'balance-row-val red';
+    document.getElementById('bc-remaining').textContent = '- ' + fmt(Math.abs(remaining));
+  }
+
+  const blk = document.getElementById('balance-check-block');
+  blk.className = `balance-check ${state} mb20`;
+  document.getElementById('bc-remaining').className  = remClass;
+  document.getElementById('bc-verdict').textContent  = verdict;
+  document.getElementById('bc-verdict').className    = `balance-verdict ${state}`;
+  document.getElementById('bc-title').textContent    = '公司自有熱錢包餘額檢核';
+  document.querySelector('#step3 .btn-red').disabled = (state === 'block');
+}
+
+/* ═══════════ UTILS ═══════════ */
+function limitDecimals(el, dp){
+  const val = el.value;
+  if(val.includes('.')){
+    const parts = val.split('.');
+    if(parts[1].length > dp) el.value = parts[0] + '.' + parts[1].slice(0, dp);
+  }
+}
+function fmtAmt(n, coin){
+  // 按幣別精度截位，使用 toLocaleString 加千分位，保留 trailing zeros 以維持金融顯示一致性
+  const dp = (coin && COIN_DP[coin] != null) ? COIN_DP[coin] : 8;
+  // 用 Number().toFixed 後再丟給 Intl，避開 parseFloat 在大額時的科學記號問題
+  const fixed = Number(n).toFixed(dp);
+  const [intPart, fracPart] = fixed.split('.');
+  const withCommas = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return fracPart ? withCommas + '.' + fracPart : withCommas;
+}
+
+/* ═══════════ MODE TOGGLE ═══════════ */
+let codeMode = 'multi';
+/* ── CSV 真實解析（FileReader API）────────────────────────── */
+window._csvPairs1 = [];  // 第一份有效配對
+window._csvPairs2 = [];  // 第二份有效配對
+
+function parseCsvText(text) {
+  var lines = text.split(/\r?\n/);
+  var valid = [], invalid = 0;
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i].trim();
+    if (!line) continue;                              // 空白行略過
+    var cols = line.split(',').map(function(c){ return c.trim(); });
+    // 自動略過標題列（第一行且首欄含英文字母非數字開頭）
+    if (i === 0 && /[a-zA-Z]/.test(cols[0]) && !/^\d/.test(cols[0])) continue;
+    if (cols.length < 2 || !cols[0] || !cols[1]) { invalid++; continue; }
+    valid.push({ uid: cols[0], code: cols[1] });
+  }
+  return { valid: valid, invalid: invalid };
+}
+
+function mockCsvLoad(inp) {
+  var file = inp && inp.files && inp.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var result = parseCsvText(e.target.result);
+    window._csvPairs1 = result.valid;
+    var total = result.valid.length + result.invalid;
+
+    // 檔案標籤
+    var tagsWrap = document.getElementById('csv-tags-wrap');
+    tagsWrap.innerHTML = '<span style="display:inline-flex;align-items:center;gap:5px;background:#FFF3CC;color:#8B6D1F;border:1px solid #E8C97A;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:700;margin-right:6px;">📄 ' + file.name + '\u3000' + result.valid.length + ' \u7b46</span>';
+    document.getElementById('csv-file-tags').style.display = 'block';
+    document.getElementById('csv-upload-text').textContent = '重新選擇';
+
+    // 更新數字
+    document.getElementById('csv-r1-valid').textContent   = result.valid.length;
+    document.getElementById('csv-r1-invalid').textContent = result.invalid;
+    document.getElementById('csv-r1-total').textContent   = total;
+
+    // 警示訊息
+    var warnDiv = document.getElementById('csv-r1-warn');
+    if (result.invalid > 0) {
+      warnDiv.style.display = 'block';
+      warnDiv.innerHTML = '⚠ ' + result.invalid + ' 筆格式錯誤將被跳過。若名單仍有缺漏，可補充上傳第二份 CSV。';
+    } else {
+      warnDiv.style.display = 'none';
+    }
+
+    // 確認按鈕
+    var btn = document.getElementById('csv-confirm-btn-1');
+    btn.textContent = '以 ' + result.valid.length + ' 筆確認建立';
+    btn.onclick = function(){ confirmCsvFinal(result.valid.length); };
+
+    document.getElementById('csv-result-1').style.display = 'block';
+    document.getElementById('csv-result-2').style.display = 'none';
+    document.getElementById('csv-confirmed').style.display = 'none';
+    document.getElementById('csv-supplement-area').style.display = 'none';
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+function showSupplementUpload(){
+  document.getElementById('csv-supplement-area').style.display='block';
+}
+
+function mockCsvLoad2(inp) {
+  var file = inp && inp.files && inp.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var result = parseCsvText(e.target.result);
+    // 合併去重（以 uid 為 key）
+    var existUids = {};
+    window._csvPairs1.forEach(function(p){ existUids[p.uid] = true; });
+    var newPairs = [], dupCount = 0;
+    result.valid.forEach(function(p){
+      if (existUids[p.uid]) { dupCount++; }
+      else { existUids[p.uid] = true; newPairs.push(p); }
+    });
+    window._csvPairs2 = newPairs;
+    var merged = window._csvPairs1.length + newPairs.length;
+
+    // 檔案標籤
+    var tagsWrap = document.getElementById('csv-tags-wrap');
+    tagsWrap.innerHTML += '<span style="display:inline-flex;align-items:center;gap:5px;background:#E8F4FE;color:#1A5276;border:1px solid #A0C4E8;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:700;margin-right:6px;">📄 ' + file.name + '\u3000' + result.valid.length + ' \u7b46</span>';
+
+    // 更新數字
+    document.getElementById('csv-r2-valid').textContent   = merged;
+    document.getElementById('csv-r2-invalid').textContent = result.invalid;
+    document.getElementById('csv-r2-dup').textContent     = dupCount;
+    document.getElementById('csv-r2-msg').innerHTML       = '✓ 第 2 份新增 ' + newPairs.length + ' 筆，重複去重 ' + dupCount + ' 筆，合計 ' + merged + ' 筆有效配對';
+
+    // 確認按鈕
+    var btn = document.getElementById('csv-confirm-btn-2');
+    btn.textContent = '以 ' + merged + ' 筆確認建立';
+    btn.onclick = function(){ confirmCsvFinal(merged); };
+
+    document.getElementById('csv-supplement-area').style.display = 'none';
+    document.getElementById('csv-result-1').style.display = 'none';
+    document.getElementById('csv-result-2').style.display = 'block';
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+function confirmCsvFinal(n){
+  document.getElementById('csv-result-1').style.display='none';
+  document.getElementById('csv-result-2').style.display='none';
+  document.getElementById('csv-supplement-area').style.display='none';
+  document.getElementById('csv-confirmed-text').textContent='✓ 合計 '+n+' 筆有效 UID ↔ 兌換碼配對已確認';
+  document.getElementById('csv-confirmed').style.display='block';
+  var qf=document.getElementById('inp-qty');
+  if(qf){ qf.value=n; calcFiat(); }
+  // 生成 mock UID↔碼 配對，供 doCreate 使用
+  window._pendingCsvPairs = [];
+  for(var i=0;i<n;i++){
+    var uid='UID_'+String(10000000+Math.floor(Math.random()*89999999));
+    var parts=[4,4,4].map(function(l){var s='';for(var k=0;k<l;k++)s+=SAFE_CHARS[Math.floor(Math.random()*SAFE_CHARS.length)];return s;});
+    var code='CSV-'+parts.join('-');
+    window._pendingCsvPairs.push({uid:uid,code:code,used:false});
+  }
+}
+function resetCsv(){
+  document.getElementById('csv-file-tags').style.display='none';
+  document.getElementById('csv-tags-wrap').innerHTML='';
+  document.getElementById('csv-upload-text').textContent='選擇 CSV 檔案（UID + 兌換碼對應表）';
+  document.getElementById('csv-result-1').style.display='none';
+  document.getElementById('csv-result-2').style.display='none';
+  document.getElementById('csv-supplement-area').style.display='none';
+  document.getElementById('csv-confirmed').style.display='none';
+  var qf=document.getElementById('inp-qty');
+  if(qf){ qf.value=''; calcFiat(); }
+}
+function setMode(m){
+  codeMode = m;
+  ['mode-multi','mode-single','mode-csv'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el) el.classList.remove('selected');
+  });
+  var active=document.getElementById('mode-'+m);
+  if(active) active.classList.add('selected');
+  document.getElementById('single-code-box').style.display = m==='single' ? 'block' : 'none';
+  document.getElementById('csv-mode-box').style.display = m==='csv' ? 'block' : 'none';
+  document.getElementById('multi-code-section').style.display = m==='multi' ? 'block' : 'none';
+  document.getElementById('qty-field').style.display = m==='multi' ? 'block' : 'none';
+  // CSV 模式：停用 single-limit 避免瀏覽器驗證報錯；qty 只隱藏不 disable
+  var sl = document.getElementById('inp-single-limit');
+  if(sl){ sl.disabled = (m!=='single'); if(m==='single'){ sl.value=''; if(!document.getElementById('inp-single-code').value) genSingleCode(); } }
+  if(m!=='csv'){ var sq=document.getElementById('inp-qty'); if(sq) sq.value=''; }
+  calcFiat();
+}
+function genSingleCode(){
+  const prefix = document.getElementById('set-prefix')?.value || '';
+  const p = prefix ? prefix.toUpperCase()+'-' : '';
+  const part = ()=>{ let s=''; for(let i=0;i<4;i++) s+=SAFE_CHARS[Math.floor(Math.random()*SAFE_CHARS.length)]; return s; };
+  const code = genUniqueCode(()=> p+part()+'-'+part());
+  USED_CODES.add(code);
+  document.getElementById('inp-single-code').value = code;
+  sanitizeSingleCodeInput(document.getElementById('inp-single-code'));
+}
+
+/**
+ * 即時sanitize：
+ * 1. 轉大寫
+ * 2. 移除不在 SAFE_CHARS 且不是連字符的字元（I L O 0 1 及其他）
+ * 3. 更新 hint 文字（格式符合 / 格式錯誤 / 預設說明）
+ */
+function sanitizeSingleCodeInput(el){
+  const raw = el.value.toUpperCase();
+  const cleaned = raw.replace(/[^ABCDEFGHJKMNPQRSTUVWXYZ23456789-]/g, '');
+  if(cleaned !== raw) el.value = cleaned; // 有非法字就直接移除
+  // 字數計數器
+  const counter = document.getElementById('single-code-counter');
+  if(counter){
+    const len = cleaned.length;
+    counter.textContent = len + ' / 30';
+    counter.style.color = len >= 30 ? '#C0392B' : '#A89070';
+  }
+  const hint = document.getElementById('single-code-hint');
+  if(!hint) return;
+  if(!cleaned){
+    hint.textContent = '僅允許 A-Z（排除 I L O）、2-9，以 - 分隔';
+    hint.style.color = '#A89070';
+  } else if(buildSingleCodeRegex().test(cleaned)){
+    hint.textContent = '✓ 格式正確';
+    hint.style.color = '#3A7D4F';
+  } else {
+    hint.textContent = '格式應為：' + buildSingleCodeExample() + '（排除 I L O 0 1）';
+    hint.style.color = '#C0392B';
+  }
+}
+
+/** 依目前 set-format + set-prefix 建立正則 */
+function buildSingleCodeRegex(){
+  const SC = '[ABCDEFGHJKMNPQRSTUVWXYZ23456789]';
+  const fmt = document.getElementById('set-format')?.value || '4-4-4';
+  const pfx = (document.getElementById('set-prefix')?.value || '').toUpperCase();
+  const body = fmt.split('-').map(n => SC+'{'+parseInt(n)+'}').join('-');
+  const pre  = pfx ? pfx.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'-' : '';
+  return new RegExp('^'+pre+body+'$');
+}
+
+/** 給 toast / hint 用的可讀格式範例 */
+function buildSingleCodeExample(){
+  const fmt = document.getElementById('set-format')?.value || '4-4-4';
+  const pfx = (document.getElementById('set-prefix')?.value || '').toUpperCase();
+  const body = fmt.split('-').map(n => 'X'.repeat(parseInt(n))).join('-');
+  return pfx ? pfx+'-'+body : body;
+}
+
+/* ═══════════ CODE GENERATOR ═══════════ */
+function genCode(){
+  const fmt = document.getElementById('set-format')?.value || '4-4-4';
+  const parts = fmt.split('-').map(n=>{
+    let s='';
+    for(let i=0;i<parseInt(n);i++) s+=SAFE_CHARS[Math.floor(Math.random()*SAFE_CHARS.length)];
+    return s;
+  });
+  return parts.join('-');
+}
+
+function renderPreview(){
+  const raw = document.getElementById('set-prefix')?.value||'';
+  const prefix = raw ? raw.toUpperCase()+'-' : '';
+  document.getElementById('code-preview').innerHTML = previewCodes.map((c,i)=>
+    `<div class="code-row">
+      <span style="color:#A89070;font-size:11px;width:20px;">${i+1}.</span>
+      <span style="flex:1;">${prefix}${c}</span>
+      <button onclick="copyOne('${prefix}${c}')" style="background:none;border:none;color:#C9A040;cursor:pointer;font-size:11px;">複製</button>
+    </div>`
+  ).join('');
+}
+function regenPrev(){
+  // 釋放上一輪預覽碼，重新產生時不會自我衝突
+  PREVIEW_USED.clear();
+  previewCodes = [];
+  for(let i=0;i<5;i++){
+    const c = genUniqueCode(genCode);
+    PREVIEW_USED.add(c);
+    previewCodes.push(c);
+  }
+  renderPreview();
+}
+function updatePrefix(){
+  renderPreview();
+}
+
+function copyAllCodes(){
+  const rawP = document.getElementById('set-prefix')?.value||'';
+  const pfx = rawP ? rawP+'-' : '';
+  const text = previewCodes.map(c=>pfx+c).join('\n');
+  navigator.clipboard.writeText(text).then(()=>showToast('已複製 5 筆預覽代碼'));
+}
+function copyOne(c){
+  navigator.clipboard.writeText(c).then(()=>showToast('已複製：'+c));
+}
+
+/* ═══════════ CONFIRM ═══════════ */
+function buildConfirm(){
+  const coin = document.getElementById('sel-coin').value;
+  const amt  = document.getElementById('inp-amount').value;
+  const qty  = document.getElementById('inp-qty').value;
+  const tag  = document.getElementById('inp-tag').value;
+  const exp  = document.getElementById('inp-expire').value;
+  const rate = COIN_RATE[coin]||1;
+  const total= parseFloat(amt)*parseInt(qty)*rate;
+
+  const rows=[
+    ['兌換碼類型', TYPE_LABEL[codeType] || codeType],
+    ['派發模式', codeMode==='csv'?'CSV 指定配對（328 筆）':codeMode==='single'?'一碼多用':'多碼單用'],
+    ['幣種',coin],['單碼面額',`${amt} ${coin}`],['生成數量',`${qty} 張`],
+    ['等值總額',`NT$${total.toLocaleString(undefined,{maximumFractionDigits:2})} TWD`],
+    ['有效期限',exp],['渠道標籤',tag],
+    ['KYC 要求',document.getElementById('chk-kyc2').checked?'KYC2（嚴格實名）':'KYC1（信箱驗證）'],
+    ['裝置防刷',
+      document.getElementById('chk-dev').checked?'同裝置僅限一次（最嚴格）':
+      document.getElementById('chk-ip').checked?'同 IP 僅限一次':'不限制'],
+    ['生命週期',
+      document.getElementById('chk-new').checked?(`僅限新用戶 ${document.getElementById('inp-new-days').value||3} 天內註冊`):
+      document.getElementById('chk-old').checked?(`老用戶召回 ${document.getElementById('inp-old-days').value||30} 天未登入`):
+      codeMode==='csv'?'UID 指定配對（CSV 已匯入）':'不限'],
+    ['兌換次數',
+      document.getElementById('chk-once').checked?'每帳號限兌換一次':
+      document.getElementById('chk-dailylimit').checked?(`每日上限 ${document.getElementById('inp-dailylimit').value||1} 次`):'不限'],
+    ['流水解鎖',
+      document.getElementById('chk-vol').checked?(`需達成 ${document.getElementById('inp-vol').value||0} TWD 交易量（${document.getElementById('inp-voltimer').value||72} 小時內）`):'不需流水，立即可提現'],
+  ];
+  document.getElementById('confirm-summary').innerHTML = rows.map(([k,v])=>
+    `<div class="confirm-row"><div class="confirm-key">${k}</div><div class="confirm-val">${v}</div></div>`
+  ).join('');
+
+  const notice = document.getElementById('high-risk-notice');
+  notice.style.display = total>1000000 ? 'flex' : 'none';
+}
+
+function submitBatch(){
+  if(CURRENT_USER.kind === 'approver'){
+    showToast('審核角色不能建立批次（職責分離 SoD）','#C0392B');
+    return;
+  }
+  const digits=[...document.querySelectorAll('#twofa-inputs .twofa-digit')].map(i=>i.value).join('');
+  if(digits.length<6){ showToast('請輸入完整 2FA 驗證碼','#C0392B'); return; }
+  // 直接執行建立 — 高風險批次不再彈舊版主管密碼框（改走主管 RBAC 審核流程）
+  doCreate();
+}
+
+function doCreate(){
+  const coin   = document.getElementById('sel-coin').value;
+  const amt    = parseFloat(document.getElementById('inp-amount').value) || 0;
+  const tag    = document.getElementById('inp-tag').value.trim();
+  const expire = document.getElementById('inp-expire').value;
+  const isToken = codeType === 'token';
+  const isSingle = codeMode === 'single';
+  const total  = isSingle
+    ? (parseInt(document.getElementById('inp-single-limit').value) || 0)
+    : (parseInt(document.getElementById('inp-qty').value) || 0);
+  const frozenAmt = isToken ? amt * total : 0;
+  const frozenTWD = frozenAmt * (COIN_RATE[coin] || 1);
+
+  // 預覽碼鎖入全域 USED_CODES
+  previewCodes.forEach(c => USED_CODES.add(c));
+  PREVIEW_USED.clear();
+
+  // 產生新批次 ID
+  const nextNum = String(Math.max(...BATCH_DATA.map(b => parseInt(b.id.split('-')[2]) || 0)) + 1).padStart(3,'0');
+  const newId = 'BATCH-2026-' + nextNum;
+  const now = new Date().toLocaleString('sv').replace('T',' ').slice(0,19);
+
+  // ── 從熱錢包扣款進入凍結池（Token 才有資金動作）──
+  if(isToken){
+    if(WALLET_BALANCE[coin] < frozenAmt){
+      showToast('熱錢包餘額不足，無法凍結 — 已中止','#C0392B');
+      return;
+    }
+    WALLET_BALANCE[coin] -= frozenAmt;
+    FROZEN_BUDGET[coin]  = (FROZEN_BUDGET[coin] || 0) + frozenAmt;
+  }
+
+  // ── 取得 KYC / IP / 裝置 / 流水條件 ──
+  const kyc = document.getElementById('chk-kyc2').checked ? 'KYC2' : 'KYC1';
+  const ipLimit  = document.getElementById('chk-ip').checked || document.getElementById('chk-dev').checked;
+  const devLimit = document.getElementById('chk-dev').checked;
+  const volLimit = document.getElementById('chk-vol').checked;
+
+  // ── 取得固定碼（一碼多用）或產生碼清單（多碼單用）或 CSV 配對 ──
+  let redeemCode = null;
+  let codesList = null;
+  const isCsv = (codeMode === 'csv');
+  if(isSingle){
+    redeemCode = document.getElementById('inp-single-code').value.trim().toUpperCase();
+    USED_CODES.add(redeemCode);
+  } else if(isCsv){
+    // 使用 confirmCsvFinal 生成的配對
+    codesList = (window._pendingCsvPairs || []).map(p=>({uid:p.uid,code:p.code,used:p.used}));
+    codesList.forEach(p=>USED_CODES.add(p.code));
+    window._pendingCsvPairs = null; // 用完清除
+  } else {
+    codesList = [];
+    const pfx = nextNum;
+    const fmt = document.getElementById('set-format')?.value || '4-4-4';
+    const usrPrefix = (document.getElementById('set-prefix')?.value || '').toUpperCase();
+    const fullPrefix = usrPrefix ? usrPrefix+'-' : '';
+    for(let i=0;i<total;i++){
+      const code = genUniqueCode(()=>{
+        const parts = fmt.split('-').map(n=>{
+          let g=''; for(let k=0;k<parseInt(n);k++) g += SAFE_CHARS[Math.floor(Math.random()*SAFE_CHARS.length)];
+          return g;
+        });
+        return fullPrefix + parts.join('-');
+      });
+      USED_CODES.add(code);
+      codesList.push({code, used:false});
+    }
+  }
+
+  const newBatch = {
+    id: newId, tag, type: codeType, coin, amt, total, used: 0,
+    status: 'pending_review',
+    mode: isSingle ? 'single' : (isCsv ? 'csv' : 'multi'),
+    start: now.split(' ')[0], expire,
+    creator: CURRENT_USER.username, ip: CURRENT_USER.ip,
+    kyc, ipLimit, devLimit, volLimit,
+    anomaly: 'ok', anomalyMsg: '',
+    redeemCode, codes: codesList,
+    frozenAmt, frozenTWD,
+    submittedAt: now,
+  };
+  BATCH_DATA.unshift(newBatch);
+
+  // ── 稽核日誌 ──
+  AUDIT_DATA.unshift({
+    time: now,
+    user: CURRENT_USER.username,
+    ip: CURRENT_USER.ip,
+    action: `建立批次 ${newId}（${total} 張 ${coin}-${amt}）${isToken?`，凍結 ${fmtAmt(frozenAmt,coin)} ${coin}（≈NT$${Math.round(frozenTWD).toLocaleString()}）`:''}，送主管審核`,
+    dot: '#C9A040'
+  });
+
+  // ── 補上批次過濾與稽核過濾的選項 ──
+  const auditSel = document.getElementById('audit-batch-filter');
+  if(auditSel){
+    const opt = document.createElement('option'); opt.value=newId; opt.textContent=newId;
+    auditSel.insertBefore(opt, auditSel.children[1]);
+  }
+  // 多選下拉新增
+  if(typeof initMsDropdown === 'function') initMsDropdown();
+
+  showToast(`✓ 批次 ${newId} 已建立${isToken?'並凍結資金':''}，等待主管審核`, '#C9A040');
+
+  // ── 重置 Step 1 表單 ──
+  resetStep1();
+
+  // ── 跳到批次管理 tab 並 highlight 新批次 ──
+  setTimeout(()=>{
+    switchTab('batches', null);
+    // scroll to top
+    window.scrollTo({top:0, behavior:'smooth'});
+  }, 600);
+}
+
+function resetStep1(){
+  goStep(1);
+  document.getElementById('sel-coin').value='';
+  document.getElementById('inp-amount').value='';
+  document.getElementById('inp-qty').value='';
+  document.getElementById('inp-tag').value='';
+  document.getElementById('inp-single-code').value='';
+  document.getElementById('inp-single-limit').value='';
+  document.getElementById('fiat-box').style.display='none';
+  document.querySelectorAll('#twofa-inputs .twofa-digit').forEach(i=>i.value='');
+  codeType='token'; selectType('token');
+  if(codeMode!=='multi') setMode('multi');
+  regenPrev();
+}
+
+function closeRisk(){ document.getElementById('risk-overlay').classList.remove('show'); }
+function confirmRisk(){
+  // 此舊版主管密碼框已停用（改走 RBAC 主管審核），保留以防誤觸
+  closeRisk();
+  doCreate();
+}
+
+/* ═══════════ 2FA INPUT ═══════════ */
+function tfaMove(el, idx){
+  const inputs=[...document.querySelectorAll('.twofa-digit')];
+  el.value=el.value.replace(/[^0-9]/g,'');
+  if(el.value&&idx<5) inputs[idx+1].focus();
+}
+
+/* ═══════════ CHECK ITEMS ═══════════ */
+function toggleCheck(cb){
+  const wrap=cb.closest('.check-item');
+  wrap.classList.toggle('checked', cb.checked);
+}
+function toggleRadio(rb){
+  // 清掉同 name radio 所屬 wrap 的 checked class，再幫自己加回去
+  document.querySelectorAll('input[type=radio][name="'+rb.name+'"]').forEach(r=>{
+    const w=r.closest('.check-item');
+    if(w) w.classList.toggle('checked', r.checked);
+  });
+}
+function syncVolTimer(){
+  // 「需達成交易量」未勾選時，TWD 流水與小時欄位皆 disable
+  const on=document.getElementById('chk-vol').checked;
+  ['inp-vol','inp-voltimer'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){ el.disabled=!on; if(!on) el.value=''; }
+  });
+}
+
+/* ═══════════ BATCH LIST ═══════════ */
+const STATUS_BADGE={
+  pending_review: '<span class="badge badge-pending-review">待主管審核</span>',
+  active:    '<span class="badge badge-active">進行中</span>',
+  paused:    '<span class="badge badge-paused">已暫停</span>',
+  completed: '<span class="badge badge-completed">已完成</span>',
+  expired:   '<span class="badge badge-expired">已過期</span>',
+  cancelled: '<span class="badge badge-cancelled">已取消</span>',
+  rejected:  '<span class="badge badge-rejected">已駁回</span>',
+};
+const STATUS_LABEL={pending_review:'待主管審核',active:'進行中',paused:'已暫停',completed:'已完成',expired:'已過期',cancelled:'已取消',rejected:'已駁回'};
+const TYPE_BADGE={
+  token:   '<span class="badge badge-token">Token</span>',
+  coupon:  '<span class="badge badge-coupon">Coupon</span>',
+};
+const TYPE_LABEL={token:'可提現代幣（Token）', coupon:'Coupon'};
+const COIN_TAG={
+  USDT:'<span class="coin-tag coin-usdt">USDT</span>',
+  USDC:'<span class="coin-tag coin-usdc">USDC</span>',
+  BTC:'<span class="coin-tag coin-btc">BTC</span>',
+  ETH:'<span class="coin-tag coin-eth">ETH</span>',
+  BNB:'<span class="coin-tag coin-bnb">BNB</span>',
+};
+
+function renderBatches(){
+  const filter=document.getElementById('batch-filter').value;
+  let data=BATCH_DATA.filter(b=>filter==='all'||b.status===filter);
+  // 待審核置頂
+  data.sort((a,b)=>{
+    if(a.status==='pending_review' && b.status!=='pending_review') return -1;
+    if(b.status==='pending_review' && a.status!=='pending_review') return 1;
+    return 0;
+  });
+  const ANOMALY={ok:'<span class="anomaly-dot anomaly-ok" title="正常"></span>',warn:'<span class="anomaly-dot anomaly-warn" title="警告"></span>',alert:'<span class="anomaly-dot anomaly-alert" title="異常"></span>'};
+  const role = CURRENT_USER;
+  const isApprover = role.kind === 'approver';
+  const isOperator = role.kind === 'operator';
+
+  if(!data.length){
+    document.getElementById('batch-tbody').innerHTML = '<tr><td colspan="10" style="text-align:center;padding:40px;color:#A89070;">無符合條件的批次</td></tr>';
+    updateKPIs(); updateDonut();
+    return;
+  }
+
+  document.getElementById('batch-tbody').innerHTML=data.map(b=>{
+    const pct=Math.round(b.used/Math.max(b.total,1)*100);
+    const isPending = b.status === 'pending_review';
+    const stopped = ['cancelled','expired','completed','rejected'].includes(b.status);
+    const rowClass = isPending ? 'row-pending' : '';
+
+    // ── 兌換碼欄位 ──
+    let codeCell;
+    if(isPending && isOperator){
+      codeCell = `<span style="color:#A89070;font-size:11px;">待主管核可後可見</span>`;
+    } else if(b.mode === 'single'){
+      codeCell = `<span class="code-chip">${b.redeemCode||'—'}<button onclick="copyRedeemCode('${b.redeemCode||''}')">複製</button></span>
+                  <div class="fs11" style="color:#A89070;margin-top:3px;">一碼多用 · 剩 ${b.total-b.used}/${b.total}</div>`;
+    } else {
+      codeCell = `<button class="code-link" onclick="openCodesDrawer('${b.id}')">查看清單（${b.total} 張）</button>
+                  <div class="fs11" style="color:#A89070;margin-top:3px;">多碼單用</div>`;
+    }
+
+    // ── 審核欄位 ──
+    let reviewCell;
+    if(isPending){
+      if(isApprover){
+        // 防呆：不能審自己建的批次
+        if(b.creator === role.username){
+          reviewCell = `<span style="font-size:11px;color:#C0392B;">不能審自己的批次</span>`;
+        } else {
+          reviewCell = `<button class="btn-review" onclick="openReview('${b.id}')">審核</button>`;
+        }
+      } else {
+        reviewCell = `<span style="font-size:11px;color:#C9A040;font-weight:700;">等待主管</span>`;
+      }
+    } else if(b.status === 'rejected'){
+      reviewCell = `<span style="color:#C0392B;font-size:11px;font-weight:700;" title="${b.rejectReason||''}">已駁回</span>`;
+    } else if(b.reviewedBy){
+      reviewCell = `<span class="reviewed-tag">✓ ${b.reviewedBy}</span>`;
+    } else {
+      reviewCell = '<span style="color:#A89070;font-size:11px;">—</span>';
+    }
+
+    // ── 操作欄位 ──
+    // 操作員 & 審核主管皆可暫停/恢復/改期/緊急停止；撤回保留給操作員自建批次；審核透過「審核」欄入口
+    let actionBtns = `<button class="btn btn-outline btn-sm" onclick="openDrawer('${b.id}')">詳情</button>`;
+    const canRunOps = isOperator || isApprover;
+    if(canRunOps){
+      if(b.status === 'active'){
+        actionBtns += ` <button class="btn btn-outline btn-sm" onclick="pauseBatch('${b.id}')">暫停</button>`;
+        if(b.pendingExpiryReview){
+          if(isApprover){
+            actionBtns += ` <button class="btn btn-sm" style="background:#8B6D1F;color:#F0C96B;border:1px solid #C9A040;" onclick="openExpiryReview('${b.id}')">審核改期</button>`;
+          } else {
+            actionBtns += ` <span style="font-size:11px;color:#C9A040;border:1px solid #C9A040;border-radius:4px;padding:2px 6px;white-space:nowrap;">改期待審核</span>`;
+          }
+          actionBtns += ` <button class="btn btn-outline btn-sm" disabled style="opacity:0.4;cursor:not-allowed;">改期</button>`;
+        } else {
+          actionBtns += ` <button class="btn btn-outline btn-sm" onclick="editExpiry('${b.id}')">改期</button>`;
+        }
+        actionBtns += ` <button class="emergency-btn btn-sm" onclick="emergencyStop('${b.id}')">停止</button>`;
+      } else if(b.status === 'paused'){
+        actionBtns += ` <button class="btn btn-gold btn-sm" onclick="resumeBatch('${b.id}')">恢復</button>`;
+        actionBtns += ` <button class="emergency-btn btn-sm" onclick="emergencyStop('${b.id}')">停止</button>`;
+      }
+    }
+    // 撤回：僅 pending_review 且為自建批次的操作員可用
+    if(isOperator && b.status === 'pending_review' && b.creator === role.username){
+      actionBtns += ` <button class="btn btn-outline btn-sm" style="color:#C0392B;border-color:#C0392B;" onclick="withdrawBatch('${b.id}')">撤回</button>`;
+    }
+    // pending_review 但非自建者的操作員：顯示等待提示
+    if(isOperator && b.status === 'pending_review' && b.creator !== role.username){
+      actionBtns += ` <span style="font-size:11px;color:#A89070;">他人送審中</span>`;
+    }
+    // 已結束狀態：顯示佔位
+    if(['cancelled','expired','completed','rejected'].includes(b.status)){
+      actionBtns += ` <span style="font-size:11px;color:#A89070;">—</span>`;
+    }
+
+    return `<tr class="${rowClass}">
+      <td style="text-align:center;">${ANOMALY[b.anomaly]||''}</td>
+      <td class="fw700 fs12" style="color:#8B6D1F;font-family:monospace;white-space:nowrap;">${b.id}</td>
+      <td title="${b.tag}" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${b.tag}</td>
+      <td>${TYPE_BADGE[b.type] || '<span class="badge badge-coupon">'+b.type+'</span>'}</td>
+      <td>${codeCell}</td>
+      <td style="min-width:140px;">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <div class="progress-wrap" style="flex:1;margin:0;"><div class="progress-bar" style="width:${pct}%"></div></div>
+          <span class="fs11 fw700" style="color:#8B6D1F;white-space:nowrap;">${b.used}/${b.total}</span>
+        </div>
+        <div class="fs11" style="color:#A89070;margin-top:2px;">${pct}% 已兌換</div>
+      </td>
+      <td class="fs12" style="white-space:nowrap;">${b.expire}</td>
+      <td>${STATUS_BADGE[b.status]}</td>
+      <td>${reviewCell}</td>
+      <td><div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;">${actionBtns}</div></td>
+    </tr>`;
+  }).join('');
+
+  updateKPIs();
+  updateDonut();
+}
+
+/* ═══════════ KPI / DONUT UPDATE ═══════════ */
+function updateKPIs(){
+  const counts = {pending_review:0, active:0, paused:0, completed:0, expired:0, cancelled:0, rejected:0};
+  let totalGenerated=0, totalUsed=0, totalUSD=0;
+  BATCH_DATA.forEach(b=>{
+    counts[b.status] = (counts[b.status]||0) + 1;
+    // 已核可才計入「已生成」
+    if(['active','paused','completed','expired'].includes(b.status)){
+      totalGenerated += b.total;
+      totalUsed += b.used;
+      totalUSD += b.used * b.amt * (COIN_RATE[b.coin]||1);
+    }
+  });
+  const remain = totalGenerated - totalUsed;
+  const rate = totalGenerated > 0 ? Math.round(totalUsed/totalGenerated*1000)/10 : 0;
+  const setText = (id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=v; };
+  setText('kpi-pending', counts.pending_review);
+  setText('kpi-total', totalGenerated.toLocaleString());
+  setText('kpi-used', totalUsed.toLocaleString());
+  setText('kpi-used-rate', '兌換率 ' + rate + '%');
+  setText('kpi-remain', remain.toLocaleString());
+  setText('kpi-rejected', (counts.rejected + counts.cancelled).toLocaleString());
+  setText('kpi-rejected-sub', `駁回 ${counts.rejected} + 取消 ${counts.cancelled}（凍結金額已釋回）`);
+  setText('kpi-usd', 'NT$' + Math.round(totalUSD).toLocaleString());
+}
+
+function updateDonut(){
+  const counts = {pending_review:0, active:0, paused:0, completed:0, expired:0, cancelled:0, rejected:0};
+  BATCH_DATA.forEach(b=>{ counts[b.status] = (counts[b.status]||0) + 1; });
+  const total = BATCH_DATA.length || 1;
+  const pct = n => Math.round(n/total*1000)/10 + '%';
+  const setText = (id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=v; };
+  setText('lg-pending', counts.pending_review);  setText('lg-pending-pct', pct(counts.pending_review));
+  setText('lg-active', counts.active);            setText('lg-active-pct', pct(counts.active));
+  setText('lg-paused', counts.paused);            setText('lg-paused-pct', pct(counts.paused));
+  setText('lg-completed', counts.completed);      setText('lg-completed-pct', pct(counts.completed));
+  setText('lg-expired', counts.expired);          setText('lg-expired-pct', pct(counts.expired));
+  const cnclRej = counts.cancelled + counts.rejected;
+  setText('lg-cancelled', cnclRej);               setText('lg-cancelled-pct', pct(cnclRej));
+
+  if(donutChart){
+    donutChart.data.labels = ['待審核','進行中','已暫停','已完成','已過期','已取消/駁回'];
+    donutChart.data.datasets[0].data = [counts.pending_review, counts.active, counts.paused, counts.completed, counts.expired, cnclRej];
+    donutChart.data.datasets[0].backgroundColor = ['#E8C97A','#3A7D4F','#C9A040','#1F6F3F','#CCC','#C0392B'];
+    donutChart.update();
+  }
+}
+
+function emergencyStop(id){
+  const b = BATCH_DATA.find(x=>x.id===id);
+  if(!b) return;
+  const typed = prompt(`此操作不可逆，將立即取消批次「${id}」並回收所有未使用代碼，凍結金額自動釋回。\n\n請輸入完整批次 ID 確認：`);
+  if(typed !== id){
+    if(typed !== null) showToast('輸入不一致，操作已中止','#C0392B');
+    return;
+  }
+  // 釋回剩餘凍結（按未使用比例）
+  let releaseAmt = 0;
+  if(b.type === 'token' && b.frozenAmt > 0){
+    const usedRatio = b.used / Math.max(b.total, 1);
+    releaseAmt = b.frozenAmt * (1 - usedRatio);
+    WALLET_BALANCE[b.coin] = (WALLET_BALANCE[b.coin]||0) + releaseAmt;
+    FROZEN_BUDGET[b.coin]  = Math.max(0, (FROZEN_BUDGET[b.coin]||0) - releaseAmt);
+    b.frozenAmt = b.frozenAmt - releaseAmt;
+    b.frozenTWD = b.frozenAmt * (COIN_RATE[b.coin]||1);
+  }
+  b.status = 'cancelled';
+  const isOverride = (CURRENT_USER.kind==='approver' && b.creator !== CURRENT_USER.username);
+  AUDIT_DATA.unshift({
+    time: nowStr(),
+    user: CURRENT_USER.username,
+    ip:   CURRENT_USER.ip,
+    action: `緊急取消 ${id}（所有未使用代碼立即失效${releaseAmt>0?`，釋回 ${fmtAmt(releaseAmt,b.coin)} ${b.coin}`:''}）${isOverride?' [主管覆寫]':''}`,
+    dot: '#C0392B'
+  });
+  renderBatches();
+  renderAuditLog();
+  showToast('批次 '+id+' 已緊急取消，秒級生效'+(isOverride?'（主管覆寫）':''),'#C0392B');
+}
+
+function exportBatch(id){ showToast('正在準備加密 CSV 下載：'+id); }
+
+/* ═══════════ AUDIT LOG ═══════════ */
+let auditShowCount = 6;
+function renderAuditLog(){
+  const bFilter = document.getElementById('audit-batch-filter')?.value||'all';
+  const uFilter = document.getElementById('audit-user-filter')?.value||'all';
+  const dFilter = document.getElementById('audit-date-filter')?.value||'';
+  let data = AUDIT_DATA.filter(a=>{
+    if(bFilter!=='all' && !a.action.includes(bFilter)) return false;
+    if(uFilter!=='all' && a.user!==uFilter) return false;
+    if(dFilter && !a.time.startsWith(dFilter)) return false;
+    return true;
+  });
+  const shown = data.slice(0, auditShowCount);
+  document.getElementById('audit-count').textContent = `共 ${data.length} 筆`;
+  document.getElementById('audit-log').innerHTML=shown.map(a=>`
+    <div class="audit-row">
+      <div class="audit-dot" style="background:${a.dot};"></div>
+      <div class="audit-time">${a.time}</div>
+      <div class="audit-text">
+        ${a.action}
+        <div class="audit-user">${a.user} &nbsp;·&nbsp; ${a.ip}</div>
+      </div>
+    </div>
+  `).join('');
+  const btn=document.getElementById('audit-show-more');
+  if(btn) btn.style.display = data.length>auditShowCount?'inline-flex':'none';
+}
+function showMoreAudit(){ auditShowCount+=6; renderAuditLog(); }
+function resetAuditFilter(){
+  document.getElementById('audit-batch-filter').value='all';
+  document.getElementById('audit-user-filter').value='all';
+  document.getElementById('audit-date-filter').value='';
+  auditShowCount=6;
+  renderAuditLog();
+}
+
+/* ═══════════ DONUT CHART ═══════════ */
+let donutChart=null;
+function renderDonut(){
+  const ctx=document.getElementById('donut-chart');
+  if(!ctx) return;
+  if(donutChart){ donutChart.destroy(); }
+  donutChart=new Chart(ctx,{
+    type:'doughnut',
+    data:{
+      labels:['進行中','已暫停','已完成','已過期','已取消'],
+      datasets:[{data:[3,1,1,1,1],backgroundColor:['#3A7D4F','#C9A040','#1F6F3F','#CCC','#C0392B'],borderWidth:2,borderColor:'#fff'}]
+    },
+    options:{
+      cutout:'70%',
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.label+': '+c.raw.toLocaleString()+' 批次';}}}}
+    }
+  });
+}
+
+/* ═══════════ MASTER PAUSE ═══════════ */
+let masterPaused = false;
+function toggleMasterPause(){
+  masterPaused = !masterPaused;
+  document.getElementById('master-pause-bar').classList.toggle('show', masterPaused);
+  document.getElementById('master-pause-btn').textContent = masterPaused ? '解除全部暫停' : '全部暫停';
+  document.getElementById('master-pause-btn').style.background = masterPaused ? 'linear-gradient(135deg,#888,#AAA)' : '';
+  if(masterPaused){
+    BATCH_DATA.forEach(b=>{ if(b.status==='active'){ b._prevStatus='active'; b.status='paused'; } });
+    AUDIT_DATA.unshift({time:nowStr(),user:CURRENT_USER.username,ip:CURRENT_USER.ip,
+      action:`全站兌換碼緊急暫停（影響所有 active 批次）`, dot:'#C0392B'});
+    showToast('全站兌換碼已全部暫停','#C0392B');
+  } else {
+    BATCH_DATA.forEach(b=>{ if(b._prevStatus==='active'){ b.status='active'; delete b._prevStatus; } });
+    AUDIT_DATA.unshift({time:nowStr(),user:CURRENT_USER.username,ip:CURRENT_USER.ip,
+      action:`恢復全站兌換碼`, dot:'#3A7D4F'});
+    showToast('已恢復全部批次');
+  }
+  renderBatches();
+  renderAuditLog();
+}
+
+/* ═══════════ DRAWER ═══════════ */
+function openDrawer(id){
+  const b = BATCH_DATA.find(x=>x.id===id);
+  if(!b) return;
+  const anomalyColor = {ok:'#3A7D4F',warn:'#C9A040',alert:'#C0392B'};
+  document.getElementById('drawer-title').textContent = b.id;
+  document.getElementById('drawer-body').innerHTML = `
+    <div class="drawer-section">
+      <div class="drawer-section-title">基礎資訊</div>
+      <div class="drawer-row"><div class="drawer-key">渠道標籤</div><div class="drawer-val">${b.tag}</div></div>
+      <div class="drawer-row"><div class="drawer-key">類型</div><div class="drawer-val">${TYPE_LABEL[b.type] || b.type}</div></div>
+      <div class="drawer-row"><div class="drawer-key">幣種 / 面額</div><div class="drawer-val">${fmtAmt(b.amt, b.coin)} ${b.coin}</div></div>
+      <div class="drawer-row"><div class="drawer-key">生成總數</div><div class="drawer-val">${b.total} 張</div></div>
+      <div class="drawer-row"><div class="drawer-key">已兌換</div><div class="drawer-val">${b.used} 張（${Math.round(b.used/b.total*100)}%）</div></div>
+      <div class="drawer-row"><div class="drawer-key">生效日期</div><div class="drawer-val">${b.start} <span style="font-size:10px;color:#A89070;">00:00 (UTC+8)</span></div></div>
+      <div class="drawer-row"><div class="drawer-key">到期日期</div><div class="drawer-val">${b.expire} <span style="font-size:10px;color:#A89070;">23:59 (UTC+8)</span></div></div>
+      <div class="drawer-row"><div class="drawer-key">建立人員</div><div class="drawer-val">${b.creator}</div></div>
+      <div class="drawer-row"><div class="drawer-key">建立 IP</div><div class="drawer-val" style="font-family:monospace;">${b.ip}</div></div>
+    </div>
+    <div class="drawer-section">
+      <div class="drawer-section-title">風控條件設定</div>
+      <div class="drawer-row"><div class="drawer-key">KYC 要求</div><div class="drawer-val"><span class="badge ${b.kyc==='KYC2'?'badge-kyc2':'badge-kyc1'}">${b.kyc}</span></div></div>
+      <div class="drawer-row"><div class="drawer-key">IP 限制</div><div class="drawer-val" style="color:${b.ipLimit?'#3A7D4F':'#888'}">${b.ipLimit?'同 IP 僅限一次':'無限制'}</div></div>
+      <div class="drawer-row"><div class="drawer-key">裝置限制</div><div class="drawer-val" style="color:${b.devLimit?'#3A7D4F':'#888'}">${b.devLimit?'同裝置僅限一次':'無限制'}</div></div>
+      <div class="drawer-row"><div class="drawer-key">流水解鎖</div><div class="drawer-val" style="color:${b.volLimit?'#3A7D4F':'#888'}">${b.volLimit?'需達成交易量才可提現':'無流水限制'}</div></div>
+    </div>
+    <div class="drawer-section">
+      <div class="drawer-section-title">異常偵測</div>
+      <div class="drawer-row"><div class="drawer-key">狀態</div><div class="drawer-val" style="color:${anomalyColor[b.anomaly]};font-weight:700;">${{ok:'正常',warn:'警告',alert:'異常'}[b.anomaly]}</div></div>
+      ${b.anomalyMsg?`<div class="drawer-row"><div class="drawer-key">說明</div><div class="drawer-val text-red">${b.anomalyMsg}</div></div>`:''}
+    </div>
+  `;
+  // append code section
+  const isSingle = b.mode === 'single';
+  document.getElementById('drawer-body').innerHTML += isSingle ? `
+    <div class="drawer-section">
+      <div class="drawer-section-title">兌換序號（一碼多用）</div>
+      <div class="redeem-code-box">
+        <div class="redeem-code-label">共用序號</div>
+        <div class="redeem-code-text" id="drawer-redeem-code">${b.redeemCode||'—'}</div>
+        <button class="redeem-code-copy" onclick="copyRedeemCode('${b.redeemCode||''}')">複製序號</button>
+      </div>
+      <div style="font-size:11px;color:#A89070;margin-top:8px;">此序號可供多人輸入兌換，剩餘次數：${b.total - b.used} / ${b.total}</div>
+    </div>
+  ` : `
+    <div class="drawer-section">
+      <div class="drawer-section-title">兌換序號（多碼單用）</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;background:#FFF8E7;border:1px solid #EDE0C8;border-radius:8px;padding:12px 16px;">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:#5C4A1E;">共 ${b.total} 組唯一序號</div>
+          <div style="font-size:11px;color:#A89070;margin-top:3px;">已兌換 ${b.used} 組 · 剩餘 ${b.total - b.used} 組</div>
+        </div>
+        <button class="redeem-code-copy" onclick="exportBatchCodes('${b.id}')">匯出序號清單</button>
+      </div>
+      <div style="font-size:11px;color:#A89070;margin-top:8px;">每組序號限單一用戶兌換一次，匯出為 CSV 格式</div>
+    </div>
+  `;
+  document.getElementById('batch-drawer-overlay').classList.add('show');
+  document.getElementById('batch-drawer').classList.add('open');
+}
+function exportBatchCodes(batchId){
+  const b = BATCH_DATA.find(x=>x.id===batchId);
+  if(!b){ showToast('找不到批次資料'); return; }
+  const isCsvMode = (b.mode === 'csv');
+  let csv;
+  if(b.codes && b.codes.length){
+    const header = isCsvMode ? '序號,用戶UID,兌換碼,狀態' : '序號,兌換碼,狀態';
+    const rows = b.codes.map((c,i)=> isCsvMode
+      ? `${i+1},${c.uid||''},${c.code},${c.used?'已兌換':'未使用'}`
+      : `${i+1},${c.code},${c.used?'已兌換':'未使用'}`
+    );
+    csv = header + '\n' + rows.join('\n');
+  } else {
+    const codes = Array.from({length: Math.min(b.total, 20)}, (_,i)=>{
+      const prefix = b.redeemCode ? b.redeemCode.split('-')[0]+'-' : '';
+      const parts = [4,4,4].map(n=>{ let s=''; for(let j=0;j<n;j++) s+=SAFE_CHARS[Math.floor(Math.random()*SAFE_CHARS.length)]; return s; });
+      return `${i+1},${prefix}${parts.join('-')},${i < b.used ? '已兌換' : '未使用'}`;
+    });
+    csv = '序號,兌換碼,狀態\n' + codes.join('\n') + (b.total > 20 ? '\n...（實際匯出含全部 '+b.total+' 筆）' : '');
+  }
+  const blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `${batchId}-序號清單.csv`;
+  a.click();
+  showToast('序號清單匯出中...');
+}
+function copyRedeemCode(code){
+  if(!code){ showToast('無序號資料'); return; }
+  navigator.clipboard.writeText(code).then(()=>showToast('序號已複製：' + code));
+}
+function copyRedeemLink(url){
+  navigator.clipboard.writeText(url).then(()=>showToast('連結已複製'));
+}
+function downloadQR(){
+  const canvas = document.querySelector('#qr-canvas canvas');
+  if(!canvas){ showToast('QR Code 尚未產生'); return; }
+  const link = document.createElement('a');
+  link.download = 'redeem-qr.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+function closeDrawer(){
+  document.getElementById('batch-drawer-overlay').classList.remove('show');
+  document.getElementById('batch-drawer').classList.remove('open');
+}
+
+/* ═══════════ EXPORT ═══════════ */
+/* ── Batch multi-select ── */
+let msSelected = new Set();
+
+function initMsDropdown(){
+  const dd = document.getElementById('ms-dropdown');
+  if(!dd) return;
+  const STATUS_COLOR = {active:'#3A7D4F', paused:'#C9A040', completed:'#1F6F3F', expired:'#888', cancelled:'#C0392B'};
+  const STATUS_LABEL = {active:'進行中', paused:'已暫停', completed:'已完成', expired:'已過期', cancelled:'已取消'};
+  dd.innerHTML = '';
+  BATCH_DATA.forEach(b=>{
+    const item = document.createElement('div');
+    item.className = 'ms-item';
+    item.innerHTML = `
+      <input type="checkbox" id="ms-cb-${b.id}" value="${b.id}" onchange="onMsChange(this)">
+      <label for="ms-cb-${b.id}" style="display:flex;flex:1;align-items:center;gap:8px;cursor:pointer;">
+        <span class="ms-status-dot" style="background:${STATUS_COLOR[b.status]||'#888'}" title="${STATUS_LABEL[b.status]||b.status}"></span>
+        <span class="ms-item-id">${b.id}</span>
+        <span class="ms-item-tag">${b.tag}</span>
+      </label>`;
+    dd.appendChild(item);
+  });
+  const footer = document.createElement('div');
+  footer.className='ms-footer';
+  footer.textContent='清除全部';
+  footer.onclick = clearMsSelection;
+  dd.appendChild(footer);
+}
+
+function toggleMsDropdown(e){
+  e.stopPropagation();
+  const dd = document.getElementById('ms-dropdown');
+  const arrow = document.getElementById('ms-arrow');
+  const isOpen = dd.style.display !== 'none';
+  if(isOpen){ dd.style.display='none'; arrow.classList.remove('open'); return; }
+  dd.style.display='block';
+  arrow.classList.add('open');
+  setTimeout(()=>{ document.addEventListener('click', closeMsOnOutside, {once:true}); }, 0);
+}
+
+function closeMsOnOutside(e){
+  const wrap = document.getElementById('ms-wrap');
+  if(wrap && wrap.contains(e.target)){ document.addEventListener('click', closeMsOnOutside, {once:true}); return; }
+  document.getElementById('ms-dropdown').style.display='none';
+  document.getElementById('ms-arrow').classList.remove('open');
+}
+
+function onMsChange(cb){
+  if(cb.checked) msSelected.add(cb.value);
+  else msSelected.delete(cb.value);
+  renderMsTags();
+}
+
+function renderMsTags(){
+  const trigger = document.getElementById('ms-trigger');
+  const ph = document.getElementById('ms-placeholder');
+  trigger.querySelectorAll('.ms-tag').forEach(el=>el.remove());
+  if(msSelected.size === 0){
+    ph.style.display='';
+  } else {
+    ph.style.display='none';
+    msSelected.forEach(id=>{
+      const b = BATCH_DATA.find(x=>x.id===id);
+      if(!b) return;
+      const tag = document.createElement('span');
+      tag.className='ms-tag';
+      tag.innerHTML=`${b.id}<span class="ms-x" data-id="${id}">×</span>`;
+      tag.querySelector('.ms-x').onclick=(e)=>{ e.stopPropagation(); removeMsItem(id); };
+      trigger.insertBefore(tag, document.getElementById('ms-arrow'));
+    });
+  }
+  // grey out keyword field when batches are selected
+  const kwField = document.getElementById('exp-tag');
+  if(kwField){ kwField.disabled = msSelected.size>0; kwField.style.opacity = msSelected.size>0?'0.4':'1'; }
+}
+
+function removeMsItem(id){
+  msSelected.delete(id);
+  const cb = document.getElementById('ms-cb-'+id);
+  if(cb) cb.checked=false;
+  renderMsTags();
+}
+
+function clearMsSelection(){
+  msSelected.clear();
+  document.querySelectorAll('#ms-dropdown input[type=checkbox]').forEach(cb=>cb.checked=false);
+  renderMsTags();
+}
+
+function startExport(){
+  const prog = document.getElementById('export-progress');
+  const bar  = document.getElementById('export-progress-bar');
+  const lbl  = document.getElementById('export-progress-label');
+  const fmt  = document.getElementById('exp-format').value;
+  const batchLabel = msSelected.size>0 ? `已選 ${msSelected.size} 個批次` : '全部批次';
+  prog.style.display='flex'; prog.style.flexDirection='column'; bar.style.width='0%';
+  lbl.textContent = '正在篩選批次資料...';
+  let pct = 0;
+  const steps = ['正在篩選批次資料...','彙整兌換明細...','計算 ROI 數據...','加密壓縮檔案...','準備下載連結...'];
+  let si = 0;
+  const iv = setInterval(()=>{
+    pct += Math.random()*18+5;
+    if(pct>=100){ pct=100; clearInterval(iv); lbl.textContent='導出完成，即將下載'; showToast(`${batchLabel} ${fmt.toUpperCase()} 導出完成`); setTimeout(()=>{ prog.style.display='none'; bar.style.width='0%'; },2000); return; }
+    bar.style.width=pct+'%';
+    if(si<steps.length-1 && pct>si*22){ lbl.textContent=steps[si++]; }
+  },300);
+}
+
+/* ═══════════ DETAIL ═══════════ */
+// ═══════════ 兌換明細查詢 ═══════════
+let detailFiltered = [];
+let detailPage = 1;
+const DETAIL_PAGE_SIZE = 20;
+
+// 補充更多 demo 明細（前面 DETAIL_DATA 只有 5 筆，搜尋會太空）
+const EXTRA_DETAILS = [
+  {time:'2026-05-15 22:48:51',uid:'UID_88291047',code:'F2MR-V8KX-D4PT',batch:'BATCH-2026-048',type:'token',coin:'USDT',amt:100,ip:'114.32.55.201',kyc:'KYC2',withdraw:'已刪除',wtime:'—'},
+  {time:'2026-05-15 20:11:33',uid:'UID_70112458',code:'R6QN-A9JM-X2VL',batch:'BATCH-2026-048',type:'token',coin:'USDT',amt:100,ip:'27.247.86.119',kyc:'KYC2',withdraw:'暫停中',wtime:'—'},
+  {time:'2026-05-14 17:33:25',uid:'UID_82910044',code:'D5VK-X4HN-B7CJ',batch:'BATCH-2026-048',type:'token',coin:'USDT',amt:100,ip:'59.127.220.41',kyc:'KYC2',withdraw:'已過期',wtime:'—'},
+];
+EXTRA_DETAILS.forEach(d=>{ if(!USED_CODES.has(d.code)){ DETAIL_DATA.push(d); USED_CODES.add(d.code); } });
+DETAIL_DATA.sort((a,b)=> a.time<b.time ? 1 : -1);
+
+function renderDetail(data){
+  detailFiltered = data;
+  const total = data.length;
+  document.getElementById('det-count').textContent = total;
+  if(!total){
+    document.getElementById('detail-tbody').innerHTML =
+      '<tr><td colspan="11" style="text-align:center;padding:40px;color:#A89070;">無符合條件的資料</td></tr>';
+    renderDetailPager(0);
+    return;
+  }
+  const startIdx = (detailPage-1) * DETAIL_PAGE_SIZE;
+  const slice = data.slice(startIdx, startIdx + DETAIL_PAGE_SIZE);
+  function withdrawCell(d){
+    const cssMap = {'已提現':'badge-completed','未使用':'badge-paused','已刪除':'badge-void','暫停中':'badge-pending-review','已過期':'badge-expired'};
+    const cls = cssMap[d.withdraw] || 'badge-expired';
+    return `<span class="badge ${cls}" title="Token 本金提現狀態">${d.withdraw}</span>`;
+  }
+  document.getElementById('detail-tbody').innerHTML = slice.map(d=>`
+    <tr>
+      <td class="fs12">${d.time}</td>
+      <td class="fw700 fs12" style="font-family:monospace;color:#1A5276;">${d.uid}</td>
+      <td class="fs12" style="font-family:monospace;color:#8B6D1F;">${d.code}</td>
+      <td class="fs12" style="color:#A89070;">${d.batch}</td>
+      <td>${TYPE_BADGE[d.type] || '<span class="badge badge-coupon">'+d.type+'</span>'}</td>
+      <td>${COIN_TAG[d.coin]||d.coin}</td>
+      <td class="fw700">${d.amt} ${d.coin}</td>
+      <td class="fs12 fw700" style="font-family:monospace;">${d.ip}</td>
+      <td><span class="badge ${d.kyc==='KYC2'?'badge-kyc2':'badge-kyc1'}">${d.kyc}</span></td>
+      <td>${withdrawCell(d)}</td>
+      <td class="fs12" style="color:#A89070;">${d.wtime}</td>
+    </tr>
+  `).join('');
+  renderDetailPager(total);
+}
+
+function renderDetailPager(total){
+  let pager = document.getElementById('detail-pager');
+  if(!pager){
+    pager = document.createElement('div');
+    pager.id = 'detail-pager';
+    pager.className = 'pager';
+    document.getElementById('detail-tbody').closest('table').parentNode.appendChild(pager);
+  }
+  const pageCount = Math.max(1, Math.ceil(total / DETAIL_PAGE_SIZE));
+  if(detailPage > pageCount) detailPage = pageCount;
+  if(total === 0){ pager.innerHTML = ''; return; }
+  let html = `<button onclick="detailPageGo(1)" ${detailPage===1?'disabled':''}>«</button>
+              <button onclick="detailPageGo(${detailPage-1})" ${detailPage===1?'disabled':''}>‹</button>`;
+  const start = Math.max(1, detailPage-2);
+  const end   = Math.min(pageCount, start+4);
+  for(let i=start;i<=end;i++){
+    html += `<button class="${i===detailPage?'cur':''}" onclick="detailPageGo(${i})">${i}</button>`;
+  }
+  html += `<button onclick="detailPageGo(${detailPage+1})" ${detailPage===pageCount?'disabled':''}>›</button>
+           <button onclick="detailPageGo(${pageCount})" ${detailPage===pageCount?'disabled':''}>»</button>
+           <span style="margin-left:8px;color:#A89070;">${total} 筆 · 第 ${detailPage} / ${pageCount} 頁</span>`;
+  pager.innerHTML = html;
+}
+function detailPageGo(n){
+  detailPage = n;
+  renderDetail(detailFiltered);
+}
+
+function searchDetail(){
+  detailPage = 1;
+  const uid    = document.getElementById('det-uid').value.trim().toLowerCase();
+  const code   = document.getElementById('det-code').value.trim().toLowerCase();
+  const batch  = document.getElementById('det-batch').value.trim().toLowerCase();
+  const dStart = document.getElementById('det-start').value; // YYYY-MM-DD
+  const dEnd   = document.getElementById('det-end').value;
+  const wStatus= document.getElementById('det-withdraw').value;
+
+  let result = DETAIL_DATA.filter(d=>{
+    if(uid   && !d.uid.toLowerCase().includes(uid)) return false;
+    if(code  && !d.code.toLowerCase().includes(code)) return false;
+    if(batch && !d.batch.toLowerCase().includes(batch)) return false;
+    if(dStart && d.time.slice(0,10) < dStart) return false;
+    if(dEnd   && d.time.slice(0,10) > dEnd) return false;
+    if(wStatus){
+      if(wStatus && d.withdraw!==wStatus) return false;
+    }
+    return true;
+  });
+  renderDetail(result);
+  showToast(`查詢完成，共 ${result.length} 筆`);
+}
+
+function clearDetail(){
+  ['det-uid','det-code','det-batch','det-start','det-end'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('det-withdraw').value='';
+  detailPage = 1;
+  detailFiltered = [];
+  document.getElementById('detail-tbody').innerHTML =
+    '<tr><td colspan="11" style="text-align:center;padding:40px;color:#A89070;">請輸入查詢條件後點擊查詢</td></tr>';
+  document.getElementById('det-count').textContent='0';
+  const pager = document.getElementById('detail-pager');
+  if(pager) pager.innerHTML = '';
+}
+
+function exportDetail(){
+  const data = (detailFiltered && detailFiltered.length) ? detailFiltered : DETAIL_DATA;
+  if(!data.length){ showToast('沒有可導出的資料','#C0392B'); return; }
+  const header = ['兌換時間','用戶UID','兌換碼','批次','類型','幣種','面額','兌換IP','KYC','本金提現狀態','提現時間'];
+  const typeLabel = { token:'Token', coupon:'Coupon' };
+  const rows = data.map(d=>{
+    return [d.time, d.uid, d.code, d.batch, typeLabel[d.type]||d.type, d.coin, d.amt, d.ip, d.kyc, d.withdraw, d.wtime];
+  });
+  const csv = [header, ...rows].map(r=>r.map(v=>`"${(''+v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob(['\uFEFF'+csv], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `兌換明細_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  showToast(`已導出 ${data.length} 筆兌換明細 CSV`);
+}
+
+
+// ═══════════ 失敗記錄 ═══════════
+
+const FAIL_REASON_LABEL = {
+  notfound:'碼不存在', used:'碼已使用', expired:'已過期',
+  paused:'批次暫停', cancelled:'批次已取消',
+  kyc:'KYC 不足', ip:'同 IP 超限', dup:'重複兌換', csv:'UID 不在名單'
+};
+const FAIL_REASON_STYLE = {
+  notfound:'background:#FEF2F2;color:#991B1B;',
+  used:'background:#FEF2F2;color:#7F1D1D;',
+  expired:'background:#F3F4F6;color:#374151;',
+  paused:'background:#FFFBEB;color:#92400E;',
+  cancelled:'background:#FEF2F2;color:#991B1B;',
+  kyc:'background:#FFF7ED;color:#92400E;',
+  ip:'background:#F5F3FF;color:#7C3AED;',
+  dup:'background:#F0FDF4;color:#166534;',
+  csv:'background:#EEF2FF;color:#3730A3;'
+};
+
+const FAIL_DATA = (function(){
+  // ── 異常集群：UID_33201847 暴力猜碼（同 IP，短時間，全 notfound）──
+  const brute = [];
+  const bruteBase = new Date('2026-05-25T14:32:01').getTime();
+  for(let i=0;i<18;i++){
+    const t = new Date(bruteBase - i*9000);
+    const pad = n => String(n).padStart(2,'0');
+    const ts = `${t.getFullYear()}-${pad(t.getMonth()+1)}-${pad(t.getDate())} ${pad(t.getHours())}:${pad(t.getMinutes())}:${pad(t.getSeconds())}`;
+    const fakeCode = `A3BX-${pad(i)}-FAKE`;
+    brute.push({time:ts,uid:'UID_33201847',code:fakeCode,reason:'notfound',batch:null,ip:'114.32.55.201',kyc:'KYC1'});
+  }
+  // ── 同 IP 跨多 UID（114.32.55.201 同一 IP，不同帳號）──
+  const multiUid = [
+    {time:'2026-05-25 11:04:22',uid:'UID_88291047',code:'P2WC-M7ER-B5NH',reason:'dup',batch:'BATCH-2026-048',ip:'59.127.220.41',kyc:'KYC2'},
+    {time:'2026-05-25 09:17:55',uid:'UID_55190234',code:'KOL-A3BX-K9WM',reason:'ip',batch:'BATCH-2026-048',ip:'114.32.55.201',kyc:'KYC2'},
+    {time:'2026-05-25 09:15:20',uid:'UID_72034910',code:'KOL-R9XM-B3NP',reason:'ip',batch:'BATCH-2026-048',ip:'114.32.55.201',kyc:'KYC2'},
+    {time:'2026-05-25 09:12:44',uid:'UID_40192837',code:'KOL-T2PK-W4QR',reason:'ip',batch:'BATCH-2026-048',ip:'114.32.55.201',kyc:'KYC2'},
+    {time:'2026-05-25 09:10:03',uid:'UID_29183746',code:'KOL-P3NM-X2VL',reason:'ip',batch:'BATCH-2026-048',ip:'114.32.55.201',kyc:'KYC1'},
+  ];
+  // ── 一般失敗記錄 ──
+  const normal = [
+    {time:'2026-05-24 19:55:10',uid:'UID_62018374',code:'CSV-X7KM-B3NP',reason:'csv',batch:'BATCH-2026-051',ip:'203.65.12.88',kyc:'KYC2'},
+    {time:'2026-05-24 16:30:01',uid:'UID_18203947',code:'KOL-Q9WX-T5MR',reason:'kyc',batch:'BATCH-2026-048',ip:'61.220.105.33',kyc:'KYC1'},
+    {time:'2026-05-24 15:21:44',uid:'UID_30192748',code:'A7QX-T2PK-M5NR',reason:'expired',batch:'BATCH-2026-036',ip:'118.163.44.20',kyc:'KYC2'},
+    {time:'2026-05-24 12:08:33',uid:'UID_10928374',code:'KOL-R8WM-C4TX',reason:'paused',batch:'BATCH-2026-041',ip:'123.110.55.72',kyc:'KYC2'},
+    {time:'2026-05-23 22:48:31',uid:'UID_91827364',code:'P2WC-ZZZZ-XXXX',reason:'notfound',batch:null,ip:'36.224.18.90',kyc:'KYC2'},
+    {time:'2026-05-23 18:12:00',uid:'UID_83019274',code:'KOL-M3BX-V9WK',reason:'used',batch:'BATCH-2026-045',ip:'220.135.88.41',kyc:'KYC2'},
+    {time:'2026-05-23 14:05:22',uid:'UID_57392018',code:'CSV-K4NP-R2TM',reason:'csv',batch:'BATCH-2026-051',ip:'111.82.34.56',kyc:'KYC2'},
+    {time:'2026-05-23 09:30:17',uid:'UID_26173849',code:'KOL-B7XK-D9PT',reason:'kyc',batch:'BATCH-2026-048',ip:'59.127.220.41',kyc:'KYC1'},
+    {time:'2026-05-22 20:44:55',uid:'UID_39182047',code:'A3BX-XXXX-9999',reason:'notfound',batch:null,ip:'1.164.55.33',kyc:'KYC2'},
+    {time:'2026-05-22 16:33:19',uid:'UID_48291837',code:'KOL-R8WM-C4TX',reason:'cancelled',batch:'BATCH-2026-041',ip:'180.176.22.10',kyc:'KYC2'},
+    {time:'2026-05-22 11:20:08',uid:'UID_10928374',code:'CSV-P9MK-Q2NR',reason:'csv',batch:'BATCH-2026-051',ip:'61.220.105.33',kyc:'KYC2'},
+    {time:'2026-05-21 23:55:40',uid:'UID_75918203',code:'KOL-T7BX-W3KM',reason:'dup',batch:'BATCH-2026-048',ip:'27.247.86.119',kyc:'KYC2'},
+    {time:'2026-05-21 18:02:11',uid:'UID_62901834',code:'A3BX-YYYY-0001',reason:'notfound',batch:null,ip:'203.204.55.18',kyc:'KYC1'},
+    {time:'2026-05-20 14:48:30',uid:'UID_38201947',code:'KOL-V2MX-N8PT',reason:'ip',batch:'BATCH-2026-048',ip:'114.32.55.201',kyc:'KYC2'},
+    {time:'2026-05-20 10:15:22',uid:'UID_29018374',code:'A7QX-ABCD-EFGH',reason:'notfound',batch:null,ip:'36.224.18.90',kyc:'KYC1'},
+    {time:'2026-05-19 22:30:05',uid:'UID_57019283',code:'KOL-B8NX-R4TM',reason:'kyc',batch:'BATCH-2026-050',ip:'111.82.34.56',kyc:'KYC1'},
+    {time:'2026-05-19 16:55:44',uid:'UID_83720194',code:'KOL-M9WX-K3NP',reason:'used',batch:'BATCH-2026-045',ip:'220.135.88.41',kyc:'KYC2'},
+    {time:'2026-05-18 20:10:33',uid:'UID_10293847',code:'CSV-T5KM-B7XN',reason:'csv',batch:'BATCH-2026-051',ip:'1.164.55.33',kyc:'KYC2'},
+  ];
+  return [...brute,...multiUid,...normal].sort((a,b)=>a.time<b.time?1:-1);
+})();
+
+// ── 異常偵測（三條規則）──
+function computeAnomalies(data){
+  const flags = new Map(); // index -> Set of string tags
+
+  // 規則 1：同 UID，10 分鐘內失敗 >= 5 次
+  const uidMap = {};
+  data.forEach((d,i)=>{ if(!uidMap[d.uid]) uidMap[d.uid]=[]; uidMap[d.uid].push({i,t:new Date(d.time).getTime()}); });
+  Object.values(uidMap).forEach(entries=>{
+    entries.sort((a,b)=>a.t-b.t);
+    for(let j=0;j<entries.length;j++){
+      const win = entries.filter(e=>e.t>=entries[j].t && e.t<=entries[j].t+10*60*1000);
+      if(win.length>=5) win.forEach(e=>{ if(!flags.has(e.i)) flags.set(e.i,new Set()); flags.get(e.i).add('freq'); });
+    }
+  });
+
+  // 規則 2：同 IP，跨 >= 3 個不同 UID 有失敗
+  const ipMap = {};
+  data.forEach((d,i)=>{ if(!ipMap[d.ip]) ipMap[d.ip]={uids:new Set(),idx:[]}; ipMap[d.ip].uids.add(d.uid); ipMap[d.ip].idx.push(i); });
+  Object.values(ipMap).forEach(g=>{ if(g.uids.size>=3) g.idx.forEach(i=>{ if(!flags.has(i)) flags.set(i,new Set()); flags.get(i).add('multi_uid'); }); });
+
+  // 規則 3：同 UID，連續 >= 3 次「碼不存在」
+  Object.values(uidMap).forEach(entries=>{
+    const sorted=[...entries].sort((a,b)=>a.t-b.t);
+    let streak=[];
+    sorted.forEach(e=>{
+      if(data[e.i].reason==='notfound'){ streak.push(e.i); if(streak.length>=3) streak.forEach(i=>{ if(!flags.has(i)) flags.set(i,new Set()); flags.get(i).add('brute'); }); }
+      else{ streak=[]; }
+    });
+  });
+
+  return flags;
+}
+
+let failFiltered = [];
+let failAnomalyFlags = new Map();
+
+function renderFailSummary(data, flagMap){
+  const counts = {};
+  Object.keys(FAIL_REASON_LABEL).forEach(k=>counts[k]=0);
+  data.forEach(d=>{ if(counts[d.reason]!==undefined) counts[d.reason]++; });
+  const anomalyCount = [...flagMap.values()].filter((_,i)=> i < data.length).length;
+  let html = `<span style="padding:5px 12px;border-radius:20px;background:#F5F0E8;color:#5C4A1E;font-size:12px;"><strong>${data.length}</strong> 總失敗</span>`;
+  Object.entries(FAIL_REASON_LABEL).forEach(([k,label])=>{
+    if(counts[k]>0){
+      const st = FAIL_REASON_STYLE[k]||'';
+      html+=`<span style="padding:5px 12px;border-radius:20px;font-size:12px;${st}"><strong>${counts[k]}</strong> ${label}</span>`;
+    }
+  });
+  document.getElementById('fail-summary-row').innerHTML = html;
+
+  // 異常警示 banner
+  const banner = document.getElementById('fail-anomaly-banner');
+  const anomalousUids = {};
+  data.forEach((d,i)=>{ if(flagMap.has(i)){ if(!anomalousUids[d.uid]) anomalousUids[d.uid]={count:0,reasons:new Set()}; anomalousUids[d.uid].count++; flagMap.get(i).forEach(r=>anomalousUids[d.uid].reasons.add(r)); } });
+  const uidList = Object.entries(anomalousUids);
+  if(uidList.length){
+    const ruleLabel = {freq:'短時間高頻失敗',multi_uid:'同 IP 跨多帳號',brute:'疑暴力猜碼'};
+    const lines = uidList.map(([uid,info])=>`<strong>${uid}</strong> — ${[...info.reasons].map(r=>ruleLabel[r]||r).join('、')}（${info.count} 筆）`);
+    banner.innerHTML = `⚠ 偵測到 ${uidList.length} 個異常 UID，建議核查：<br>${lines.join('<br>')}`;
+    banner.style.display='block';
+  } else {
+    banner.style.display='none';
+  }
+}
+
+function renderFailLog(data){
+  failFiltered = data;
+  failAnomalyFlags = computeAnomalies(data);
+  document.getElementById('fail-total-count').textContent = data.length;
+  renderFailSummary(data, failAnomalyFlags);
+  if(!data.length){
+    document.getElementById('fail-tbody').innerHTML='<tr><td colspan="7" style="text-align:center;padding:40px;color:#A89070;">無符合條件的資料</td></tr>';
+    return;
+  }
+  document.getElementById('fail-tbody').innerHTML = data.map((d,i)=>{
+    const isAnomaly = failAnomalyFlags.has(i);
+    const reasonSt = FAIL_REASON_STYLE[d.reason]||'';
+    const reasonLbl = FAIL_REASON_LABEL[d.reason]||d.reason;
+    const rowBg = isAnomaly ? 'background:#FFF5F5;' : '';
+    const anomalyTag = isAnomaly ? `<span style="font-size:10px;background:#FEF2F2;color:#991B1B;border:1px solid #FECACA;padding:1px 6px;border-radius:4px;margin-left:5px;font-weight:500;">異常</span>` : '';
+    return `<tr style="${rowBg}">
+      <td class="fs12" style="font-family:monospace;">${d.time}</td>
+      <td class="fs12" style="font-family:monospace;color:#1A5276;font-weight:600;">${d.uid}${anomalyTag}</td>
+      <td class="fs12" style="font-family:monospace;color:#8B6D1F;">${d.code}</td>
+      <td><span style="display:inline-block;padding:2px 9px;border-radius:10px;font-size:11px;font-weight:500;${reasonSt}">${reasonLbl}</span></td>
+      <td class="fs12" style="color:#A89070;">${d.batch||'—'}</td>
+      <td class="fs12" style="font-family:monospace;">${d.ip}</td>
+      <td><span class="badge ${d.kyc==='KYC2'?'badge-kyc2':'badge-kyc1'}">${d.kyc}</span></td>
+    </tr>`;
+  }).join('');
+  // 更新 badge 數字
+  const badgeEl = document.getElementById('fail-count-badge');
+  if(badgeEl) badgeEl.textContent = FAIL_DATA.length;
+}
+
+function searchFailLog(){
+  const uid    = document.getElementById('fail-uid').value.trim().toLowerCase();
+  const reason = document.getElementById('fail-reason').value;
+  const batch  = document.getElementById('fail-batch').value.trim().toLowerCase();
+  const dStart = document.getElementById('fail-start').value;
+  const dEnd   = document.getElementById('fail-end').value;
+  const onlyAnomaly = document.getElementById('fail-anomaly-filter').value === 'anomaly';
+
+  // 先計算全量異常，再過濾
+  const allFlags = computeAnomalies(FAIL_DATA);
+  let result = FAIL_DATA.filter((d,i)=>{
+    if(uid    && !d.uid.toLowerCase().includes(uid)) return false;
+    if(reason && d.reason !== reason) return false;
+    if(batch  && (!d.batch || !d.batch.toLowerCase().includes(batch))) return false;
+    if(dStart && d.time.slice(0,10) < dStart) return false;
+    if(dEnd   && d.time.slice(0,10) > dEnd) return false;
+    if(onlyAnomaly && !allFlags.has(i)) return false;
+    return true;
+  });
+  renderFailLog(result);
+  showToast(`查詢完成，共 ${result.length} 筆`);
+}
+
+function clearFailLog(){
+  ['fail-uid','fail-batch','fail-start','fail-end'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('fail-reason').value='';
+  document.getElementById('fail-anomaly-filter').value='';
+  failFiltered=[];
+  document.getElementById('fail-tbody').innerHTML='<tr><td colspan="7" style="text-align:center;padding:40px;color:#A89070;">請輸入查詢條件後點擊查詢</td></tr>';
+  document.getElementById('fail-total-count').textContent='0';
+  document.getElementById('fail-summary-row').innerHTML='';
+  document.getElementById('fail-anomaly-banner').style.display='none';
+}
+
+function exportFailLog(){
+  const data = failFiltered.length ? failFiltered : FAIL_DATA;
+  if(!data.length){ showToast('沒有可導出的資料','#C0392B'); return; }
+  const allFlags = computeAnomalies(data);
+  const header = ['時間','用戶UID','輸入的碼','失敗原因','批次ID','IP','KYC','異常標記'];
+  const ruleLabel = {freq:'高頻失敗',multi_uid:'跨UID同IP',brute:'疑猜碼'};
+  const rows = data.map((d,i)=>{
+    const flags = allFlags.has(i) ? [...allFlags.get(i)].map(r=>ruleLabel[r]||r).join('/') : '';
+    return [d.time,d.uid,d.code,FAIL_REASON_LABEL[d.reason]||d.reason,d.batch||'',d.ip,d.kyc,flags];
+  });
+  const csv = [header,...rows].map(r=>r.map(v=>`"${(''+v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `兌換失敗記錄_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+  showToast(`已導出 ${data.length} 筆失敗記錄 CSV`);
+}
+
+function switchDetailTab(tab){
+  const isSuccess = (tab==='success');
+  document.getElementById('panel-success').style.display = isSuccess ? '' : 'none';
+  document.getElementById('panel-fail').style.display    = isSuccess ? 'none' : '';
+  const activeStyle = 'padding:6px 20px;font-size:13px;border-radius:20px;border:1px solid #C9A040;background:#FBF3DC;color:#8B6D1F;cursor:pointer;font-family:inherit;font-weight:500;';
+  const inactiveStyle = 'padding:6px 20px;font-size:13px;border-radius:20px;border:1px solid var(--color-border-secondary);background:transparent;color:var(--color-text-secondary);cursor:pointer;font-family:inherit;';
+  document.getElementById('subtab-btn-success').style.cssText = isSuccess ? activeStyle : inactiveStyle;
+  document.getElementById('subtab-btn-fail').style.cssText    = isSuccess ? inactiveStyle : activeStyle;
+  if(!isSuccess && !failFiltered.length){ renderFailLog(FAIL_DATA); }
+}
+
+// 初始化 fail badge 數字
+(function(){ const b=document.getElementById('fail-count-badge'); if(b) b.textContent=FAIL_DATA.length; })();
+
+/* ═══════════ SETTINGS ═══════════ */
+function saveSettings(){ showToast('系統設定已儲存'); }
+
+/* ═══════════ TOAST ═══════════ */
+function showToast(msg, bg='#3A7D4F'){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.style.background=bg; t.style.display='block';
+  clearTimeout(t._timer);
+  t._timer=setTimeout(()=>t.style.display='none',3000);
+}
+
+/* ═══════════ INIT ═══════════ */
+document.addEventListener('DOMContentLoaded',function(){
+  // Set default expire date (+30 days)
+  const d=new Date(); d.setDate(d.getDate()+30);
+  document.getElementById('inp-expire').value=d.toISOString().split('T')[0];
+  // 黑名單預設勾選，同步 CSS class
+  const blCb = document.getElementById('chk-blacklist');
+  if(blCb) toggleCheck(blCb);
+  regenPrev();
+  initMsDropdown();
+  // ── 補上每批次的 codes 清單（多碼單用，demo 用）──
+  BATCH_DATA.forEach(_generateBatchCodes);
+  // 套用初始角色 + 渲染所有 KPI
+  applyRoleVisibility();
+  renderDonut();
+  updateKPIs();
+  updateDonut();
+});
+</script>
+<!-- ── Codes List Drawer ── -->
+<div class="drawer-overlay" id="codes-drawer-overlay" onclick="closeCodesDrawer()"></div>
+<div class="drawer wide" id="codes-drawer">
+  <div class="drawer-header">
+    <div class="bar" style="width:4px;height:18px;background:#C9A040;border-radius:2px;flex-shrink:0;"></div>
+    <div class="title" id="codes-drawer-title">兌換碼清單</div>
+    <button class="drawer-close" onclick="closeCodesDrawer()">✕</button>
+  </div>
+  <div class="drawer-body">
+    <div id="codes-drawer-meta" style="font-size:12px;color:#A89070;margin-bottom:10px;"></div>
+    <div class="codes-list-toolbar">
+      <input type="text" id="codes-search" placeholder="搜尋碼或末 4 碼..." oninput="renderCodesList()">
+      <select id="codes-filter" onchange="renderCodesList()" style="padding:7px 10px;border:1.5px solid #E8D9B0;border-radius:6px;font-size:12px;font-family:'Noto Sans TC',sans-serif;">
+        <option value="all">全部</option>
+        <option value="unused">未兌換</option>
+        <option value="used">已兌換</option>
+      </select>
+      <button class="btn btn-outline btn-sm" onclick="copyAllListCodes()">複製全部</button>
+      <button class="btn btn-gold btn-sm" onclick="downloadCodesCSV()">下載 CSV</button>
+    </div>
+    <div id="codes-count" style="font-size:11px;color:#8B6D1F;margin-bottom:6px;font-weight:700;"></div>
+    <div class="codes-grid" id="codes-grid"></div>
+  </div>
+</div>
+
+<!-- ── Review Modal ── -->
+<div class="risk-overlay" id="review-overlay" onclick="if(event.target===this)closeReview()">
+  <div class="risk-modal" style="max-width:560px;border-top-color:#C9A040;">
+    <h2 style="color:#8B6D1F;">主管審核 ── <span id="review-batch-id" style="font-family:monospace;font-size:16px;"></span></h2>
+    <p style="margin-bottom:14px;">此批次已凍結資金等待您核可。通過後立即生效並開放兌換；駁回則秒級釋回凍結金額。</p>
+    <div class="info-grid" id="review-info" style="margin-bottom:14px;"></div>
+    <div style="background:#FBF4E1;border-left:3px solid #C9A040;padding:10px 12px;border-radius:6px;margin-bottom:14px;">
+      <div style="font-size:11px;font-weight:800;color:#8B6D1F;margin-bottom:6px;letter-spacing:.5px;">兌換碼</div>
+      <div id="review-code-preview"></div>
+    </div>
+    <div style="border-top:1px dashed #EDE0C8;padding-top:12px;margin-bottom:6px;">
+      <div style="font-size:12px;color:#8B6D1F;font-weight:700;margin-bottom:6px;">通過需 2FA 驗證（主管 Authenticator）</div>
+      <div class="tfa-compact" id="review-tfa">
+        <input maxlength="1" type="text" oninput="reviewTfaMove(this,0)">
+        <input maxlength="1" type="text" oninput="reviewTfaMove(this,1)">
+        <input maxlength="1" type="text" oninput="reviewTfaMove(this,2)">
+        <input maxlength="1" type="text" oninput="reviewTfaMove(this,3)">
+        <input maxlength="1" type="text" oninput="reviewTfaMove(this,4)">
+        <input maxlength="1" type="text" oninput="reviewTfaMove(this,5)">
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:14px;">
+      <button class="btn btn-outline" style="flex:1;" onclick="closeReview()">取消</button>
+      <button class="btn btn-review reject" style="flex:1;" onclick="openRejectModal()">駁回</button>
+      <button class="btn btn-gold" style="flex:1.2;" onclick="approveReview()">通過審核</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Reject Reason Modal ── -->
+<div class="risk-overlay" id="reject-overlay" onclick="if(event.target===this)closeRejectModal()">
+  <div class="mini-modal danger">
+    <h3>駁回此批次</h3>
+    <p>駁回後此批次將立即作廢，所有已生成的兌換碼將無法使用，凍結的資金會秒級釋回公司熱錢包。此操作會寫入稽核日誌。</p>
+    <label style="font-size:12px;font-weight:700;color:#C0392B;display:block;margin-bottom:6px;">駁回原因 <span>*</span></label>
+    <textarea id="reject-reason" placeholder="例：總額超出當月行銷預算、KOL 合約尚未簽核、目標族群不符合活動定位..."></textarea>
+    <div class="row">
+      <button class="btn btn-outline" onclick="closeRejectModal()">取消</button>
+      <button class="btn btn-red" onclick="confirmReject()">確認駁回</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Edit Expiry Modal ── -->
+<div class="risk-overlay" id="edit-expiry-overlay" onclick="if(event.target===this)closeEditExpiry()">
+  <div class="mini-modal">
+    <h3>改期申請</h3>
+    <p>批次 <strong id="edit-expiry-batch-id" style="font-family:monospace;color:#8B6D1F;"></strong>　目前到期：<span id="edit-expiry-current" style="color:#C9A040;font-weight:700;"></span></p>
+    <div id="edit-expiry-last-redeem" style="font-size:11px;color:#A89070;margin-bottom:8px;display:none;"></div>
+    <label style="font-size:12px;font-weight:700;color:#8B6D1F;display:block;margin-bottom:6px;">新到期日期 <span style="color:#C0392B;">*</span>　<span style="font-weight:400;color:#A89070;">（不可早於明天）</span></label>
+    <input type="date" id="edit-expiry-input">
+    <div style="font-size:11px;color:#A89070;margin-top:6px;">以 Asia/Taipei UTC+8 當日 23:59:59 為界</div>
+    <div style="margin-top:10px;padding:8px 10px;background:#FFF8E7;border:1px solid #C9A040;border-radius:6px;font-size:11px;color:#8B6D1F;">
+      ⚠️ 此操作需主管覆核，送出後將進入「待審核」狀態，期限確認前暫不生效。
+    </div>
+    <div class="row" style="margin-top:14px;">
+      <button class="btn btn-outline" onclick="closeEditExpiry()">取消</button>
+      <button class="btn btn-gold" onclick="confirmEditExpiry()">送出改期申請</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Expiry Review Modal ── -->
+<div class="risk-overlay" id="expiry-review-overlay" onclick="if(event.target===this)closeExpiryReview()">
+  <div class="mini-modal">
+    <h3>改期審核</h3>
+    <p>批次 <strong id="expiry-review-batch-id" style="font-family:monospace;color:#8B6D1F;"></strong></p>
+    <div style="display:flex;gap:16px;align-items:center;margin:12px 0;padding:10px 14px;background:#F9F5EB;border-radius:8px;font-size:13px;">
+      <div>
+        <div style="font-size:11px;color:#A89070;margin-bottom:2px;">現行到期</div>
+        <div style="font-weight:700;color:#8B6D1F;font-family:monospace;" id="expiry-review-old"></div>
+      </div>
+      <div style="font-size:18px;color:#C9A040;">→</div>
+      <div>
+        <div style="font-size:11px;color:#A89070;margin-bottom:2px;">申請改為</div>
+        <div style="font-weight:700;color:#C9A040;font-family:monospace;" id="expiry-review-new"></div>
+      </div>
+    </div>
+    <div class="row" style="margin-top:14px;">
+      <button class="btn btn-outline" onclick="closeExpiryReview()">取消</button>
+      <button class="btn btn-outline" style="color:#C0392B;border-color:#C0392B;" onclick="toggleExpiryRejectBox()">駁回</button>
+      <button class="btn btn-gold" onclick="approveExpiryReview()">核准改期</button>
+    </div>
+    <div id="expiry-review-reject-box" style="display:none;margin-top:12px;">
+      <label style="font-size:12px;font-weight:700;color:#C0392B;display:block;margin-bottom:6px;">駁回原因 <span>*</span></label>
+      <textarea id="expiry-review-reject-reason" placeholder="例：新日期與活動檔期衝突、需重新評估風險敞口..." style="width:100%;height:70px;border:1.5px solid #C0392B;border-radius:6px;padding:8px;font-size:12px;resize:vertical;box-sizing:border-box;"></textarea>
+      <button class="btn btn-red" style="margin-top:8px;width:100%;" onclick="rejectExpiryReview()">確認駁回</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

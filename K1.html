@@ -1,0 +1,1848 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>後台 — 邀請碼管理</title>
+<meta name="version" content="v2 2026-04-24">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f4f5f7;color:#1a1a1a;font-size:14px;min-height:100vh}
+a{color:inherit;text-decoration:none}
+
+/* Topbar */
+.topbar{background:#1D5FAD;height:52px;display:flex;align-items:center;padding:0 24px;gap:16px}
+.topbar-logo{color:#fff;font-size:15px;font-weight:500;letter-spacing:.3px}
+.topbar-sep{color:rgba(255,255,255,.3);font-size:13px;margin:0 4px}
+.topbar-page{color:rgba(255,255,255,.85);font-size:13px}
+.topbar-spacer{flex:1}
+.topbar-user{display:flex;align-items:center;gap:8px;color:rgba(255,255,255,.85);font-size:13px}
+.avatar{width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;color:#fff}
+
+/* Layout */
+.layout{display:flex;min-height:calc(100vh - 52px)}
+.sidebar{width:200px;background:#fff;border-right:1px solid #e5e7eb;padding:16px 0;flex-shrink:0}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 20px;font-size:13px;color:#555;cursor:pointer;transition:background .15s}
+.nav-item:hover{background:#f0f4ff}
+.nav-item.active{background:#EBF3FD;color:#1D5FAD;font-weight:500;border-right:2px solid #1D5FAD}
+.nav-icon{width:16px;height:16px;flex-shrink:0;opacity:.7}
+.nav-section{font-size:10px;font-weight:500;color:#aaa;letter-spacing:.6px;padding:16px 20px 6px;text-transform:uppercase}
+
+/* Main content */
+.main{flex:1;padding:24px;overflow-y:auto}
+.page-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px}
+.page-title{font-size:18px;font-weight:500;color:#111}
+.page-sub{font-size:12px;color:#888;margin-top:3px}
+.btn-primary{background:#1D5FAD;color:#fff;border:none;padding:8px 16px;border-radius:6px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:6px}
+.btn-primary:hover{background:#1752a0}
+
+/* Stats grid */
+.stats-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px}
+.stat-card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:14px 16px}
+.stat-label{font-size:11px;color:#888;margin-bottom:6px;font-weight:500}
+.stat-value{font-size:22px;font-weight:500;color:#111}
+.stat-change{font-size:11px;color:#888;margin-top:4px}
+.stat-change.up{color:#177A5A}
+.stat-change.warn{color:#9A5C14}
+
+/* AML alert bar */
+.aml-bar{background:#FFF8E8;border:1px solid #F5C96A;border-radius:8px;padding:12px 16px;display:flex;align-items:center;gap:12px;margin-bottom:20px}
+.aml-dot{width:8px;height:8px;border-radius:50%;background:#C98A00;flex-shrink:0}
+.aml-text{font-size:13px;color:#7A5000;flex:1}
+.aml-text strong{font-weight:500}
+.aml-link{font-size:13px;color:#1D5FAD;cursor:pointer;white-space:nowrap}
+
+/* Filter bar */
+.filter-bar{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.search-wrap{position:relative;flex:1;min-width:200px;max-width:280px}
+.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:#aaa;pointer-events:none}
+.search-input{width:100%;padding:7px 10px 7px 32px;border:1px solid #ddd;border-radius:6px;font-size:13px;background:#fff;color:#1a1a1a;outline:none}
+.search-input:focus{border-color:#1D5FAD;box-shadow:0 0 0 2px rgba(29,95,173,.15)}
+select.filter-select{padding:7px 28px 7px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;background:#fff;color:#1a1a1a;cursor:pointer;outline:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23999'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center}
+select.filter-select:focus{border-color:#1D5FAD}
+.filter-count{font-size:12px;color:#888;margin-left:4px}
+.filter-spacer{flex:1}
+.btn-export{padding:7px 12px;border:1px solid #ddd;border-radius:6px;font-size:13px;background:#fff;color:#444;cursor:pointer;display:flex;align-items:center;gap:6px}
+.btn-export:hover{background:#f5f5f5}
+
+/* Table */
+.table-wrap{background:#fff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden}
+table{width:100%;border-collapse:collapse;table-layout:fixed}
+thead tr{background:#f8f9fa;border-bottom:1px solid #e5e7eb}
+th{padding:10px 12px;text-align:left;font-size:11px;font-weight:500;color:#666;letter-spacing:.3px;text-transform:uppercase;white-space:nowrap;overflow:hidden}
+td{padding:11px 12px;font-size:13px;color:#1a1a1a;border-bottom:1px solid #f0f0f0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+tr:last-child td{border-bottom:none}
+tbody tr:hover{background:#fafbff}
+tbody tr.flagged{background:#FFFBF0}
+tbody tr.flagged:hover{background:#FFF7E6}
+
+/* Column widths */
+col.c-code{width:120px}
+col.c-inviter{width:120px}
+col.c-invitee{width:110px}
+col.c-status{width:88px}
+col.c-created{width:100px}
+col.c-expiry{width:100px}
+col.c-rebate{width:90px}
+col.c-cap{width:88px}
+col.c-actions{width:100px}
+
+/* Badges */
+.badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:12px;font-size:11px;font-weight:500;white-space:nowrap}
+.badge-active{background:#EBF3FD;color:#1D5FAD}
+.badge-used{background:#EAF5EE;color:#177A5A}
+.badge-expired{background:#f0f0f0;color:#777}
+.badge-disabled{background:#FCEAEA;color:#A32D2D}
+.badge-pending{background:#FEF4EA;color:#9A5C14}
+
+/* Code chip */
+.code-chip{font-family:'SF Mono',Consolas,monospace;font-size:12px;background:#f0f4ff;color:#1D5FAD;padding:3px 7px;border-radius:4px;letter-spacing:.5px}
+
+/* User cell */
+.user-cell{display:flex;align-items:center;gap:7px}
+.user-av{width:22px;height:22px;border-radius:50%;background:#dde8f8;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;color:#1D5FAD;flex-shrink:0}
+
+/* Rebate progress */
+.cap-bar-wrap{display:flex;align-items:center;gap:6px}
+.cap-bar{flex:1;height:4px;background:#eee;border-radius:2px;overflow:hidden;min-width:36px}
+.cap-fill{height:100%;border-radius:2px;background:#1D5FAD}
+.cap-fill.warn{background:#C98A00}
+.cap-fill.over{background:#A32D2D}
+.cap-pct{font-size:11px;color:#888;min-width:28px;text-align:right}
+
+/* Action buttons */
+.actions{display:flex;align-items:center;gap:6px}
+.btn-sm{padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer;font-weight:500;border:1px solid transparent;display:inline-flex;align-items:center;gap:3px}
+.btn-view{background:#f0f4ff;color:#1D5FAD;border-color:#c8daef}
+.btn-view:hover{background:#dde8f8}
+.btn-detail{background:#f5f0ff;color:#6B3FC0;border-color:#d4b8f5}
+.btn-detail:hover{background:#ece4fa}
+.btn-disable{background:#fff0f0;color:#A32D2D;border-color:#f5c6c6}
+.btn-disable:hover{background:#fde8e8}
+.btn-enable{background:#f0faf4;color:#177A5A;border-color:#b6dfc5}
+.btn-enable:hover{background:#dcf0e4}
+.btn-flag{background:#FEF4EA;color:#9A5C14;border-color:#f5d5a0}
+.btn-flag:hover{background:#fde8c5}
+
+/* Flag icon */
+.flag-icon{display:inline-block;width:8px;height:8px;border-radius:50%;background:#C98A00;margin-right:4px;flex-shrink:0}
+
+/* Pagination */
+.pagination{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-top:1px solid #f0f0f0;background:#fff}
+.page-info{font-size:12px;color:#888}
+.page-btns{display:flex;gap:4px}
+.page-btn{padding:4px 10px;border:1px solid #ddd;border-radius:4px;font-size:12px;cursor:pointer;background:#fff;color:#555}
+.page-btn.active{background:#1D5FAD;color:#fff;border-color:#1D5FAD}
+.page-btn:hover:not(.active){background:#f5f5f5}
+
+/* AML section */
+.section-title{font-size:13px;font-weight:500;color:#333;margin:24px 0 12px;display:flex;align-items:center;gap:8px}
+.section-badge{font-size:11px;background:#FEF4EA;color:#9A5C14;padding:2px 7px;border-radius:10px;font-weight:500}
+
+/* ── Settings page ── */
+.settings-wrap{max-width:760px}
+.settings-section{background:#fff;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:16px;overflow:hidden}
+.settings-section-header{padding:14px 20px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-between}
+.settings-section-title{font-size:14px;font-weight:500;color:#111}
+.settings-section-desc{font-size:12px;color:#888;margin-top:2px}
+.settings-row{display:grid;grid-template-columns:1fr 1fr;gap:0;border-bottom:1px solid #f5f5f5}
+.settings-row:last-child{border-bottom:none}
+.settings-field{padding:16px 20px;display:flex;flex-direction:column;gap:4px}
+.settings-label{font-size:13px;font-weight:500;color:#333}
+.settings-hint{font-size:11px;color:#aaa;line-height:1.5}
+.settings-input-wrap{display:flex;align-items:center;gap:8px;margin-top:6px}
+.settings-input{width:90px;padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:14px;font-weight:500;color:#111;text-align:right;outline:none}
+.settings-input:focus{border-color:#1D5FAD;box-shadow:0 0 0 2px rgba(29,95,173,.15)}
+.settings-unit{font-size:13px;color:#666;white-space:nowrap}
+.settings-slider{width:160px;accent-color:#1D5FAD}
+.settings-preview{font-size:12px;color:#1D5FAD;background:#EBF3FD;padding:3px 8px;border-radius:10px;margin-top:2px;display:inline-block}
+.settings-actions{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-top:1px solid #e5e7eb;background:#fafafa}
+.settings-actions-left{font-size:12px;color:#aaa}
+.settings-actions-right{display:flex;gap:8px}
+.btn-cancel{padding:8px 16px;border:1px solid #ddd;border-radius:6px;font-size:13px;background:#fff;color:#555;cursor:pointer}
+.btn-cancel:hover{background:#f5f5f5}
+.btn-save{padding:8px 20px;border:none;border-radius:6px;font-size:13px;font-weight:500;background:#1D5FAD;color:#fff;cursor:pointer}
+.btn-save:hover{background:#1752a0}
+.btn-save:disabled{background:#a0b8d8;cursor:not-allowed}
+.settings-changed{background:#FFF8E8;border:1px solid #F5C96A;border-radius:6px;padding:10px 14px;font-size:12px;color:#7A5000;display:none;align-items:center;gap:8px}
+.settings-changed.visible{display:flex}
+.change-dot{width:6px;height:6px;border-radius:50%;background:#C98A00;flex-shrink:0}
+.changelog-wrap{background:#fff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;margin-top:20px}
+.changelog-header{padding:12px 20px;border-bottom:1px solid #f0f0f0;display:flex;align-items:center;justify-content:space-between}
+.changelog-title{font-size:13px;font-weight:500;color:#333}
+.changelog-row{display:flex;align-items:flex-start;gap:12px;padding:12px 20px;border-bottom:1px solid #f5f5f5;font-size:13px}
+.changelog-row:last-child{border-bottom:none}
+.changelog-time{color:#aaa;font-size:11px;white-space:nowrap;min-width:132px}
+.changelog-op{color:#555;flex:1}
+.changelog-op strong{color:#111;font-weight:500}
+.changelog-op .from{color:#A32D2D}
+.changelog-op .to{color:#177A5A}
+/* ── end settings ── */
+
+/* Detail drawer placeholder */
+.detail-overlay{display:none;position:fixed;inset:0;z-index:100}
+.detail-overlay.open{display:flex;align-items:flex-start;justify-content:flex-end}
+.detail-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.25)}
+.detail-drawer{position:relative;z-index:1;width:380px;height:100vh;background:#fff;border-left:1px solid #ddd;overflow-y:auto;padding:24px}
+.drawer-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+.drawer-title{font-size:15px;font-weight:500}
+.drawer-close{width:28px;height:28px;border-radius:50%;background:#f0f0f0;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;border:none;color:#555}
+.drawer-section{margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid #f0f0f0}
+.drawer-section:last-child{border-bottom:none}
+.drawer-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:13px}
+.drawer-row .lbl{color:#888}
+.drawer-row .val{font-weight:500;color:#111}
+.timeline{display:flex;flex-direction:column;gap:12px}
+.tl-item{display:flex;gap:10px;align-items:flex-start}
+.tl-dot{width:8px;height:8px;border-radius:50%;background:#1D5FAD;flex-shrink:0;margin-top:4px}
+.tl-dot.gray{background:#ccc}
+.tl-content{flex:1}
+.tl-event{font-size:13px;color:#222}
+.tl-time{font-size:11px;color:#aaa}
+
+/* Empty state */
+.empty-row td{text-align:center;padding:32px;color:#aaa;font-size:13px}
+
+/* ── 反佣明細 filter panel ── */
+.filter-panel{background:#fff;border:1px solid #e5e7eb;border-radius:8px;margin-bottom:16px;overflow:hidden}
+.filter-panel-header{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;cursor:pointer;border-bottom:1px solid #f5f5f5;user-select:none}
+.filter-panel-title{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:500;color:#333}
+.filter-panel-icon{color:#1D5FAD;font-size:15px}
+.filter-toggle-icon{font-size:11px;color:#aaa;transition:transform .2s}
+.filter-panel-body{padding:16px 20px 20px}
+.filter-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px 16px;margin-bottom:14px}
+.filter-field{display:flex;flex-direction:column;gap:4px}
+.filter-field-label{font-size:11px;color:#888;font-weight:500}
+.filter-field input,.filter-field select{padding:7px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;color:#1a1a1a;background:#fff;outline:none;width:100%;transition:border-color .15s}
+.filter-field input:focus,.filter-field select:focus{border-color:#1D5FAD;box-shadow:0 0 0 2px rgba(29,95,173,.15)}
+.filter-field select{padding-right:28px;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23999'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 8px center}
+.filter-advanced-toggle{font-size:12px;color:#1D5FAD;cursor:pointer;display:inline-flex;align-items:center;gap:3px;margin-bottom:10px}
+.filter-advanced-section{display:none}
+.filter-advanced-section.open{display:block}
+.filter-actions{display:flex;align-items:center;justify-content:flex-end;gap:8px;border-top:1px solid #f0f0f0;padding-top:14px;margin-top:2px}
+.btn-clear{padding:7px 16px;border:1px solid #ddd;border-radius:6px;font-size:13px;background:#fff;color:#555;cursor:pointer}
+.btn-clear:hover{background:#f5f5f5}
+.btn-search-apply{padding:7px 20px;border:none;border-radius:6px;font-size:13px;font-weight:500;background:#1D5FAD;color:#fff;cursor:pointer;display:flex;align-items:center;gap:6px}
+.btn-search-apply:hover{background:#1752a0}
+/* Rebate table toolbar */
+.rebate-toolbar{display:flex;align-items:center;justify-content:flex-end;margin-bottom:8px}
+/* Empty search state */
+.empty-search{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 24px;color:#ccc;gap:10px}
+.empty-search p{font-size:13px;color:#bbb}
+/* Per-page + pagination */
+.rebate-pagination{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-top:1px solid #f0f0f0;background:#fff}
+.perpage-wrap{display:flex;align-items:center;gap:6px;font-size:12px;color:#888}
+.perpage-select{padding:3px 22px 3px 8px;border:1px solid #ddd;border-radius:4px;font-size:12px;appearance:none;background:#fff;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5' viewBox='0 0 8 5'%3E%3Cpath d='M0 0l4 5 4-5z' fill='%23999'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 5px center;cursor:pointer;outline:none}
+/* Breadcrumb */
+.breadcrumb{display:flex;align-items:center;gap:6px;font-size:12px;color:#aaa;margin-bottom:12px}
+.breadcrumb span{color:#aaa}
+.breadcrumb .bc-cur{color:#555;font-weight:500}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="topbar-logo">Exchange Admin</span>
+  <span class="topbar-sep">/</span>
+  <span class="topbar-page">邀請碼管理</span>
+  <div class="topbar-spacer"></div>
+  <div class="topbar-user">
+    <div class="avatar">管</div>
+    admin@exchange.com
+  </div>
+</div>
+
+<div class="layout">
+  <nav class="sidebar">
+    <div class="nav-section">用戶管理</div>
+    <div class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="5" r="3"/><path d="M2 14c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>
+      用戶列表
+    </div>
+    <div class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="3" width="12" height="10" rx="1.5"/><path d="M5 7h6M5 10h4"/></svg>
+      KYC 審核
+    </div>
+    <div class="nav-section">邀請 &amp; 返佣</div>
+    <div class="nav-item" id="nav-pending" onclick="showSection('pending')">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6"/><path d="M8 5v3.5l2.5 1.5"/></svg>
+      返佣異常審查
+      <span style="margin-left:auto;font-size:10px;background:#FEF4EA;color:#9A5C14;padding:1px 6px;border-radius:8px;font-weight:600" id="pending-nav-badge">12</span>
+    </div>
+    <div class="nav-item active" id="nav-codes" onclick="showSection('codes')">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M13 2H3a1 1 0 00-1 1v10a1 1 0 001 1h10a1 1 0 001-1V3a1 1 0 00-1-1z"/><path d="M8 5v6M5 8h6"/></svg>
+      邀請碼管理
+    </div>
+    <div class="nav-item" id="nav-rebate" onclick="showSection('rebate')">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 12V5l6-3 6 3v7l-6 3-6-3z"/></svg>
+      返佣明細
+    </div>
+    <div class="nav-item" id="nav-finance" onclick="showSection('finance')">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 3h10v10H3z"/><path d="M3 7h10M7 3v10"/></svg>
+      返佣財務報表
+    </div>
+    <div class="nav-section">合規</div>
+    <div class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M8 2l1.5 3 3.5.5-2.5 2.5.6 3.5L8 9.8l-3.1 1.7.6-3.5L3 5.5l3.5-.5z"/></svg>
+      AML 審核佇列
+    </div>
+    <div class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="6"/><path d="M8 5v4l2.5 1.5"/></svg>
+      審計日誌
+    </div>
+    <div class="nav-section">系統</div>
+    <div class="nav-item" id="nav-settings" onclick="showSection('settings')">
+      <svg class="nav-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="2.5"/><path d="M8 2v1.5M8 12.5V14M2 8h1.5M12.5 8H14M3.5 3.5l1 1M11.5 11.5l1 1M3.5 12.5l1-1M11.5 4.5l1-1"/></svg>
+      費率設定
+    </div>
+  </nav>
+
+  <main class="main" id="mainContent">
+
+  <!-- ══ SETTINGS SECTION ══ -->
+  <div id="section-settings" style="display:none">
+    <div class="page-header">
+      <div>
+        <div class="page-title">費率設定</div>
+        <div class="page-sub">來源：SOW_1.1_邀請碼反佣_v2.md R11 · 所有變更均寫入操作日誌</div>
+      </div>
+    </div>
+
+    <div class="settings-changed" id="changedBar">
+      <div class="change-dot"></div>
+      <span id="changedMsg">有 <strong id="changedCount">0</strong> 項設定已修改，尚未儲存。</span>
+    </div>
+    <div style="height:12px"></div>
+
+    <div class="settings-wrap">
+
+      <!-- 被邀請人優惠 -->
+      <div class="settings-section">
+        <div class="settings-section-header">
+          <div>
+            <div class="settings-section-title">被邀請人優惠設定</div>
+            <div class="settings-section-desc">新用戶透過邀請碼加入後，享有的手續費折扣條件</div>
+          </div>
+        </div>
+        <div class="settings-row">
+          <div class="settings-field">
+            <div class="settings-label">手續費折扣 %數</div>
+            <div class="settings-hint">被邀請人在折扣期限內，每筆交易享有的手續費減免比例。<br>折扣與其他優惠取較大者，不疊加。</div>
+            <div class="settings-input-wrap">
+              <input type="range" class="settings-slider" id="slider-discount" min="1" max="50" step="1" value="10" oninput="syncSlider('discount')">
+              <input type="number" class="settings-input" id="input-discount" min="1" max="50" value="10" oninput="syncInput('discount',this.value);markChanged('discount')">
+              <span class="settings-unit">%</span>
+            </div>
+            <span class="settings-preview" id="preview-discount">被邀請人享有 10% 手續費折扣</span>
+          </div>
+          <div class="settings-field">
+            <div class="settings-label">折扣天數</div>
+            <div class="settings-hint">自被邀請人 KYC 完成日起計算，折扣自動於期滿日失效，<br>不影響邀請人的反佣有效期。</div>
+            <div class="settings-input-wrap">
+              <input type="range" class="settings-slider" id="slider-days" min="7" max="180" step="1" value="30" oninput="syncSlider('days')">
+              <input type="number" class="settings-input" id="input-days" min="7" max="180" value="30" oninput="syncInput('days',this.value);markChanged('days')">
+              <span class="settings-unit">天</span>
+            </div>
+            <span class="settings-preview" id="preview-days">KYC 完成後 30 天內有效</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 邀請碼規則 -->
+      <div class="settings-section">
+        <div class="settings-section-header">
+          <div>
+            <div class="settings-section-title">邀請碼規則設定</div>
+            <div class="settings-section-desc">控制每位用戶可持有的邀請碼數量及有效期限</div>
+          </div>
+        </div>
+        <div class="settings-row">
+          <div class="settings-field">
+            <div class="settings-label">每人邀請碼數量上限</div>
+            <div class="settings-hint">每位用戶同時可持有的未使用邀請碼上限。<br>達到上限後，需等待現有碼被使用或過期才可再申請。</div>
+            <div class="settings-input-wrap">
+              <input type="range" class="settings-slider" id="slider-maxcodes" min="1" max="20" step="1" value="5" oninput="syncSlider('maxcodes')">
+              <input type="number" class="settings-input" id="input-maxcodes" min="1" max="20" value="5" oninput="syncInput('maxcodes',this.value);markChanged('maxcodes')">
+              <span class="settings-unit">組</span>
+            </div>
+            <span class="settings-preview" id="preview-maxcodes">每人最多同時持有 5 組未使用邀請碼</span>
+          </div>
+          <div class="settings-field">
+            <div class="settings-label">邀請碼使用期限</div>
+            <div class="settings-hint">邀請碼自產生起算的有效天數。<br>逾期未使用將自動標記為「已過期」，不可再被使用。</div>
+            <div class="settings-input-wrap">
+              <input type="range" class="settings-slider" id="slider-expiry" min="7" max="90" step="1" value="30" oninput="syncSlider('expiry')">
+              <input type="number" class="settings-input" id="input-expiry" min="7" max="90" value="30" oninput="syncInput('expiry',this.value);markChanged('expiry')">
+              <span class="settings-unit">天</span>
+            </div>
+            <span class="settings-preview" id="preview-expiry">邀請碼產生後 30 天有效</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 反佣上限 -->
+      <div class="settings-section">
+        <div class="settings-section-header">
+          <div>
+            <div class="settings-section-title">反佣上限設定</div>
+            <div class="settings-section-desc">控制邀請人每月可獲得的反佣最高金額，超過後當月不再計入</div>
+          </div>
+        </div>
+        <div class="settings-row" style="grid-template-columns:1fr">
+          <div class="settings-field">
+            <div class="settings-label">每月反佣額度上限</div>
+            <div class="settings-hint">每位邀請人每自然月（1 日 00:00 UTC+8 重置）可獲得的反佣上限，以 USDT 等值計算。<br>達到上限後當月剩餘交易不計入邀請人反佣；被邀請人的手續費折扣不受影響。</div>
+            <div class="settings-input-wrap" style="margin-top:8px">
+              <input type="range" class="settings-slider" id="slider-cap" min="50" max="5000" step="50" value="500" oninput="syncSlider('cap')" style="width:240px">
+              <input type="number" class="settings-input" id="input-cap" min="50" max="5000" step="50" value="500" oninput="syncInput('cap',this.value);markChanged('cap')" style="width:110px">
+              <span class="settings-unit">USDT / 月</span>
+            </div>
+            <span class="settings-preview" id="preview-cap">邀請人每月最高獲得 USDT 500 反佣</span>
+            <div style="font-size:11px;color:#aaa;margin-top:6px">調整說明：上限調高將增加平台每月最大反佣支出；調低可能降低邀請誘因。建議財務評估後調整。</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Save bar -->
+      <div class="settings-actions">
+        <span class="settings-actions-left" id="lastSavedLabel">上次儲存：2026-04-24 09:30 ｜ 操作人：admin@exchange.com</span>
+        <div class="settings-actions-right">
+          <button class="btn-cancel" onclick="resetSettings()">還原預設值</button>
+          <button class="btn-save" id="saveBtn" onclick="saveSettings()">儲存設定</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Change log -->
+    <div class="changelog-wrap">
+      <div class="changelog-header">
+        <span class="changelog-title">設定變更日誌</span>
+        <span style="font-size:11px;color:#aaa">依 rule.md 第六章合規附注，操作記錄保存 5 年</span>
+      </div>
+      <div id="changelogBody">
+        <div class="changelog-row">
+          <span class="changelog-time">2026-04-24 09:30</span>
+          <div class="changelog-op">admin@exchange.com 修改 <strong>手續費折扣 %數</strong>：<span class="from">8%</span> → <span class="to">10%</span></div>
+        </div>
+        <div class="changelog-row">
+          <span class="changelog-time">2026-04-10 14:05</span>
+          <div class="changelog-op">admin@exchange.com 修改 <strong>每月反佣額度上限</strong>：<span class="from">USDT 300</span> → <span class="to">USDT 500</span></div>
+        </div>
+        <div class="changelog-row">
+          <span class="changelog-time">2026-03-28 11:22</span>
+          <div class="changelog-op">admin@exchange.com 初始化設定（系統上線）：折扣 8%・折扣天數 30 天・每人碼數上限 5・有效期 30 天・月度上限 USDT 300</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- ══ END SETTINGS ══ -->
+
+  <!-- ══ CODES SECTION ══ -->
+  <div id="section-codes">
+    <div class="page-header">
+      <div>
+        <div class="page-title">邀請碼管理</div>
+      </div>
+      <button class="btn-primary" onclick="alert('匯出功能：產出 CSV 格式的邀請碼與反佣日誌')">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M7 2v7M4 7l3 3 3-3M2 11h10"/></svg>
+        匯出日誌
+      </button>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid" style="grid-template-columns:repeat(4,1fr)">
+      <div class="stat-card">
+        <div class="stat-label">本月已產生邀請碼</div>
+        <div class="stat-value">248</div>
+        <div class="stat-change up">↑ 31 較上月</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">邀請關係成立</div>
+        <div class="stat-value">104</div>
+        <div class="stat-change">轉化率 41.9%</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">本月返佣發放</div>
+        <div class="stat-value">USDT 3,840</div>
+        <div class="stat-change up">↑ 12% 較上月</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">待確認邀請碼</div>
+        <div class="stat-value">87</div>
+        <div class="stat-change">未使用，30 天內有效</div>
+      </div>
+    </div>
+
+    <!-- Filter bar -->
+    <div class="filter-bar">
+      <div class="search-wrap">
+        <svg class="search-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="7" cy="7" r="4.5"/><line x1="10.5" y1="10.5" x2="14" y2="14"/></svg>
+        <input class="search-input" type="text" id="searchInput" placeholder="搜尋邀請碼、邀請人 UID、被邀請人 UID…" oninput="filterTable()">
+      </div>
+      <select class="filter-select" id="statusFilter" onchange="filterTable()">
+        <option value="">全部狀態</option>
+        <option value="未使用">未使用</option>
+        <option value="已使用">已使用</option>
+        <option value="已過期">已過期</option>
+        <option value="已停用">已停用</option>
+        <option value="待審核">待審核</option>
+      </select>
+      <select class="filter-select" id="dateFilter" onchange="filterTable()">
+        <option value="">全部時間</option>
+        <option value="7">最近 7 天</option>
+        <option value="30">最近 30 天</option>
+      </select>
+      <span class="filter-count" id="filterCount"></span>
+      <div class="filter-spacer"></div>
+      <button class="btn-export" onclick="alert('複製邀請碼篩選結果')">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="1" y="3" width="8" height="9" rx="1"/><path d="M4 3V2a1 1 0 011-1h5a1 1 0 011 1v8a1 1 0 01-1 1h-1"/></svg>
+        複製
+      </button>
+    </div>
+
+    <!-- Main table -->
+    <div class="table-wrap">
+      <table>
+        <colgroup>
+          <col class="c-code"><col class="c-inviter"><col class="c-invitee">
+          <col class="c-status"><col class="c-created"><col class="c-expiry">
+          <col class="c-rebate"><col class="c-cap"><col class="c-actions">
+        </colgroup>
+        <thead>
+          <tr>
+            <th>邀請碼</th><th>邀請人</th><th>被邀請人</th>
+            <th>狀態</th><th>產生日期</th><th>有效期至</th>
+            <th>反佣（USDT）</th><th>月度上限</th><th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="tableBody">
+        </tbody>
+      </table>
+      <div class="pagination">
+        <span class="page-info" id="pageInfo"></span>
+        <div class="page-btns">
+          <button class="page-btn" onclick="changePage(-1)">‹ 上一頁</button>
+          <button class="page-btn active" id="pageNum">1</button>
+          <button class="page-btn" onclick="changePage(1)">下一頁 ›</button>
+        </div>
+      </div>
+    </div>
+
+
+  </div>
+  <!-- ══ END CODES SECTION ══ -->
+
+  <!-- ══ REBATE SECTION ══ -->
+  <div id="section-rebate" style="display:none">
+
+    <!-- Breadcrumb -->
+    <div class="breadcrumb">
+      <span>首頁</span><span>›</span>
+      <span>邀請 &amp; 反佣</span><span>›</span>
+      <span class="bc-cur">返佣明細</span>
+    </div>
+
+    <!-- Page header -->
+    <div class="page-header" style="margin-bottom:16px">
+      <div>
+        <div class="page-title" style="display:flex;align-items:center;gap:8px">
+          <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;background:#FEF4EA;border-radius:6px">
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="#C98A00" stroke-width="1.5"><path d="M2 11V5l5.5-2.5L13 5v6l-5.5 2.5L2 11z"/></svg>
+          </span>
+          返佣明細紀錄
+        </div>
+        <div class="page-sub" style="margin-top:4px">每日 00:00 UTC+8 自動結算。可搜尋邀請人、被邀請人或結算單號，查看反佣金額與發放狀態，並匯出 Excel 報表。</div>
+      </div>
+    </div>
+
+    <!-- ■ Filter panel ■ -->
+    <div class="filter-panel">
+      <div class="filter-panel-header" onclick="toggleFilterPanel()">
+        <div class="filter-panel-title">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#1D5FAD" stroke-width="1.5"><path d="M1 2h12M3 7h8M5.5 12h3"/></svg>
+          篩選條件
+        </div>
+        <span class="filter-toggle-icon" id="filterToggleIcon">▲</span>
+      </div>
+      <div class="filter-panel-body" id="filterPanelBody">
+        <!-- Row 1 -->
+        <div class="filter-grid">
+          <div class="filter-field">
+            <div class="filter-field-label">結算日期（起）</div>
+            <input type="date" id="rb-dateFrom" value="2026-04-01">
+          </div>
+          <div class="filter-field">
+            <div class="filter-field-label">結算日期（迄）</div>
+            <input type="date" id="rb-dateTo" value="2026-04-27">
+          </div>
+          <div class="filter-field">
+            <div class="filter-field-label">邀請人用戶ID</div>
+            <input type="text" id="rb-inviterID" placeholder="例：U00412">
+          </div>
+          <div class="filter-field">
+            <div class="filter-field-label">被邀請人用戶ID</div>
+            <input type="text" id="rb-inviteeID" placeholder="例：U00891">
+          </div>
+        </div>
+        <!-- Row 2 (advanced) -->
+        <span class="filter-advanced-toggle" onclick="toggleAdvanced()">
+          <span id="advIcon">＋</span> 進階篩選
+        </span>
+        <div class="filter-advanced-section" id="advancedSection">
+          <div class="filter-grid" style="margin-bottom:14px">
+            <div class="filter-field">
+              <div class="filter-field-label">結算單號</div>
+              <input type="text" id="rb-billID" placeholder="例：RB00042">
+            </div>
+            <div class="filter-field">
+              <div class="filter-field-label">發放狀態</div>
+              <select id="rb-status">
+                <option value="">全部</option>
+                <option value="paid">已發放</option>
+                <option value="processing">處理中</option>
+                <option value="capped">已達上限</option>
+                <option value="failed">發放失敗</option>
+              </select>
+            </div>
+            <div class="filter-field">
+              <div class="filter-field-label">幣種</div>
+              <select id="rb-currency">
+                <option value="">全部</option>
+                <option value="USDT">USDT</option>
+                <option value="BTC">BTC</option>
+                <option value="ETH">ETH</option>
+              </select>
+            </div>
+            <div class="filter-field">
+              <div class="filter-field-label">邀請人姓名</div>
+              <input type="text" id="rb-inviterName" placeholder="關鍵字">
+            </div>
+          </div>
+        </div>
+        <div class="filter-actions">
+          <button class="btn-clear" onclick="clearRebateFilter()">清空</button>
+          <button class="btn-search-apply" onclick="applyRebateSearch()">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="5.5" cy="5.5" r="4"/><path d="M9 9l2.5 2.5"/></svg>
+            搜尋
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ■ Table area ■ -->
+    <div class="rebate-toolbar">
+      <button class="btn-export" onclick="alert('匯出篩選範圍內的全部返佣明細為 Excel 格式')">
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6.5 1v8M3.5 6.5l3 3 3-3"/><path d="M1 10v1.5a.5.5 0 00.5.5h10a.5.5 0 00.5-.5V10"/></svg>
+        導出 Excel
+      </button>
+    </div>
+
+    <div class="table-wrap">
+      <table id="rebateTable">
+        <colgroup>
+          <col style="width:108px"><!-- 結算日期 -->
+          <col style="width:88px"> <!-- 結算單號 -->
+          <col style="width:130px"><!-- 邀請人 -->
+          <col style="width:130px"><!-- 被邀請人 -->
+          <col style="width:68px"> <!-- 筆數 -->
+          <col style="width:110px"><!-- 手續費 -->
+          <col style="width:115px"><!-- 反佣金額 -->
+          <col style="width:140px"><!-- 月度累計 -->
+          <col style="width:88px"> <!-- 狀態 -->
+        </colgroup>
+        <thead>
+          <tr>
+            <th>結算日期</th>
+            <th>結算單號</th>
+            <th>邀請人</th>
+            <th>被邀請人</th>
+            <th style="text-align:right">交易筆數</th>
+            <th style="text-align:right">手續費總額</th>
+            <th style="text-align:right">反佣金額</th>
+            <th>月度累計 / 上限</th>
+            <th>發放狀態</th>
+          </tr>
+        </thead>
+        <tbody id="rebateBody">
+          <!-- populated by JS after search -->
+        </tbody>
+      </table>
+
+      <!-- Empty / initial state -->
+      <div class="empty-search" id="rebateEmptyState">
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="#ccc" stroke-width="2">
+          <circle cx="21" cy="21" r="14"/><line x1="32" y1="32" x2="44" y2="44"/>
+        </svg>
+        <p>請輸入搜尋條件後點擊搜尋</p>
+      </div>
+
+      <!-- Pagination (hidden until data loaded) -->
+      <div class="rebate-pagination" id="rebatePagination" style="display:none">
+        <div class="perpage-wrap">
+          每頁項目：
+          <select class="perpage-select" id="perPageSelect" onchange="changePerPage()">
+            <option value="10" selected>10</option>
+            <option value="20">20</option>
+            <option value="50">50</option>
+          </select>
+          <span id="rebatePageInfo" style="margin-left:8px">0 條中的 0~0 條</span>
+        </div>
+        <div class="page-btns">
+          <button class="page-btn" id="rbFirst"  onclick="rbGoPage(1)" title="第一頁">|‹</button>
+          <button class="page-btn" id="rbPrev"   onclick="rbChangePage(-1)">‹</button>
+          <span id="rbPageNums" style="display:flex;gap:4px"></span>
+          <button class="page-btn" id="rbNext"   onclick="rbChangePage(1)">›</button>
+          <button class="page-btn" id="rbLast"   onclick="rbGoPage(rbTotalPages())" title="最後一頁">›|</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <!-- ══ END REBATE SECTION ══ -->
+
+  <!-- ══ PENDING REBATE SECTION ══ -->
+  <div id="section-pending" style="display:none">
+
+    <div class="breadcrumb">
+      <span>首頁</span><span>›</span>
+      <span>邀請 &amp; 返佣</span><span>›</span>
+      <span class="bc-cur">待發放返佣</span>
+    </div>
+
+    <div class="page-header" style="margin-bottom:16px">
+      <div>
+        <div class="page-title" style="display:flex;align-items:center;gap:8px">
+          <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;background:#FEF4EA;border-radius:6px">
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="#C98A00" stroke-width="1.5"><circle cx="7.5" cy="7.5" r="6"/><path d="M7.5 4.5V8l2.5 1.5"/></svg>
+          </span>
+          返佣異常審查
+        </div>
+        <div class="page-sub" style="margin-top:4px">系統每日 00:00 UTC+8 自動結算並發放返佣。此頁面僅顯示被系統標記為異常（上限超出、UID 不符、帳號凍結等）而暫緩發放的記錄，供人工檢視並決定是否拒絕。</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn-export" onclick="pendingBatchAction('reject')">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6.5" cy="6.5" r="5.5"/><path d="M4 4l5 5M9 4l-5 5"/></svg>
+          批量拒絕
+        </button>
+
+      </div>
+    </div>
+
+    <!-- Info banner -->
+    <div style="background:#EBF3FD;border:1px solid #c8daef;border-radius:8px;padding:12px 16px;display:flex;align-items:center;gap:12px;margin-bottom:16px">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#1D5FAD" stroke-width="1.5"><circle cx="8" cy="8" r="6"/><path d="M8 7v4M8 5.5v.5"/></svg>
+      <span style="font-size:13px;color:#1D4080">本頁僅顯示系統自動暫緩的異常返佣記錄。正常返佣由系統每日自動發放，無需人工介入。若確認異常屬實，可點擊「拒絕」取消該筆返佣，操作將寫入稽核日誌。</span>
+    </div>
+
+    <!-- Filter panel -->
+    <div class="filter-panel">
+      <div class="filter-panel-header" onclick="togglePendingPanel()">
+        <div class="filter-panel-title">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#1D5FAD" stroke-width="1.5"><path d="M1 2h12M3 7h8M5.5 12h3"/></svg>
+          篩選條件
+        </div>
+        <span class="filter-toggle-icon" id="pendingToggleIcon">▲</span>
+      </div>
+      <div class="filter-panel-body" id="pendingPanelBody">
+        <div class="filter-grid">
+          <div class="filter-field">
+            <div class="filter-field-label">結算日期（起）</div>
+            <input type="date" id="pd-dateFrom" value="2026-04-01">
+          </div>
+          <div class="filter-field">
+            <div class="filter-field-label">結算日期（迄）</div>
+            <input type="date" id="pd-dateTo" value="2026-04-27">
+          </div>
+          <div class="filter-field">
+            <div class="filter-field-label">邀請人 UID</div>
+            <input type="text" id="pd-inviterUID" placeholder="例：U00412">
+          </div>
+          <div class="filter-field">
+            <div class="filter-field-label">被邀請人 UID</div>
+            <input type="text" id="pd-inviteeUID" placeholder="例：U00891">
+          </div>
+        </div>
+        <div class="filter-actions">
+          <button class="btn-clear" onclick="clearPendingFilter()">清空</button>
+          <button class="btn-search-apply" onclick="applyPendingSearch()">
+            <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="5.5" cy="5.5" r="4"/><path d="M9 9l2.5 2.5"/></svg>
+            搜尋
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-wrap">
+      <table id="pendingTable">
+        <colgroup>
+          <col style="width:36px">  <!-- checkbox -->
+          <col style="width:88px">  <!-- 結算單號 -->
+          <col style="width:100px"> <!-- 結算日期 -->
+          <col style="width:100px"> <!-- 邀請人 UID -->
+          <col style="width:100px"> <!-- 被邀請人 UID -->
+          <col style="width:68px">  <!-- 交易筆數 -->
+          <col style="width:110px"> <!-- 手續費 -->
+          <col style="width:115px"> <!-- 返佣金額 -->
+          <col style="width:130px"> <!-- 月度累計 -->
+          <col style="width:130px"> <!-- 操作 -->
+        </colgroup>
+        <thead>
+          <tr>
+            <th><input type="checkbox" id="pendingSelectAll" onchange="toggleSelectAll(this)" title="全選"></th>
+            <th>結算單號</th>
+            <th>結算日期</th>
+            <th>邀請人 UID</th>
+            <th>被邀請人 UID</th>
+            <th style="text-align:right">交易筆數</th>
+            <th style="text-align:right">手續費總額</th>
+            <th style="text-align:right">返佣金額</th>
+            <th>月度累計 / 上限</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="pendingBody"></tbody>
+      </table>
+
+      <!-- Empty state -->
+      <div class="empty-search" id="pendingEmptyState" style="display:none">
+        <svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="#ccc" stroke-width="2">
+          <circle cx="21" cy="21" r="14"/><line x1="32" y1="32" x2="44" y2="44"/>
+        </svg>
+        <p>查無待審核返佣記錄</p>
+      </div>
+
+      <div class="rebate-pagination" id="pendingPagination">
+        <div class="perpage-wrap">
+          每頁項目：
+          <select class="perpage-select" id="pdPerPageSelect" onchange="changePdPerPage()">
+            <option value="10" selected>10</option>
+            <option value="20">20</option>
+            <option value="50">50</option>
+          </select>
+          <span id="pdPageInfo" style="margin-left:8px">共 0 條</span>
+        </div>
+        <div class="page-btns">
+          <button class="page-btn" id="pdPrev" onclick="pdChangePage(-1)">‹</button>
+          <span id="pdPageNums" style="display:flex;gap:4px"></span>
+          <button class="page-btn" id="pdNext" onclick="pdChangePage(1)">›</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Audit log panel -->
+    <div style="margin-top:24px">
+      <div class="section-title" style="margin-bottom:12px">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="#555" stroke-width="1.4"><rect x="1" y="1" width="12" height="12" rx="1.5"/><path d="M4 5h6M4 7.5h4M4 10h5"/></svg>
+        最近審核操作日誌
+      </div>
+      <div class="table-wrap">
+        <table>
+          <colgroup>
+            <col style="width:140px"><col style="width:90px"><col style="width:100px">
+            <col style="width:100px"><col style="width:100px"><col><col style="width:80px">
+          </colgroup>
+          <thead>
+            <tr>
+              <th>操作時間</th><th>結算單號</th><th>邀請人 UID</th>
+              <th>被邀請人 UID</th><th>返佣金額</th><th>審核結果</th><th>操作人</th>
+            </tr>
+          </thead>
+          <tbody id="pendingAuditLog">
+            <tr>
+              <td style="color:#888;font-size:12px">2026-04-27 09:15</td>
+              <td style="font-family:monospace;font-size:11px;color:#888">RB00211</td>
+              <td style="font-family:monospace;font-size:12px">U00412</td>
+              <td style="font-family:monospace;font-size:12px">U00891</td>
+              <td style="color:#177A5A;font-weight:500">+12.4000 USDT</td>
+              <td><span class="badge badge-used">已核准發放</span></td>
+              <td style="font-size:12px;color:#888">admin</td>
+            </tr>
+            <tr>
+              <td style="color:#888;font-size:12px">2026-04-27 09:14</td>
+              <td style="font-family:monospace;font-size:11px;color:#888">RB00209</td>
+              <td style="font-family:monospace;font-size:12px">U00341</td>
+              <td style="font-family:monospace;font-size:12px">U00933</td>
+              <td style="color:#177A5A;font-weight:500">+8.2000 USDT</td>
+              <td><span class="badge badge-used">已核准發放</span></td>
+              <td style="font-size:12px;color:#888">admin</td>
+            </tr>
+            <tr>
+              <td style="color:#888;font-size:12px">2026-04-26 17:42</td>
+              <td style="font-family:monospace;font-size:11px;color:#888">RB00188</td>
+              <td style="font-family:monospace;font-size:12px">U00819</td>
+              <td style="font-family:monospace;font-size:12px">U01002</td>
+              <td style="color:#A32D2D;font-weight:500">0.0000 USDT</td>
+              <td><span class="badge badge-disabled">已拒絕</span></td>
+              <td style="font-size:12px;color:#888">admin</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+  <!-- ══ END PENDING SECTION ══ -->
+
+
+  <!-- ══ FINANCE REPORT SECTION ══ -->
+  <div id="section-finance" style="display:none">
+
+    <div class="page-header" style="margin-bottom:16px">
+      <div>
+        <div class="page-title" style="display:flex;align-items:center;gap:8px">
+          <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;background:#EBF3FD;border-radius:6px">
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="#1D5FAD" stroke-width="1.5"><rect x="1.5" y="2" width="12" height="11" rx="1.5"/><path d="M5 6h5M5 9h3"/><path d="M1.5 5h12"/></svg>
+          </span>
+          返佣財務報表
+        </div>
+        <div class="page-sub" style="margin-top:4px">依幣種彙整每日返佣發放總量，供財務部門核對與下載。數據來源：系統自動結算日誌。</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <select id="fin-month" onchange="renderFinanceReport()" style="padding:7px 28px 7px 10px;border:1px solid #ddd;border-radius:6px;font-size:13px;background:#fff;appearance:none;background-image:url(&quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23999'/%3E%3C/svg%3E&quot;);background-repeat:no-repeat;background-position:right 8px center;outline:none;cursor:pointer">
+          <option value="2026-04">2026 年 4 月</option>
+          <option value="2026-03">2026 年 3 月</option>
+          <option value="2026-02">2026 年 2 月</option>
+        </select>
+        <button class="btn-export" onclick="alert('匯出 CSV：返佣財務報表_' + document.getElementById('fin-month').value + '.csv')">
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6.5 1v8M3.5 6.5l3 3 3-3"/><path d="M1 10v1.5a.5.5 0 00.5.5h10a.5.5 0 00.5-.5V10"/></svg>
+          下載 CSV
+        </button>
+      </div>
+    </div>
+
+    <!-- 月度摘要卡片 -->
+    <div class="stats-grid" id="fin-summary-cards" style="grid-template-columns:repeat(4,1fr);margin-bottom:20px"></div>
+
+    <!-- 每日明細表 -->
+    <div class="table-wrap">
+      <table>
+        <colgroup>
+          <col style="width:110px">
+          <col style="width:120px">
+          <col style="width:120px">
+          <col style="width:120px">
+          <col style="width:140px">
+          <col style="width:80px">
+          <col style="width:80px">
+        </colgroup>
+        <thead>
+          <tr>
+            <th>日期</th>
+            <th style="text-align:right">USDT 返佣</th>
+            <th style="text-align:right">BTC 返佣</th>
+            <th style="text-align:right">ETH 返佣</th>
+            <th style="text-align:right">USDT 等值合計</th>
+            <th style="text-align:right">發放筆數</th>
+            <th style="text-align:right">異常筆數</th>
+          </tr>
+        </thead>
+        <tbody id="fin-table-body"></tbody>
+      </table>
+      <!-- 月合計 row -->
+      <div style="background:#f8f9fa;border-top:2px solid #e5e7eb;padding:10px 12px;display:flex;gap:32px;font-size:13px" id="fin-total-row"></div>
+    </div>
+
+  </div>
+  <!-- ══ END FINANCE SECTION ══ -->
+
+  </main>
+</div><!-- /.layout -->
+
+<!-- Detail drawer -->
+<div class="detail-overlay" id="detailOverlay">
+  <div class="detail-backdrop" onclick="closeDrawer()"></div>
+  <div class="detail-drawer">
+    <div class="drawer-header">
+      <span class="drawer-title" id="drawerTitle">邀請碼詳情</span>
+      <button class="drawer-close" onclick="closeDrawer()">✕</button>
+    </div>
+    <div id="drawerContent"></div>
+  </div>
+</div>
+
+<!-- 明細 modal -->
+<div id="detailModal" style="display:none;position:fixed;inset:0;z-index:200;align-items:center;justify-content:center">
+  <div style="position:absolute;inset:0;background:rgba(0,0,0,.35)" onclick="closeDetailModal()"></div>
+  <div style="position:relative;z-index:1;width:560px;max-height:80vh;background:#fff;border-radius:10px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,.18)">
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 24px 16px;border-bottom:1px solid #eee">
+      <div>
+        <div style="font-size:15px;font-weight:600;color:#111" id="detailModalTitle">單號明細</div>
+        <div style="font-size:12px;color:#888;margin-top:2px" id="detailModalSub"></div>
+      </div>
+      <button onclick="closeDetailModal()" style="width:28px;height:28px;border-radius:50%;background:#f0f0f0;border:none;cursor:pointer;font-size:14px;color:#555;display:flex;align-items:center;justify-content:center">✕</button>
+    </div>
+    <div style="overflow-y:auto;padding:20px 24px;flex:1" id="detailModalBody"></div>
+  </div>
+</div>
+
+<script>
+const allData = [
+  {code:'A7F3KX92',inviter:'陳建明',inviterID:'U00412',invitee:'李雅婷',inviteeID:'U00891',status:'已使用',created:'2026-04-10',expiry:'2026-05-10',rebate:'124.50',capPct:24.9,flagged:false},
+  {code:'B2M9QP51',inviter:'王淑芬',inviterID:'U00228',invitee:'',inviteeID:'',status:'未使用',created:'2026-04-18',expiry:'2026-05-18',rebate:'0.00',capPct:0,flagged:false},
+  {code:'C5RW7YH4',inviter:'林俊宏',inviterID:'U00103',invitee:'張文凱',inviteeID:'U00915',status:'已使用',created:'2026-04-05',expiry:'2026-05-05',rebate:'312.80',capPct:62.6,flagged:false},
+  {code:'D8NZ3TK6',inviter:'黃美玲',inviterID:'U00576',invitee:'',inviteeID:'',status:'已過期',created:'2026-03-15',expiry:'2026-04-14',rebate:'0.00',capPct:0,flagged:false},
+  {code:'E1XP6MG0',inviter:'吳信賢',inviterID:'U00341',invitee:'劉秀蘭',inviteeID:'U00933',status:'已使用',created:'2026-04-02',expiry:'2026-05-02',rebate:'489.20',capPct:97.8,flagged:false},
+  {code:'F4QJ8VC3',inviter:'陳建明',inviterID:'U00412',invitee:'',inviteeID:'',status:'未使用',created:'2026-04-20',expiry:'2026-05-20',rebate:'0.00',capPct:0,flagged:false},
+  {code:'G6KL2AS9',inviter:'蔡宗翰',inviterID:'U00688',invitee:'鄭怡君',inviteeID:'U00944',status:'已停用',created:'2026-04-08',expiry:'2026-05-08',rebate:'0.00',capPct:0,flagged:false},
+  {code:'H3DY5PB7',inviter:'許家豪',inviterID:'U00095',invitee:'謝明哲',inviteeID:'U00957',status:'已使用',created:'2026-04-12',expiry:'2026-05-12',rebate:'78.40',capPct:15.7,flagged:false},
+  {code:'J9MF1NW8',inviter:'林俊宏',inviterID:'U00103',invitee:'',inviteeID:'',status:'未使用',created:'2026-04-22',expiry:'2026-05-22',rebate:'0.00',capPct:0,flagged:false},
+  {code:'K2TE4RX5',inviter:'王淑芬',inviterID:'U00228',invitee:'周志明',inviteeID:'U00968',status:'已使用',created:'2026-04-01',expiry:'2026-05-01',rebate:'235.60',capPct:47.1,flagged:false},
+  {code:'L7PQ9HU2',inviter:'張偉強',inviterID:'U00819',invitee:'',inviteeID:'',status:'未使用',created:'2026-04-21',expiry:'2026-05-21',rebate:'0.00',capPct:0,flagged:false},
+  {code:'M5VB3ZC1',inviter:'趙冠宇',inviterID:'U00455',invitee:'孫佳玲',inviteeID:'U00979',status:'待審核',created:'2026-04-19',expiry:'2026-05-19',rebate:'0.00',capPct:0,flagged:true},
+];
+
+const amlData = [
+  {code:'M5VB3ZC1',inviter:'趙冠宇',inviterID:'U00455',reason:'同一 IP 內 24 小時建立 4 個帳號',flaggedAt:'2026-04-19 14:23',inviteeCount:4},
+  {code:'N8WK6DT3',inviter:'陳志成',inviterID:'U00732',reason:'KYC 後 6 小時內密集交易 ×32 筆',flaggedAt:'2026-04-20 09:17',inviteeCount:1},
+  {code:'P3XR2HM7',inviter:'方宜蓁',inviterID:'U00261',reason:'同一 KYC 身份對應 2 個帳號',flaggedAt:'2026-04-22 17:44',inviteeCount:2},
+];
+
+let filtered = [...allData];
+let page = 1;
+const perPage = 8;
+
+function initials(name){return name?name.slice(0,2):''}
+
+function statusBadge(s){
+  const m={'未使用':'badge-active','已使用':'badge-used','已過期':'badge-expired','已停用':'badge-disabled','待審核':'badge-pending'};
+  return `<span class="badge ${m[s]||''}">${s}</span>`;
+}
+
+function capBar(pct){
+  const cls = pct>=90?'over':pct>=80?'warn':'';
+  return `<div class="cap-bar-wrap"><div class="cap-bar"><div class="cap-fill ${cls}" style="width:${Math.min(pct,100)}%"></div></div><span class="cap-pct">${pct.toFixed(0)}%</span></div>`;
+}
+
+function actionBtns(row){
+  let btns = `<button class="btn-sm btn-view" onclick="openDrawer('${row.code}')">詳情</button>`;
+  if(row.status==='未使用'||row.status==='已使用'){
+    btns += `<button class="btn-sm btn-disable" onclick="toggleStatus('${row.code}',true)">停用</button>`;
+  } else if(row.status==='已停用'){
+    btns += `<button class="btn-sm btn-enable" onclick="toggleStatus('${row.code}',false)">恢復</button>`;
+  } else if(row.status==='待審核'){
+    btns += `<button class="btn-sm btn-flag" onclick="approveAML('${row.code}')">審核</button>`;
+  }
+  return `<div class="actions">${btns}</div>`;
+}
+
+function renderTable(){
+  const tbody = document.getElementById('tableBody');
+  const start=(page-1)*perPage, end=Math.min(start+perPage,filtered.length);
+  const rows = filtered.slice(start,end);
+  if(!rows.length){
+    tbody.innerHTML='<tr class="empty-row"><td colspan="9">沒有符合條件的邀請碼</td></tr>';
+  } else {
+    tbody.innerHTML = rows.map(r=>`
+      <tr class="${r.flagged?'flagged':''}">
+        <td><span class="code-chip">${r.code}</span>${r.flagged?'<span class="flag-icon"></span>':''}</td>
+        <td style="font-family:monospace;font-size:12px;font-weight:500;color:#1a1a1a">${r.inviterID}</td>
+        <td style="font-family:monospace;font-size:12px;font-weight:500;color:#1a1a1a">${r.inviteeID||'<span style="color:#ccc;font-family:sans-serif;font-weight:400">—</span>'}</td>
+        <td>${statusBadge(r.status)}</td>
+        <td>${r.created}</td>
+        <td style="${r.status==='已過期'?'color:#ccc':''}">${r.expiry}</td>
+        <td style="font-variant-numeric:tabular-nums">${r.rebate}<span style="font-size:10px;color:#aaa;margin-left:1px">U</span></td>
+        <td>${r.capPct>0?capBar(r.capPct):'<span style="color:#ccc">—</span>'}</td>
+        <td>${actionBtns(r)}</td>
+      </tr>
+    `).join('');
+  }
+  document.getElementById('pageInfo').textContent = `顯示第 ${start+1}–${end} 筆，共 ${filtered.length} 筆`;
+  document.getElementById('filterCount').textContent = filtered.length < allData.length ? `篩選結果：${filtered.length} 筆` : '';
+}
+
+
+function filterTable(){
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const st = document.getElementById('statusFilter').value;
+  filtered = allData.filter(r=>{
+    const matchQ = !q || r.code.toLowerCase().includes(q)||r.inviterID.toLowerCase().includes(q)||r.inviteeID.toLowerCase().includes(q);
+    const matchSt = !st || r.status===st;
+    return matchQ && matchSt;
+  });
+  page=1;
+  renderTable();
+}
+
+function changePage(dir){
+  const maxPage = Math.ceil(filtered.length/perPage);
+  page = Math.max(1,Math.min(maxPage,page+dir));
+  document.getElementById('pageNum').textContent = page;
+  renderTable();
+}
+
+function toggleStatus(code, disable){
+  const row = allData.find(r=>r.code===code);
+  if(row) row.status = disable?'已停用':row.invitee?'已使用':'未使用';
+  filterTable();
+}
+
+
+function openDrawer(code){
+  const r = allData.find(x=>x.code===code);
+  if(!r) return;
+  document.getElementById('drawerTitle').textContent = `邀請碼：${r.code}`;
+  document.getElementById('drawerContent').innerHTML = `
+    <div class="drawer-section">
+      <div class="drawer-row"><span class="lbl">邀請碼</span><span class="val"><span class="code-chip">${r.code}</span></span></div>
+      <div class="drawer-row"><span class="lbl">狀態</span><span class="val">${statusBadge(r.status)}</span></div>
+      <div class="drawer-row"><span class="lbl">有效期</span><span class="val">${r.created} → ${r.expiry}</span></div>
+    </div>
+    <div class="drawer-section">
+      <div style="font-size:12px;font-weight:500;color:#888;margin-bottom:8px">邀請關係</div>
+      <div class="drawer-row"><span class="lbl">邀請人 UID</span><span class="val" style="font-family:monospace">${r.inviterID}</span></div>
+      <div class="drawer-row"><span class="lbl">被邀請人 UID</span><span class="val" style="font-family:monospace">${r.inviteeID||'—'}</span></div>
+    </div>
+    <div class="drawer-section">
+      <div style="font-size:12px;font-weight:500;color:#888;margin-bottom:8px">反佣概況</div>
+      <div class="drawer-row"><span class="lbl">本月反佣</span><span class="val">${r.rebate}<span style="font-size:11px;color:#aaa;margin-left:1px">U</span></span></div>
+      <div class="drawer-row"><span class="lbl">月度上限使用</span><span class="val">${r.capPct.toFixed(1)}% / 500 USDT</span></div>
+    </div>
+    <div class="drawer-section">
+      <div style="font-size:12px;font-weight:500;color:#888;margin-bottom:10px">事件記錄</div>
+      <div class="timeline">
+        ${r.invitee?`<div class="tl-item"><div class="tl-dot"></div><div class="tl-content"><div class="tl-event">邀請關係啟動（KYC 通過）</div><div class="tl-time">${r.created} 14:22 UTC+8</div></div></div>`:''}
+        <div class="tl-item"><div class="tl-dot ${r.invitee?'':''}"></div><div class="tl-content"><div class="tl-event">邀請碼產生</div><div class="tl-time">${r.created} 10:05 UTC+8</div></div></div>
+        ${r.rebate!=='0.00'?`<div class="tl-item"><div class="tl-dot"></div><div class="tl-content"><div class="tl-event">反佣發放 ${r.rebate}U</div><div class="tl-time">本月累計</div></div></div>`:''}
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      ${r.status!=='已停用'?`<button class="btn-sm btn-disable" style="flex:1;justify-content:center;padding:8px" onclick="toggleStatus('${r.code}',true);closeDrawer()">停用此邀請碼</button>`:''}
+      <button class="btn-sm btn-view" style="flex:1;justify-content:center;padding:8px" onclick="closeDrawer()">關閉</button>
+    </div>
+  `;
+  document.getElementById('detailOverlay').classList.add('open');
+}
+
+function closeDrawer(){
+  document.getElementById('detailOverlay').classList.remove('open');
+}
+
+/* ── 明細 modal ── */
+function openDetailModal(code){
+  const r = allData.find(x=>x.code===code);
+  if(!r) return;
+
+  // Generate mock rebate log rows for this code
+  const statuses = ['已發放','已發放','已發放','處理中','已達上限'];
+  const stColors = {'已發放':'#177A5A','處理中':'#9A5C14','已達上限':'#A32D2D'};
+  const stBg     = {'已發放':'#edf7f3','處理中':'#fdf6ec','已達上限':'#fdf0f0'};
+  const txTypes  = ['手續費返佣','手續費返佣','手續費返佣','手續費返佣','現貨交易返佣'];
+  const seed = code.charCodeAt(0);
+  const rows = Array.from({length:6}, (_,i)=>{
+    const d = new Date(2026,3,28-(i*5+seed%5));
+    const dateStr = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    const amt = (Math.abs(Math.sin(seed+i*7))*80+5).toFixed(4);
+    const st = i===3?'處理中':i===4?'已達上限':'已發放';
+    const tx = txTypes[i%txTypes.length];
+    const txid = 'TX'+String(seed*100+i*17+8832).padStart(8,'0');
+    return {date:dateStr,txid,type:tx,amt,st};
+  });
+
+  const totalPaid = rows.filter(x=>x.st==='已發放').reduce((s,x)=>s+parseFloat(x.amt),0);
+
+  document.getElementById('detailModalTitle').textContent = `邀請碼 ${r.code} · 返佣明細`;
+  document.getElementById('detailModalSub').textContent = `邀請人 UID：${r.inviterID}${r.inviteeID?' · 被邀請人 UID：'+r.inviteeID:''}`;
+
+  document.getElementById('detailModalBody').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:18px">
+      <div style="background:#f8f9fa;border-radius:6px;padding:12px 14px">
+        <div style="font-size:11px;color:#888;margin-bottom:4px">本月累計返佣</div>
+        <div style="font-size:18px;font-weight:600;color:#177A5A">${r.rebate}<span style="font-size:11px;color:#aaa;margin-left:2px">U</span></div>
+      </div>
+      <div style="background:#f8f9fa;border-radius:6px;padding:12px 14px">
+        <div style="font-size:11px;color:#888;margin-bottom:4px">已發放</div>
+        <div style="font-size:18px;font-weight:600;color:#177A5A">${totalPaid.toFixed(4)}<span style="font-size:11px;color:#aaa;margin-left:2px">U</span></div>
+      </div>
+      <div style="background:#f8f9fa;border-radius:6px;padding:12px 14px">
+        <div style="font-size:11px;color:#888;margin-bottom:4px">月度上限使用</div>
+        <div style="font-size:18px;font-weight:600;color:${r.capPct>80?'#A32D2D':'#111'}">${r.capPct.toFixed(1)}%<span style="font-size:11px;color:#aaa;margin-left:2px">/ 500U</span></div>
+      </div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <thead>
+        <tr style="border-bottom:2px solid #eee">
+          <th style="text-align:left;padding:8px 6px;color:#888;font-weight:500;font-size:12px">日期</th>
+          <th style="text-align:left;padding:8px 6px;color:#888;font-weight:500;font-size:12px">交易流水號</th>
+          <th style="text-align:left;padding:8px 6px;color:#888;font-weight:500;font-size:12px">類型</th>
+          <th style="text-align:right;padding:8px 6px;color:#888;font-weight:500;font-size:12px">返佣金額</th>
+          <th style="text-align:center;padding:8px 6px;color:#888;font-weight:500;font-size:12px">狀態</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.map(rx=>`
+        <tr style="border-bottom:1px solid #f4f4f4">
+          <td style="padding:9px 6px;color:#555">${rx.date}</td>
+          <td style="padding:9px 6px;font-family:monospace;font-size:12px;color:#444">${rx.txid}</td>
+          <td style="padding:9px 6px;color:#444">${rx.type}</td>
+          <td style="padding:9px 6px;text-align:right;font-variant-numeric:tabular-nums;color:#177A5A;font-weight:500">+${rx.amt}<span style="font-size:10px;color:#aaa;margin-left:1px">u</span></td>
+          <td style="padding:9px 6px;text-align:center"><span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:500;background:${stBg[rx.st]};color:${stColors[rx.st]}">${rx.st}</span></td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+  `;
+
+  const modal = document.getElementById('detailModal');
+  modal.style.display = 'flex';
+}
+
+function closeDetailModal(){
+  document.getElementById('detailModal').style.display = 'none';
+}
+
+renderTable();
+
+/* ── Section switcher ── */
+function showSection(name){
+  ['codes','settings','rebate','pending','finance'].forEach(s=>{
+    document.getElementById('section-'+s).style.display = s===name?'block':'none';
+    const nav = document.getElementById('nav-'+s);
+    if(nav) nav.classList.toggle('active', s===name);
+  });
+  const titles = {codes:'邀請碼管理', settings:'費率設定', rebate:'返佣明細', pending:'返佣異常審查', finance:'返佣財務報表'};
+  document.querySelector('.topbar-page').textContent = titles[name]||'';
+  if(name==='pending') renderPendingTable();
+  if(name==='finance') renderFinanceReport();
+}
+
+/* ══ 反佣明細 section logic ══ */
+
+// ── Mock data (847 rows) ──────────────────────────────────────
+const RB_USERS = [
+  {uid:'U00412',name:'陳建明'},{uid:'U00228',name:'王淑芬'},
+  {uid:'U00103',name:'林俊宏'},{uid:'U00576',name:'黃美玲'},
+  {uid:'U00341',name:'吳信賢'},{uid:'U00688',name:'蔡宗翰'},
+  {uid:'U00095',name:'許家豪'},{uid:'U00819',name:'張偉強'},
+  {uid:'U00455',name:'趙冠宇'},{uid:'U00261',name:'方宜蓁'},
+];
+const RB_INVITEES = [
+  {uid:'U00891',name:'李雅婷'},{uid:'U00915',name:'張文凱'},
+  {uid:'U00933',name:'劉秀蘭'},{uid:'U00957',name:'謝明哲'},
+  {uid:'U00968',name:'周志明'},{uid:'U00979',name:'孫佳玲'},
+  {uid:'U00944',name:'鄭怡君'},{uid:'U01002',name:'曾文正'},
+  {uid:'U01018',name:'陳雅如'},{uid:'U01034',name:'林俊達'},
+];
+const RB_CURRENCIES = ['USDT','USDT','USDT','BTC','ETH'];
+const RB_STATUSES   = ['paid','paid','paid','processing','capped','failed'];
+const RB_STATUS_LABEL = {paid:'已發放',processing:'處理中',capped:'已達上限',failed:'發放失敗'};
+const RB_STATUS_CLASS = {paid:'badge-used',processing:'badge-active',capped:'badge-expired',failed:'badge-disabled'};
+
+function rbRand(a,b){return Math.random()*(b-a)+a}
+function rbPick(arr){return arr[Math.floor(rbRand(0,arr.length))];}
+
+const RB_ALL_DATA = (function(){
+  const rows=[], start=new Date('2026-04-01');
+  for(let i=0;i<847;i++){
+    const d=new Date(start); d.setDate(d.getDate()+Math.floor(i/38));
+    const cur=rbPick(RB_CURRENCIES);
+    const fee=parseFloat((rbRand(0.5,90)).toFixed(4));
+    const rebate=parseFloat((fee*.20).toFixed(4));
+    const capUsed=parseFloat((rbRand(8,540)).toFixed(2));
+    const capLimit=500;
+    const st=capUsed>=capLimit?'capped':rbPick(RB_STATUSES);
+    rows.push({
+      id:'RB'+String(i+1).padStart(5,'0'),
+      date:d.toISOString().slice(0,10),
+      inviter:rbPick(RB_USERS), invitee:rbPick(RB_INVITEES),
+      txcount:Math.floor(rbRand(1,30)),
+      fee, rebate, currency:cur,
+      capUsed, capLimit,
+      capPct:Math.min(capUsed/capLimit,1.05),
+      status:st
+    });
+  }
+  rows.sort((a,b)=>b.date.localeCompare(a.date));
+  return rows;
+})();
+
+// ── State ────────────────────────────────────────────────────
+let rbFiltered = [];
+let rbPage = 1;
+let rbPerPage = 10;
+let rbSearched = false;
+
+// ── UI Toggles ────────────────────────────────────────────────
+function toggleFilterPanel(){
+  const body = document.getElementById('filterPanelBody');
+  const icon = document.getElementById('filterToggleIcon');
+  const collapsed = body.style.display==='none';
+  body.style.display = collapsed?'':'none';
+  icon.textContent = collapsed?'▲':'▼';
+}
+
+function toggleAdvanced(){
+  const sec = document.getElementById('advancedSection');
+  const icon = document.getElementById('advIcon');
+  const open = sec.classList.toggle('open');
+  icon.textContent = open?'－':'＋';
+}
+
+// ── Filter & Search ───────────────────────────────────────────
+function applyRebateSearch(){
+  const from    = document.getElementById('rb-dateFrom').value;
+  const to      = document.getElementById('rb-dateTo').value;
+  const invID   = document.getElementById('rb-inviterID').value.trim().toLowerCase();
+  const inveeID = document.getElementById('rb-inviteeID').value.trim().toLowerCase();
+  const billID  = document.getElementById('rb-billID').value.trim().toLowerCase();
+  const status  = document.getElementById('rb-status').value;
+  const currency= document.getElementById('rb-currency').value;
+  const invName = document.getElementById('rb-inviterName').value.trim().toLowerCase();
+
+  rbFiltered = RB_ALL_DATA.filter(r=>{
+    if(from && r.date<from) return false;
+    if(to   && r.date>to)   return false;
+    if(invID   && !r.inviter.uid.toLowerCase().includes(invID))   return false;
+    if(inveeID && !r.invitee.uid.toLowerCase().includes(inveeID)) return false;
+    if(billID  && !r.id.toLowerCase().includes(billID))           return false;
+    if(status  && r.status!==status)   return false;
+    if(currency&& r.currency!==currency) return false;
+    if(invName && !r.inviter.name.includes(invName)) return false;
+    return true;
+  });
+
+  rbPage = 1;
+  rbSearched = true;
+  renderRebateTable();
+}
+
+function clearRebateFilter(){
+  document.getElementById('rb-dateFrom').value  = '2026-04-01';
+  document.getElementById('rb-dateTo').value    = '2026-04-27';
+  document.getElementById('rb-inviterID').value = '';
+  document.getElementById('rb-inviteeID').value = '';
+  document.getElementById('rb-billID').value    = '';
+  document.getElementById('rb-status').value    = '';
+  document.getElementById('rb-currency').value  = '';
+  document.getElementById('rb-inviterName').value='';
+}
+
+// ── Render ────────────────────────────────────────────────────
+function renderRebateTable(){
+  const tbody  = document.getElementById('rebateBody');
+  const empty  = document.getElementById('rebateEmptyState');
+  const pagin  = document.getElementById('rebatePagination');
+
+  if(!rbSearched){
+    tbody.innerHTML=''; empty.style.display='flex'; pagin.style.display='none';
+    return;
+  }
+
+  empty.style.display = 'none';
+
+  if(rbFiltered.length===0){
+    tbody.innerHTML=`<tr class="empty-row"><td colspan="10">查無符合條件的反佣明細</td></tr>`;
+    pagin.style.display='none';
+    return;
+  }
+
+  pagin.style.display='flex';
+  const start=(rbPage-1)*rbPerPage, end=Math.min(start+rbPerPage, rbFiltered.length);
+  const page = rbFiltered.slice(start,end);
+
+  // summary for this page
+  let totFee=0,totRb=0,totTx=0;
+  page.forEach(r=>{totFee+=r.fee;totRb+=r.rebate;totTx+=r.txcount;});
+
+  tbody.innerHTML = page.map(r=>{
+    const capPct = Math.min(r.capPct,1);
+    const capCls = r.capPct>=1?'over':r.capPct>=0.8?'warn':'';
+    const capChip = r.capPct>=1
+      ?`<span style="font-size:11px;background:#f0f0f0;color:#777;padding:1px 6px;border-radius:8px;font-weight:500">已達上限</span>`
+      :r.capPct>=0.8
+      ?`<span style="font-size:11px;background:#FEF4EA;color:#9A5C14;padding:1px 6px;border-radius:8px;font-weight:500">${(r.capPct*100).toFixed(0)}%</span>`
+      :`<span style="font-size:11px;background:#EAF5EE;color:#177A5A;padding:1px 6px;border-radius:8px;font-weight:500">${(r.capPct*100).toFixed(0)}%</span>`;
+    return `<tr>
+      <td style="font-size:12px;color:#666;font-variant-numeric:tabular-nums">${r.date}</td>
+      <td style="font-family:monospace;font-size:11px;color:#888">${r.id}</td>
+      <td style="font-family:monospace;font-size:12px;color:#1a1a1a;font-weight:500">${r.inviter.uid}</td>
+      <td style="font-family:monospace;font-size:12px;color:#1a1a1a;font-weight:500">${r.invitee.uid}</td>
+      <td style="text-align:right;font-variant-numeric:tabular-nums;color:#666">${r.txcount}</td>
+      <td style="text-align:right;font-variant-numeric:tabular-nums;color:#555">${r.fee.toFixed(4)}</td>
+      <td style="text-align:right;font-variant-numeric:tabular-nums;color:#177A5A;font-weight:500">+${r.rebate.toFixed(4)}<span style="font-size:10px;color:#aaa;margin-left:1px">u</span></td>
+      <td><div class="cap-bar-wrap">
+        <div class="cap-bar"><div class="cap-fill ${capCls}" style="width:${(capPct*100).toFixed(1)}%"></div></div>
+        <span style="font-size:11px;color:#888">${r.capUsed.toFixed(0)}/${r.capLimit}</span>
+        ${capChip}
+      </div></td>
+      <td><span class="badge ${RB_STATUS_CLASS[r.status]}">${RB_STATUS_LABEL[r.status]}</span></td>
+    </tr>`;
+  }).join('');
+
+  // Summary row
+  tbody.innerHTML += `<tr style="background:#fafafa;border-top:2px solid #e5e7eb">
+    <td colspan="4" style="font-size:11px;color:#888;padding-left:12px">本頁小計（${page.length} 筆）</td>
+    <td style="text-align:right;font-size:12px;font-weight:500;color:#555;font-variant-numeric:tabular-nums">${totTx}</td>
+    <td style="text-align:right;font-size:12px;font-weight:500;color:#555;font-variant-numeric:tabular-nums">${totFee.toFixed(4)}</td>
+    <td style="text-align:right;font-size:12px;font-weight:500;color:#177A5A;font-variant-numeric:tabular-nums">+${totRb.toFixed(4)}<span style="font-size:10px;color:#aaa;margin-left:1px">u</span></td>
+    <td colspan="2"></td>
+  </tr>`;
+
+  // Update pagination info
+  document.getElementById('rebatePageInfo').textContent =
+    `${rbFiltered.length} 條中的 ${start+1}~${end} 條`;
+  renderRbPageNums();
+}
+
+function rbTotalPages(){return Math.max(1,Math.ceil(rbFiltered.length/rbPerPage));}
+
+function renderRbPageNums(){
+  const total=rbTotalPages();
+  const container=document.getElementById('rbPageNums');
+  const pages=rbBuildPages(rbPage,total);
+  container.innerHTML=pages.map(p=>{
+    if(p==='...') return `<span class="page-ellipsis">…</span>`;
+    return `<button class="page-btn${p===rbPage?' active':''}" onclick="rbGoPage(${p})">${p}</button>`;
+  }).join('');
+  document.getElementById('rbFirst').disabled=rbPage===1;
+  document.getElementById('rbPrev').disabled=rbPage===1;
+  document.getElementById('rbNext').disabled=rbPage===total;
+  document.getElementById('rbLast').disabled=rbPage===total;
+}
+
+function rbBuildPages(cur,total){
+  if(total<=7) return Array.from({length:total},(_,i)=>i+1);
+  const p=[1];
+  if(cur>3) p.push('...');
+  for(let i=Math.max(2,cur-1);i<=Math.min(total-1,cur+1);i++) p.push(i);
+  if(cur<total-2) p.push('...');
+  p.push(total);
+  return p;
+}
+
+function rbGoPage(n){rbPage=n;renderRebateTable();}
+function rbChangePage(delta){rbGoPage(Math.max(1,Math.min(rbTotalPages(),rbPage+delta)));}
+function changePerPage(){rbPerPage=parseInt(document.getElementById('perPageSelect').value);rbPage=1;renderRebateTable();}
+
+/* ── Settings logic ── */
+const defaults = {discount:10, days:30, maxcodes:5, expiry:30, cap:500};
+const current  = {...defaults};
+const saved    = {...defaults};
+const dirtySet = new Set();
+
+const previews = {
+  discount: v => `被邀請人享有 ${v}% 手續費折扣`,
+  days:     v => `KYC 完成後 ${v} 天內有效`,
+  maxcodes: v => `每人最多同時持有 ${v} 組未使用邀請碼`,
+  expiry:   v => `邀請碼產生後 ${v} 天有效`,
+  cap:      v => `邀請人每月最高獲得 USDT ${Number(v).toLocaleString()} 反佣`,
+};
+
+function syncSlider(key){
+  const v = document.getElementById('slider-'+key).value;
+  document.getElementById('input-'+key).value = v;
+  updatePreview(key, v);
+  markChanged(key);
+}
+function syncInput(key, raw){
+  const el = document.getElementById('input-'+key);
+  const min = parseInt(el.min), max = parseInt(el.max);
+  const v = Math.max(min, Math.min(max, parseInt(raw)||min));
+  document.getElementById('slider-'+key).value = v;
+  updatePreview(key, v);
+}
+function updatePreview(key, v){
+  current[key] = Number(v);
+  document.getElementById('preview-'+key).textContent = previews[key](v);
+}
+function markChanged(key){
+  const v = Number(document.getElementById('input-'+key).value);
+  if(v !== saved[key]) dirtySet.add(key); else dirtySet.delete(key);
+  const bar = document.getElementById('changedBar');
+  const count = dirtySet.size;
+  if(count > 0){
+    bar.classList.add('visible');
+    document.getElementById('changedCount').textContent = count;
+  } else {
+    bar.classList.remove('visible');
+  }
+  document.getElementById('saveBtn').disabled = count===0;
+}
+function resetSettings(){
+  if(!confirm('確定要還原為預設值？（折扣 10%・折扣天數 30 天・每人碼數上限 5・有效期 30 天・月度上限 USDT 500）')) return;
+  Object.keys(defaults).forEach(k=>{
+    document.getElementById('input-'+k).value = defaults[k];
+    document.getElementById('slider-'+k).value = defaults[k];
+    updatePreview(k, defaults[k]);
+    dirtySet.delete(k);
+  });
+  document.getElementById('changedBar').classList.remove('visible');
+  document.getElementById('saveBtn').disabled = true;
+}
+function saveSettings(){
+  const now = new Date();
+  const ts = now.toLocaleString('zh-TW',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).replace(/\//g,'-');
+  const labels = {discount:'手續費折扣 %數', days:'折扣天數', maxcodes:'每人邀請碼數量上限', expiry:'邀請碼使用期限', cap:'每月反佣額度上限'};
+  const units  = {discount:'%', days:'天', maxcodes:'組', expiry:'天', cap:'USDT '};
+  const newEntries = [];
+  dirtySet.forEach(k=>{
+    const oldVal = saved[k];
+    const newVal = current[k];
+    const fmt = v => units[k]==='USDT '?`USDT ${v.toLocaleString()}`:`${v}${units[k]}`;
+    newEntries.push(`<div class="changelog-row"><span class="changelog-time">${ts}</span><div class="changelog-op">admin@exchange.com 修改 <strong>${labels[k]}</strong>：<span class="from">${fmt(oldVal)}</span> → <span class="to">${fmt(newVal)}</span></div></div>`);
+    saved[k] = newVal;
+  });
+  dirtySet.clear();
+  document.getElementById('changedBar').classList.remove('visible');
+  document.getElementById('saveBtn').disabled = true;
+  document.getElementById('lastSavedLabel').textContent = `上次儲存：${ts} ｜ 操作人：admin@exchange.com`;
+  const body = document.getElementById('changelogBody');
+  body.insertAdjacentHTML('afterbegin', newEntries.join(''));
+  alert('設定已儲存並寫入操作日誌。');
+}
+
+document.getElementById('saveBtn').disabled = true;
+
+/* ══ 待發放返佣 section logic ══ */
+
+// Generate 12 pending rows (all status = 'pending')
+const PD_ALL_DATA = (function(){
+  const rows=[];
+  const inviterUIDs=['U00412','U00228','U00103','U00576','U00341','U00688'];
+  const inviteeUIDs=['U00891','U00915','U00933','U00957','U00968','U00979'];
+  const curs=['USDT','USDT','USDT','BTC'];
+  for(let i=0;i<12;i++){
+    const cur=curs[i%curs.length];
+    const fee=parseFloat((Math.random()*60+2).toFixed(4));
+    const rebate=parseFloat((fee*.20).toFixed(4));
+    const capUsed=parseFloat((Math.random()*400+20).toFixed(2));
+    rows.push({
+      id:'RB'+String(i+820).padStart(5,'0'),
+      date:'2026-04-27',
+      inviterUID: inviterUIDs[i%inviterUIDs.length],
+      inviteeUID: inviteeUIDs[i%inviteeUIDs.length],
+      txcount: Math.floor(Math.random()*20+1),
+      fee, rebate, currency:cur,
+      capUsed, capLimit:500,
+      capPct: Math.min(capUsed/500, 1.02),
+      status:'pending',
+      checked:false
+    });
+  }
+  return rows;
+})();
+
+let pdFiltered = [...PD_ALL_DATA];
+let pdPage = 1;
+let pdPerPage = 10;
+
+function togglePendingPanel(){
+  const body=document.getElementById('pendingPanelBody');
+  const icon=document.getElementById('pendingToggleIcon');
+  const collapsed=body.style.display==='none';
+  body.style.display=collapsed?'':'none';
+  icon.textContent=collapsed?'▲':'▼';
+}
+
+function applyPendingSearch(){
+  const from  =document.getElementById('pd-dateFrom').value;
+  const to    =document.getElementById('pd-dateTo').value;
+  const invUID=document.getElementById('pd-inviterUID').value.trim().toLowerCase();
+  const inveeUID=document.getElementById('pd-inviteeUID').value.trim().toLowerCase();
+  pdFiltered=PD_ALL_DATA.filter(r=>{
+    if(from && r.date<from) return false;
+    if(to   && r.date>to)   return false;
+    if(invUID  && !r.inviterUID.toLowerCase().includes(invUID)) return false;
+    if(inveeUID&& !r.inviteeUID.toLowerCase().includes(inveeUID)) return false;
+    return true;
+  });
+  pdPage=1;
+  renderPendingTable();
+}
+
+function clearPendingFilter(){
+  document.getElementById('pd-dateFrom').value='2026-04-01';
+  document.getElementById('pd-dateTo').value='2026-04-27';
+  document.getElementById('pd-inviterUID').value='';
+  document.getElementById('pd-inviteeUID').value='';
+}
+
+function toggleSelectAll(cb){
+  const page=pdFiltered.slice((pdPage-1)*pdPerPage, pdPage*pdPerPage);
+  page.forEach(r=>{r.checked=cb.checked;});
+  renderPendingTable();
+}
+
+function toggleRow(id, val){
+  const r=PD_ALL_DATA.find(x=>x.id===id);
+  if(r) r.checked=val;
+}
+
+/* ── 待發放返佣 明細 modal ── */
+function openPendingDetailModal(id){
+  const r = PD_ALL_DATA.find(x=>x.id===id);
+  if(!r) return;
+
+  // Generate mock tx breakdown rows
+  const txTypes = ['現貨交易手續費','槓桿交易手續費','現貨交易手續費','合約手續費','現貨交易手續費'];
+  const rows = Array.from({length: Math.min(r.txcount, 6)}, (_,i)=>{
+    const seed = id.charCodeAt(2)+i;
+    const fee = parseFloat((r.fee / r.txcount * (0.8+Math.abs(Math.sin(seed))*0.4)).toFixed(4));
+    const rebate = parseFloat((fee*0.20).toFixed(4));
+    const hhmm = `${String(9+Math.floor(seed%8)).padStart(2,'0')}:${String(seed%60).padStart(2,'0')}`;
+    const txid = 'TX'+String(parseInt(id.slice(2))*10+i+10000).padStart(8,'0');
+    return {time:`${r.date} ${hhmm}`, txid, type:txTypes[i%txTypes.length], fee, rebate};
+  });
+
+  const stColor = r.capPct>=1?'#A32D2D':r.capPct>=0.8?'#9A5C14':'#177A5A';
+  const stBg    = r.capPct>=1?'#fdf0f0':r.capPct>=0.8?'#fdf6ec':'#edf7f3';
+  const stLabel = r.capPct>=1?'已達上限':r.capPct>=0.8?'接近上限':'正常';
+
+  document.getElementById('detailModalTitle').textContent = `單號 ${r.id} · 待發放返佣明細`;
+  document.getElementById('detailModalSub').textContent = `邀請人 UID：${r.inviterUID} · 被邀請人 UID：${r.inviteeUID} · ${r.date}`;
+
+  document.getElementById('detailModalBody').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;margin-bottom:18px">
+      <div style="background:#f8f9fa;border-radius:6px;padding:12px 14px">
+        <div style="font-size:11px;color:#888;margin-bottom:4px">待發放返佣</div>
+        <div style="font-size:17px;font-weight:600;color:#177A5A">${r.rebate.toFixed(4)}<span style="font-size:11px;color:#aaa;margin-left:2px">u</span></div>
+      </div>
+      <div style="background:#f8f9fa;border-radius:6px;padding:12px 14px">
+        <div style="font-size:11px;color:#888;margin-bottom:4px">手續費合計</div>
+        <div style="font-size:17px;font-weight:600;color:#444">${r.fee.toFixed(4)}<span style="font-size:11px;color:#aaa;margin-left:2px">u</span></div>
+      </div>
+      <div style="background:#f8f9fa;border-radius:6px;padding:12px 14px">
+        <div style="font-size:11px;color:#888;margin-bottom:4px">交易筆數</div>
+        <div style="font-size:17px;font-weight:600;color:#444">${r.txcount}</div>
+      </div>
+      <div style="background:#f8f9fa;border-radius:6px;padding:12px 14px">
+        <div style="font-size:11px;color:#888;margin-bottom:4px">月度上限狀態</div>
+        <div style="margin-top:4px"><span style="padding:3px 10px;border-radius:10px;font-size:12px;font-weight:500;background:${stBg};color:${stColor}">${stLabel}</span></div>
+        <div style="font-size:11px;color:#888;margin-top:4px">${r.capUsed.toFixed(0)} / ${r.capLimit} U</div>
+      </div>
+    </div>
+    <div style="font-size:12px;font-weight:500;color:#888;margin-bottom:8px">交易明細（顯示前 ${rows.length} 筆）</div>
+    <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <thead>
+        <tr style="border-bottom:2px solid #eee">
+          <th style="text-align:left;padding:8px 6px;color:#888;font-weight:500;font-size:12px">時間</th>
+          <th style="text-align:left;padding:8px 6px;color:#888;font-weight:500;font-size:12px">交易流水號</th>
+          <th style="text-align:left;padding:8px 6px;color:#888;font-weight:500;font-size:12px">類型</th>
+          <th style="text-align:right;padding:8px 6px;color:#888;font-weight:500;font-size:12px">手續費</th>
+          <th style="text-align:right;padding:8px 6px;color:#888;font-weight:500;font-size:12px">返佣</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${rows.map(rx=>`
+        <tr style="border-bottom:1px solid #f4f4f4">
+          <td style="padding:9px 6px;color:#555;font-size:12px">${rx.time}</td>
+          <td style="padding:9px 6px;font-family:monospace;font-size:11px;color:#444">${rx.txid}</td>
+          <td style="padding:9px 6px;color:#444">${rx.type}</td>
+          <td style="padding:9px 6px;text-align:right;font-variant-numeric:tabular-nums;color:#555">${rx.fee.toFixed(4)}<span style="font-size:10px;color:#aaa;margin-left:1px">u</span></td>
+          <td style="padding:9px 6px;text-align:right;font-variant-numeric:tabular-nums;color:#177A5A;font-weight:500">+${rx.rebate.toFixed(4)}<span style="font-size:10px;color:#aaa;margin-left:1px">u</span></td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+    <div style="margin-top:16px;display:flex;gap:8px;justify-content:center">
+      <button class="btn-sm btn-disable" style="padding:8px 24px" onclick="closeDetailModal();rejectRow('${r.id}')">拒絕此筆</button>
+      <button class="btn-sm btn-view" style="padding:8px 24px" onclick="closeDetailModal()">關閉</button>
+    </div>
+  `;
+
+  const modal = document.getElementById('detailModal');
+  modal.style.display = 'flex';
+}
+
+function renderPendingTable(){
+  const tbody=document.getElementById('pendingBody');
+  const empty=document.getElementById('pendingEmptyState');
+  const pagin=document.getElementById('pendingPagination');
+  const remaining=pdFiltered.filter(r=>r.status==='pending');
+
+  if(remaining.length===0){
+    tbody.innerHTML='';
+    empty.style.display='flex';
+    pagin.style.display='none';
+    // update nav badge
+    const navBadge=document.querySelector('#nav-pending span[style]');
+    if(navBadge) navBadge.textContent='0';
+    return;
+  }
+  empty.style.display='none';
+  pagin.style.display='flex';
+
+  const start=(pdPage-1)*pdPerPage, end=Math.min(start+pdPerPage, remaining.length);
+  const page=remaining.slice(start,end);
+
+  tbody.innerHTML=page.map(r=>{
+    const capPct=Math.min(r.capPct,1);
+    const capCls=r.capPct>=1?'over':r.capPct>=0.8?'warn':'';
+    const capChip=r.capPct>=1
+      ?`<span style="font-size:10px;background:#f0f0f0;color:#777;padding:1px 5px;border-radius:6px">已達上限</span>`
+      :r.capPct>=0.8
+      ?`<span style="font-size:10px;background:#FEF4EA;color:#9A5C14;padding:1px 5px;border-radius:6px">${(r.capPct*100).toFixed(0)}%</span>`
+      :`<span style="font-size:10px;background:#EAF5EE;color:#177A5A;padding:1px 5px;border-radius:6px">${(r.capPct*100).toFixed(0)}%</span>`;
+    return `<tr>
+      <td><input type="checkbox" ${r.checked?'checked':''} onchange="toggleRow('${r.id}',this.checked)"></td>
+      <td style="font-family:monospace;font-size:11px;color:#888">${r.id}</td>
+      <td style="font-size:12px;color:#666">${r.date}</td>
+      <td style="font-family:monospace;font-size:12px;font-weight:500">${r.inviterUID}</td>
+      <td style="font-family:monospace;font-size:12px;font-weight:500">${r.inviteeUID}</td>
+      <td style="text-align:right;font-variant-numeric:tabular-nums;color:#666">${r.txcount}</td>
+      <td style="text-align:right;font-variant-numeric:tabular-nums;color:#555">${r.fee.toFixed(4)}</td>
+      <td style="text-align:right;font-variant-numeric:tabular-nums;color:#177A5A;font-weight:500">+${r.rebate.toFixed(4)}<span style="font-size:10px;color:#aaa;margin-left:1px">u</span></td>
+      <td><div class="cap-bar-wrap">
+        <div class="cap-bar"><div class="cap-fill ${capCls}" style="width:${(capPct*100).toFixed(1)}%"></div></div>
+        <span style="font-size:11px;color:#888">${r.capUsed.toFixed(0)}/${r.capLimit}</span>
+        ${capChip}
+      </div></td>
+      <td><div class="actions">
+        <button class="btn-sm btn-detail" onclick="openPendingDetailModal('${r.id}')"><svg width="11" height="11" viewBox="0 0 11 11" fill="none" stroke="currentColor" stroke-width="1.5" style="vertical-align:-1px;margin-right:2px"><ellipse cx="5.5" cy="5.5" rx="5" ry="3.4"/><circle cx="5.5" cy="5.5" r="1.5" fill="currentColor" stroke="none"/></svg>明細</button>
+        <button class="btn-sm btn-disable" onclick="rejectRow('${r.id}')">拒絕</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('pdPageInfo').textContent=`共 ${remaining.length} 條待審核`;
+  // update nav badge
+  const navBadge=document.querySelector('#nav-pending span[style]');
+  if(navBadge) navBadge.textContent=remaining.length;
+  renderPdPageNums(remaining.length);
+}
+
+function rejectRow(id){
+  const r=PD_ALL_DATA.find(x=>x.id===id);
+  if(!r) return;
+  r.status='rejected';
+  addAuditLog(r,'已拒絕');
+  pdFiltered=pdFiltered.filter(x=>x.status==='pending');
+  renderPendingTable();
+}
+
+function pendingBatchAction(action){
+  const checked=PD_ALL_DATA.filter(r=>r.checked && r.status==='pending');
+  if(checked.length===0){alert('請先勾選要操作的項目');return;}
+  if(!confirm(`確定要批量拒絕 ${checked.length} 筆異常返佣？`)) return;
+  checked.forEach(r=>{
+    r.status='rejected';
+    r.checked=false;
+    addAuditLog(r, '已拒絕');
+  });
+  pdFiltered=PD_ALL_DATA.filter(x=>x.status==='pending');
+  document.getElementById('pendingSelectAll').checked=false;
+  renderPendingTable();
+}
+
+function addAuditLog(r, result){
+  const now=new Date();
+  const ts=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  const isApproved=result==='已核准發放';
+  const html=`<tr>
+    <td style="color:#888;font-size:12px">${ts}</td>
+    <td style="font-family:monospace;font-size:11px;color:#888">${r.id}</td>
+    <td style="font-family:monospace;font-size:12px">${r.inviterUID}</td>
+    <td style="font-family:monospace;font-size:12px">${r.inviteeUID}</td>
+    <td style="${isApproved?'color:#177A5A':'color:#A32D2D'};font-weight:500">${isApproved?'+':''}${r.rebate.toFixed(4)}<span style="font-size:10px;color:#aaa;margin-left:1px">u</span></td>
+    <td><span class="badge ${isApproved?'badge-used':'badge-disabled'}">${result}</span></td>
+    <td style="font-size:12px;color:#888">admin</td>
+  </tr>`;
+  document.getElementById('pendingAuditLog').insertAdjacentHTML('afterbegin',html);
+}
+
+function renderPdPageNums(total){
+  const totalPages=Math.max(1,Math.ceil(total/pdPerPage));
+  const container=document.getElementById('pdPageNums');
+  const pages=rbBuildPages(pdPage,totalPages);
+  container.innerHTML=pages.map(p=>{
+    if(p==='...') return `<span class="page-ellipsis">…</span>`;
+    return `<button class="page-btn${p===pdPage?' active':''}" onclick="pdGoPage(${p})">${p}</button>`;
+  }).join('');
+  document.getElementById('pdPrev').disabled=pdPage===1;
+  document.getElementById('pdNext').disabled=pdPage===totalPages;
+}
+
+function pdGoPage(n){pdPage=n;renderPendingTable();}
+function pdChangePage(d){const t=Math.ceil(pdFiltered.filter(r=>r.status==='pending').length/pdPerPage);pdGoPage(Math.max(1,Math.min(t,pdPage+d)));}
+function changePdPerPage(){pdPerPage=parseInt(document.getElementById('pdPerPageSelect').value);pdPage=1;renderPendingTable();}
+
+/* ══ 返佣財務報表 logic ══ */
+const BTC_USDT = 62000;
+const ETH_USDT = 3200;
+
+function renderFinanceReport(){
+  const month = document.getElementById('fin-month').value; // e.g. "2026-04"
+  const rows = RB_ALL_DATA.filter(r => r.date.startsWith(month));
+
+  // Group by date
+  const byDate = {};
+  rows.forEach(r => {
+    if(!byDate[r.date]) byDate[r.date] = {usdt:0, btc:0, eth:0, count:0, rejected:0};
+    const d = byDate[r.date];
+    if(r.currency==='USDT') d.usdt += r.rebate;
+    else if(r.currency==='BTC') d.btc += r.rebate;
+    else if(r.currency==='ETH') d.eth += r.rebate;
+    d.count++;
+    if(r.status==='capped'||r.status==='failed') d.rejected++;
+  });
+
+  const dates = Object.keys(byDate).sort((a,b)=>b.localeCompare(a));
+
+  // Summary cards
+  let totUsdt=0, totBtc=0, totEth=0, totCount=0, totRej=0;
+  dates.forEach(d=>{
+    totUsdt  += byDate[d].usdt;
+    totBtc   += byDate[d].btc;
+    totEth   += byDate[d].eth;
+    totCount += byDate[d].count;
+    totRej   += byDate[d].rejected;
+  });
+  const totEqv = totUsdt + totBtc*BTC_USDT + totEth*ETH_USDT;
+
+  document.getElementById('fin-summary-cards').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">USDT 返佣合計</div>
+      <div class="stat-value" style="font-size:18px">${totUsdt.toFixed(2)}</div>
+      <div class="stat-change">USDT</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">BTC 返佣合計</div>
+      <div class="stat-value" style="font-size:18px">${totBtc.toFixed(6)}</div>
+      <div class="stat-change">BTC</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">ETH 返佣合計</div>
+      <div class="stat-value" style="font-size:18px">${totEth.toFixed(6)}</div>
+      <div class="stat-change">ETH</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">USDT 等值總計</div>
+      <div class="stat-value" style="font-size:18px;color:#177A5A">${totEqv.toFixed(2)}</div>
+      <div class="stat-change">發放 ${totCount} 筆・異常 ${totRej} 筆</div>
+    </div>
+  `;
+
+  // Table rows
+  if(dates.length===0){
+    document.getElementById('fin-table-body').innerHTML = '<tr class="empty-row"><td colspan="7">本月尚無返佣紀錄</td></tr>';
+    document.getElementById('fin-total-row').innerHTML = '';
+    return;
+  }
+
+  document.getElementById('fin-table-body').innerHTML = dates.map(dt=>{
+    const d = byDate[dt];
+    const eqv = d.usdt + d.btc*BTC_USDT + d.eth*ETH_USDT;
+    const rejCls = d.rejected>0 ? 'color:#A32D2D;font-weight:500' : 'color:#ccc';
+    return `<tr>
+      <td style="font-size:12px;color:#555;font-variant-numeric:tabular-nums">${dt}</td>
+      <td style="text-align:right;font-variant-numeric:tabular-nums;color:#177A5A">${d.usdt>0?d.usdt.toFixed(4):'—'}</td>
+      <td style="text-align:right;font-variant-numeric:tabular-nums;color:#9A5C14">${d.btc>0?d.btc.toFixed(6):'—'}</td>
+      <td style="text-align:right;font-variant-numeric:tabular-nums;color:#6B3FC0">${d.eth>0?d.eth.toFixed(6):'—'}</td>
+      <td style="text-align:right;font-variant-numeric:tabular-nums;font-weight:500">${eqv.toFixed(2)} U</td>
+      <td style="text-align:right;color:#666">${d.count}</td>
+      <td style="text-align:right;${rejCls}">${d.rejected>0?d.rejected:'—'}</td>
+    </tr>`;
+  }).join('');
+
+  // Total row
+  document.getElementById('fin-total-row').innerHTML = `
+    <span style="color:#888;font-weight:500">月合計</span>
+    <span style="margin-left:auto">USDT <strong>${totUsdt.toFixed(4)}</strong></span>
+    <span>BTC <strong>${totBtc.toFixed(6)}</strong></span>
+    <span>ETH <strong>${totEth.toFixed(6)}</strong></span>
+    <span>等值 <strong style="color:#177A5A">${totEqv.toFixed(2)} U</strong></span>
+    <span style="margin-left:auto;color:#888">${totCount} 筆・異常 <span style="color:${totRej>0?'#A32D2D':'#aaa'}">${totRej}</span></span>
+  `;
+}
+
+</script>
+</body>
+</html>
