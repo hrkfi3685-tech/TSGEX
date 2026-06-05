@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>營運管理 - TSG EX 管理後台</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", sans-serif; background: #f0ede4; display: flex; flex-direction: column; height: 100vh; font-size: 14px; }
+  .header { display: flex; align-items: center; justify-content: space-between; background: #fff; height: 60px; padding: 0 20px; border-bottom: 1px solid #eee; position: fixed; top: 0; left: 0; right: 0; z-index: 100; }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-icon { width: 40px; height: 40px; background: #1a1a2e; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #F5A623; font-weight: bold; font-size: 12px; line-height: 1.2; text-align: center; }
+  .logo-text .brand { font-weight: 700; font-size: 15px; color: #F5A623; }
+  .logo-text .sub { font-size: 12px; color: #888; }
+  .user-info { display: flex; align-items: center; gap: 8px; color: #555; }
+  .user-avatar { width: 32px; height: 32px; border-radius: 50%; background: #ddd; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .layout { display: flex; margin-top: 60px; height: calc(100vh - 60px); }
+  .sidebar { width: 280px; background: #fff; border-right: 1px solid #eee; overflow-y: auto; flex-shrink: 0; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 12px 16px; color: #555; cursor: default; user-select: none; }
+  .nav-item .nav-label { flex: 1; font-size: 14px; }
+  .nav-item .nav-chevron { font-size: 12px; color: #aaa; }
+  .nav-group-header { display: flex; align-items: center; gap: 10px; padding: 12px 16px; color: #F5A623; font-weight: 600; cursor: default; }
+  .nav-group-header .nav-label { flex: 1; }
+  .nav-group-header .nav-chevron { font-size: 12px; color: #aaa; }
+  .nav-sub-item { display: flex; align-items: center; gap: 10px; padding: 10px 16px 10px 46px; cursor: pointer; color: #666; position: relative; transition: background 0.15s; }
+  .nav-sub-item:hover { background: #fafafa; }
+  .nav-sub-item.active { background: #FFFBE6; color: #F5A623; font-weight: 600; }
+  .nav-sub-item.active::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: #F5A623; }
+  .sidebar-version { padding: 16px; color: #bbb; font-size: 12px; text-align: center; }
+  .main { flex: 1; overflow-y: auto; padding: 24px; }
+  .panel { display: none; } .panel.active { display: block; }
+  .breadcrumb { display: flex; align-items: center; gap: 6px; color: #999; font-size: 13px; margin-bottom: 20px; }
+  .breadcrumb .sep { color: #ccc; }
+  .page-header { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 6px; }
+  .page-icon { width: 36px; height: 36px; background: #FFF3CC; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .page-title { font-size: 22px; font-weight: 700; color: #222; line-height: 36px; }
+  .page-desc { color: #888; font-size: 13px; margin-bottom: 24px; margin-left: 48px; }
+  .card { background: #fff; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+  .filter-section { padding: 16px 20px; }
+  .filter-header { display: flex; align-items: center; justify-content: space-between; font-weight: 600; color: #555; margin-bottom: 16px; }
+  .filter-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 12px; }
+  .filter-item label { display: block; color: #666; font-size: 13px; margin-bottom: 6px; }
+  .filter-item input, .filter-item select { width: 100%; padding: 8px 12px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px; background: #fff; color: #333; outline: none; }
+  .filter-item textarea { width: 100%; padding: 8px 12px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px; background: #fff; color: #333; outline: none; resize: vertical; min-height: 80px; }
+  .filter-actions { display: flex; justify-content: flex-end; gap: 10px; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; border: 1.5px solid #222; background: #fff; color: #222; }
+  .btn-primary { background: #222; color: #fff; }
+  .btn-excel { background: #fff; color: #555; border-color: #ccc; font-size: 13px; }
+  .table-section { border-top: 1px solid #f0f0f0; }
+  .table-toolbar { display: flex; justify-content: flex-end; padding: 12px 16px; }
+  table { width: 100%; border-collapse: collapse; }
+  thead tr { background: #fafafa; border-bottom: 1px solid #f0f0f0; }
+  th { padding: 12px 10px; text-align: center; color: #999; font-weight: 500; font-size: 12px; white-space: nowrap; }
+  td { padding: 13px 10px; text-align: center; color: #444; border-bottom: 1px solid #f5f5f5; font-size: 13px; }
+  tbody tr:hover { background: #fafafa; }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; }
+  .badge-active { background: #e8f5e9; color: #2e9e5b; }
+  .badge-ended { background: #f5f5f5; color: #999; }
+  .badge-draft { background: #fff3cd; color: #856404; }
+  .action-btn { background: #F5A623; border: none; cursor: pointer; font-size: 13px; padding: 4px 10px; color: #fff; border-radius: 4px; }
+  .action-btn-outline { background: none; border: 1px solid #ccc; cursor: pointer; font-size: 13px; padding: 4px 10px; color: #555; border-radius: 4px; }
+  .action-btn-red { background: none; border: 1px solid #e74c3c; cursor: pointer; font-size: 13px; padding: 4px 10px; color: #e74c3c; border-radius: 4px; }
+  /* Settings */
+  .setting-section { padding: 24px; }
+  .setting-group { margin-bottom: 28px; }
+  .setting-group-title { font-size: 15px; font-weight: 700; color: #222; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 1px solid #f0f0f0; }
+  .setting-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid #f9f9f9; }
+  .setting-label { font-size: 14px; color: #444; }
+  .setting-desc { font-size: 12px; color: #aaa; margin-top: 3px; }
+  .setting-input { padding: 7px 12px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px; color: #333; outline: none; width: 200px; }
+  .toggle { width: 44px; height: 24px; background: #e0e0e0; border-radius: 12px; position: relative; cursor: pointer; }
+  .toggle.on { background: #F5A623; }
+  .toggle::after { content: ''; position: absolute; width: 18px; height: 18px; background: #fff; border-radius: 50%; top: 3px; left: 3px; transition: left 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+  .toggle.on::after { left: 23px; }
+  .save-bar { display: flex; justify-content: flex-end; padding: 16px 24px; border-top: 1px solid #f0f0f0; gap: 10px; }
+  .notice-card { background: #FFFBE6; border: 1px solid #F5A623; border-radius: 8px; padding: 14px 18px; margin-bottom: 20px; font-size: 13px; color: #665500; display: flex; align-items: flex-start; gap: 8px; }
+  /* Form for 公告 */
+  .form-section { padding: 20px; border-bottom: 1px solid #f5f5f5; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 12px; }
+  .form-item label { display: block; color: #666; font-size: 13px; margin-bottom: 6px; }
+  .form-item input, .form-item select, .form-item textarea { width: 100%; padding: 8px 12px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px; background: #fff; color: #333; outline: none; }
+  .form-item.full { grid-column: span 2; }
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">TSG<br>EX</div>
+    <div class="logo-text"><div class="brand">TSG EX</div><div class="sub">管理後台</div></div>
+  </div>
+  <div class="user-info"><div class="user-avatar">👤</div><span>like00257</span><span style="color:#ccc">▾</span></div>
+</div>
+
+<div class="layout">
+  <div class="sidebar">
+    <div class="nav-item"><span>🏠</span><div class="nav-label">首頁</div></div>
+    <div class="nav-item"><span>👤</span><div class="nav-label">管理者管理</div><div class="nav-chevron">∨</div></div>
+    <div class="nav-item"><span>↔</span><div class="nav-label">幣種與會員等級設定</div><div class="nav-chevron">∨</div></div>
+    <div class="nav-item"><span>📋</span><div class="nav-label">交易紀錄</div><div class="nav-chevron">∨</div></div>
+    <div class="nav-item"><span>👥</span><div class="nav-label">用戶管理</div><div class="nav-chevron">∨</div></div>
+    <div class="nav-item"><span>👤</span><div class="nav-label">自然人實名認證審核</div><div class="nav-chevron">∨</div></div>
+    <div class="nav-item"><span>🏢</span><div class="nav-label">法人實名驗證審核</div><div class="nav-chevron">∨</div></div>
+    <div class="nav-item"><span>🏦</span><div class="nav-label">銀行帳戶管理</div><div class="nav-chevron">∨</div></div>
+    <div class="nav-item"><span>💰</span><div class="nav-label">財務管理</div><div class="nav-chevron">∨</div></div>
+    <div class="nav-item"><span>🧾</span><div class="nav-label">發票管理</div><div class="nav-chevron">∨</div></div>
+
+    <div class="nav-group-header"><span>⚙</span><div class="nav-label">營運管理</div><div class="nav-chevron">∧</div></div>
+    <div class="nav-sub-item active" data-panel="announce"><span>📢</span> 公告管理</div>
+    <div class="nav-sub-item" data-panel="params"><span>⚙</span> 系統參數設定</div>
+    <div class="nav-sub-item" data-panel="push"><span>🔔</span> 推播通知</div>
+
+    <div class="nav-item"><span>📊</span><div class="nav-label">報表統計</div><div class="nav-chevron">∨</div></div>
+    <div class="sidebar-version">v1.0.53</div>
+  </div>
+
+  <div class="main">
+
+    <!-- 公告管理 -->
+    <div class="panel active" id="panel-announce">
+      <div class="breadcrumb"><span>首頁</span><span class="sep">›</span><span>營運管理</span><span class="sep">›</span><span style="color:#222">公告管理</span></div>
+      <div class="page-header"><div class="page-icon">📢</div><div class="page-title">公告管理</div></div>
+      <div class="page-desc">管理平台公告內容，可新增、編輯或下架顯示於用戶端的系統公告與維護通知。</div>
+      <div class="card">
+        <div class="table-toolbar"><button class="btn btn-primary">＋ 新增公告</button></div>
+        <table>
+          <thead><tr><th>標題</th><th>類型</th><th>顯示對象</th><th>開始時間</th><th>結束時間</th><th>狀態</th><th>功能</th></tr></thead>
+          <tbody>
+            <tr><td style="text-align:left;padding-left:16px">【系統維護】6/5 凌晨 2:00 維護通知</td><td>系統維護</td><td>全部用戶</td><td>2024-06-04 18:00</td><td>2024-06-05 06:00</td><td><span class="badge badge-active">上架中</span></td><td><button class="action-btn-outline">編輯</button> <button class="action-btn-red">下架</button></td></tr>
+            <tr><td style="text-align:left;padding-left:16px">【重要】AML 政策更新公告</td><td>政策更新</td><td>全部用戶</td><td>2024-06-01 09:00</td><td>2024-07-01 00:00</td><td><span class="badge badge-active">上架中</span></td><td><button class="action-btn-outline">編輯</button> <button class="action-btn-red">下架</button></td></tr>
+            <tr><td style="text-align:left;padding-left:16px">【新功能】閃兌功能正式上線</td><td>新功能</td><td>全部用戶</td><td>2024-05-15 00:00</td><td>2024-05-31 23:59</td><td><span class="badge badge-ended">已結束</span></td><td><button class="action-btn-outline">查看</button></td></tr>
+            <tr><td style="text-align:left;padding-left:16px">手續費優惠活動（草稿）</td><td>活動</td><td>全部用戶</td><td>—</td><td>—</td><td><span class="badge badge-draft">草稿</span></td><td><button class="action-btn">編輯</button> <button class="action-btn-red">刪除</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 系統參數設定 -->
+    <div class="panel" id="panel-params">
+      <div class="breadcrumb"><span>首頁</span><span class="sep">›</span><span>營運管理</span><span class="sep">›</span><span style="color:#222">系統參數設定</span></div>
+      <div class="page-header"><div class="page-icon">⚙</div><div class="page-title">系統參數設定</div></div>
+      <div class="page-desc">設定平台核心營運參數，包含交易限額、系統開關、風控閾值等關鍵設定項目，請謹慎操作。</div>
+      <div class="notice-card"><span>⚠</span> 注意：以下設定變更將即時生效並影響所有用戶，請確認設定值正確無誤後再儲存。</div>
+      <div class="card">
+        <div class="setting-section">
+          <div class="setting-group">
+            <div class="setting-group-title">交易開關</div>
+            <div class="setting-row">
+              <div><div class="setting-label">撮合交易功能</div><div class="setting-desc">開啟後用戶可進行限價單與市價單交易</div></div>
+              <div style="display:flex;align-items:center;gap:8px"><div class="toggle on"></div><span style="color:#2e9e5b;font-size:13px">開啟</span></div>
+            </div>
+            <div class="setting-row">
+              <div><div class="setting-label">閃兌功能</div><div class="setting-desc">開啟後用戶可進行即時幣種兌換</div></div>
+              <div style="display:flex;align-items:center;gap:8px"><div class="toggle on"></div><span style="color:#2e9e5b;font-size:13px">開啟</span></div>
+            </div>
+            <div class="setting-row">
+              <div><div class="setting-label">新用戶註冊</div><div class="setting-desc">關閉後新用戶將無法完成註冊</div></div>
+              <div style="display:flex;align-items:center;gap:8px"><div class="toggle on"></div><span style="color:#2e9e5b;font-size:13px">開啟</span></div>
+            </div>
+          </div>
+          <div class="setting-group">
+            <div class="setting-group-title">出入金限額設定</div>
+            <div class="setting-row">
+              <div><div class="setting-label">法幣單日出金上限（TWD）</div></div>
+              <input type="text" class="setting-input" value="500,000">
+            </div>
+            <div class="setting-row">
+              <div><div class="setting-label">法幣單筆出金上限（TWD）</div></div>
+              <input type="text" class="setting-input" value="200,000">
+            </div>
+            <div class="setting-row">
+              <div><div class="setting-label">加密貨幣單日提領上限（USDT 等值）</div></div>
+              <input type="text" class="setting-input" value="50,000">
+            </div>
+          </div>
+          <div class="setting-group">
+            <div class="setting-group-title">風控閾值設定</div>
+            <div class="setting-row">
+              <div><div class="setting-label">大額交易預警閾值（TWD）</div></div>
+              <input type="text" class="setting-input" value="1,000,000">
+            </div>
+            <div class="setting-row">
+              <div><div class="setting-label">單日累計交易預警閾值（TWD）</div></div>
+              <input type="text" class="setting-input" value="3,000,000">
+            </div>
+          </div>
+        </div>
+        <div class="save-bar">
+          <button class="btn">取消</button>
+          <button class="btn btn-primary" style="background:#F5A623;border-color:#F5A623">💾 儲存設定</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 推播通知 -->
+    <div class="panel" id="panel-push">
+      <div class="breadcrumb"><span>首頁</span><span class="sep">›</span><span>營運管理</span><span class="sep">›</span><span style="color:#222">推播通知</span></div>
+      <div class="page-header"><div class="page-icon">🔔</div><div class="page-title">推播通知</div></div>
+      <div class="page-desc">發送推播通知給平台用戶，可依條件指定目標對象，並查看歷史推播紀錄。</div>
+      <div class="card" style="margin-bottom:16px">
+        <div class="form-section">
+          <div style="font-weight:600;color:#555;margin-bottom:16px">發送新推播</div>
+          <div class="form-grid">
+            <div class="form-item"><label>通知標題</label><input type="text" placeholder="請輸入通知標題"></div>
+            <div class="form-item"><label>發送對象</label><select><option>全部用戶</option><option>已完成 KYC 用戶</option><option>金卡以上會員</option><option>指定用戶ID</option></select></div>
+            <div class="form-item full"><label>通知內容</label><textarea placeholder="請輸入通知內容..."></textarea></div>
+          </div>
+          <div style="display:flex;justify-content:flex-end;gap:10px">
+            <button class="btn">預覽</button>
+            <button class="btn btn-primary">🔔 立即發送</button>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div style="padding:16px 20px;font-weight:600;color:#555;border-bottom:1px solid #f0f0f0">推播歷史紀錄</div>
+        <table>
+          <thead><tr><th>標題</th><th>發送對象</th><th>發送時間</th><th>發送數量</th><th>已讀數</th><th>操作人員</th></tr></thead>
+          <tbody>
+            <tr><td style="text-align:left;padding-left:16px">系統維護通知</td><td>全部用戶</td><td>2024-06-01 18:00</td><td>12,345</td><td>8,902</td><td>admin01</td></tr>
+            <tr><td style="text-align:left;padding-left:16px">AML 政策更新提醒</td><td>已完成 KYC 用戶</td><td>2024-06-01 09:00</td><td>9,876</td><td>6,543</td><td>admin01</td></tr>
+            <tr><td style="text-align:left;padding-left:16px">閃兌功能上線公告</td><td>全部用戶</td><td>2024-05-15 10:00</td><td>11,234</td><td>7,800</td><td>admin02</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const subItems = document.querySelectorAll('.nav-sub-item[data-panel]');
+  subItems.forEach(item => {
+    item.addEventListener('click', () => {
+      subItems.forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      document.getElementById('panel-' + item.dataset.panel).classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>

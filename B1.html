@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>管理者管理 - TSG EX 管理後台</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft JhengHei", sans-serif; background: #f0ede4; display: flex; flex-direction: column; height: 100vh; font-size: 14px; }
+  .header { display: flex; align-items: center; justify-content: space-between; background: #fff; height: 60px; padding: 0 20px; border-bottom: 1px solid #eee; position: fixed; top: 0; left: 0; right: 0; z-index: 100; }
+  .logo { display: flex; align-items: center; gap: 10px; }
+  .logo-icon { width: 40px; height: 40px; background: #1a1a2e; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #F5A623; font-weight: bold; font-size: 12px; line-height: 1.2; text-align: center; }
+  .logo-text .brand { font-weight: 700; font-size: 15px; color: #F5A623; }
+  .logo-text .sub { font-size: 12px; color: #888; }
+  .user-info { display: flex; align-items: center; gap: 8px; color: #555; }
+  .user-avatar { width: 32px; height: 32px; border-radius: 50%; background: #ddd; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .layout { display: flex; margin-top: 60px; height: calc(100vh - 60px); }
+  /* Sidebar */
+  .sidebar { width: 280px; background: #fff; border-right: 1px solid #eee; overflow-y: auto; flex-shrink: 0; }
+  .sidebar::-webkit-scrollbar { width: 4px; } .sidebar::-webkit-scrollbar-thumb { background: #ddd; }
+  /* Main nav items - NOT clickable for navigation */
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 12px 16px; color: #555; cursor: default; user-select: none; }
+  .nav-item .nav-label { flex: 1; font-size: 14px; }
+  .nav-item .nav-chevron { font-size: 12px; color: #aaa; }
+  /* Active group header */
+  .nav-group-header { display: flex; align-items: center; gap: 10px; padding: 12px 16px; color: #F5A623; font-weight: 600; cursor: default; }
+  .nav-group-header .nav-label { flex: 1; }
+  .nav-group-header .nav-chevron { font-size: 12px; color: #aaa; }
+  /* Sub items - clickable */
+  .nav-sub-item { display: flex; align-items: center; gap: 10px; padding: 10px 16px 10px 46px; cursor: pointer; color: #666; position: relative; transition: background 0.15s; }
+  .nav-sub-item:hover { background: #fafafa; }
+  .nav-sub-item.active { background: #FFFBE6; color: #F5A623; font-weight: 600; }
+  .nav-sub-item.active::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: #F5A623; }
+  .sidebar-version { padding: 16px; color: #bbb; font-size: 12px; text-align: center; }
+  /* Main */
+  .main { flex: 1; overflow-y: auto; padding: 24px; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+  .breadcrumb { display: flex; align-items: center; gap: 6px; color: #999; font-size: 13px; margin-bottom: 20px; }
+  .breadcrumb .sep { color: #ccc; }
+  .page-header { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 6px; }
+  .page-icon { width: 36px; height: 36px; background: #FFF3CC; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .page-title { font-size: 22px; font-weight: 700; color: #222; line-height: 36px; }
+  .page-desc { color: #888; font-size: 13px; margin-bottom: 24px; margin-left: 48px; }
+  .card { background: #fff; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+  .filter-section { padding: 16px 20px; }
+  .filter-header { display: flex; align-items: center; justify-content: space-between; font-weight: 600; color: #555; margin-bottom: 16px; }
+  .filter-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 12px; }
+  .filter-item label { display: block; color: #666; font-size: 13px; margin-bottom: 6px; }
+  .filter-item input, .filter-item select { width: 100%; padding: 8px 12px; border: 1px solid #e0e0e0; border-radius: 6px; font-size: 14px; background: #fff; color: #333; outline: none; }
+  .filter-item input:focus, .filter-item select:focus { border-color: #F5A623; }
+  .filter-actions { display: flex; justify-content: flex-end; gap: 10px; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; border: 1.5px solid #222; background: #fff; color: #222; }
+  .btn-primary { background: #222; color: #fff; }
+  .btn-excel { background: #fff; color: #555; border-color: #ccc; font-size: 13px; }
+  .table-section { border-top: 1px solid #f0f0f0; }
+  .table-toolbar { display: flex; justify-content: flex-end; padding: 12px 16px; }
+  table { width: 100%; border-collapse: collapse; }
+  thead tr { background: #fafafa; border-bottom: 1px solid #f0f0f0; }
+  th { padding: 12px 10px; text-align: center; color: #999; font-weight: 500; font-size: 12px; white-space: nowrap; }
+  td { padding: 13px 10px; text-align: center; color: #444; border-bottom: 1px solid #f5f5f5; font-size: 13px; }
+  tbody tr:hover { background: #fafafa; }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 12px; font-weight: 500; }
+  .badge-active { background: #e8f5e9; color: #2e9e5b; }
+  .badge-inactive { background: #fce8e8; color: #c0392b; }
+  .badge-info { background: #e8f0fe; color: #1a73e8; }
+  .action-btn { background: none; border: none; cursor: pointer; font-size: 15px; padding: 4px 8px; color: #666; }
+  .action-btn:hover { color: #F5A623; }
+  .action-btn-sm { background: none; border: 1px solid #ccc; cursor: pointer; font-size: 12px; padding: 3px 10px; color: #555; border-radius: 4px; }
+  .action-btn-sm:hover { border-color: #F5A623; color: #F5A623; }
+  /* Setting styles for 系統日誌 */
+  .info-card { background: #fff; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); overflow: hidden; }
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">TSG<br>EX</div>
+    <div class="logo-text"><div class="brand">TSG EX</div><div class="sub">管理後台</div></div>
+  </div>
+  <div class="user-info">
+    <div class="user-avatar">👤</div><span>like00257</span><span style="color:#ccc">▾</span>
+  </div>
+</div>
+
+<div class="layout">
+  <div class="sidebar">
+    <div class="nav-item"><span>🏠</span><div class="nav-label">首頁</div></div>
+
+    <div class="nav-group-header"><span>👤</span><div class="nav-label">管理者管理</div><div class="nav-chevron">∧</div></div>
+    <div class="nav-sub-item active" data-panel="role"><span>👥</span> 角色管理</div>
+    <div class="nav-sub-item" data-panel="account"><span>👤</span> 帳號管理</div>
+    <div class="nav-sub-item" data-panel="log"><span>📄</span> 系統日誌</div>
+    <div class="nav-sub-item" data-panel="fiat"><span>💲</span> 平台法幣資產</div>
+    <div class="nav-sub-item" data-panel="fee"><span>💱</span> 平台手續費資產</div>
+
+    <div class="nav-item"><span>↔</span><div class="nav-label">幣種與會員等級設定</div><div class="nav-chevron">∨</div></div>
+    <div class="nav-item"><span>📋</span><div class="nav-label">交易紀錄</div><div class="nav-chevron">∨</div></div>
+    <div class="nav-item"><span>👥</span><div class="nav-label">用戶管理</div><div class="nav-chevron">∨</div></div>
+    <div class="nav-item"><span>👤</span><div class="nav-label">自然人實名認證審核</div><div class="nav-chevron">∨</div></div>
+    <div class="nav-item"><span>🏢</span><div class="nav-label">法人實名驗證審核</div><div class="nav-chevron">∨</div></div>
+    <div class="nav-item"><span>🏦</span><div class="nav-label">銀行帳戶管理</div><div class="nav-chevron">∨</div></div>
+    <div class="nav-item"><span>💰</span><div class="nav-label">財務管理</div><div class="nav-chevron">∨</div></div>
+    <div class="nav-item"><span>🧾</span><div class="nav-label">發票管理</div><div class="nav-chevron">∨</div></div>
+    <div class="nav-item"><span>⚙</span><div class="nav-label">營運管理</div><div class="nav-chevron">∨</div></div>
+    <div class="nav-item"><span>📊</span><div class="nav-label">報表統計</div><div class="nav-chevron">∨</div></div>
+    <div class="sidebar-version">v1.0.53</div>
+  </div>
+
+  <div class="main">
+
+    <!-- 角色管理 -->
+    <div class="panel active" id="panel-role">
+      <div class="breadcrumb"><span>首頁</span><span class="sep">›</span><span>管理者管理</span><span class="sep">›</span><span style="color:#222">角色管理</span></div>
+      <div class="page-header"><div class="page-icon">👥</div><div class="page-title">角色管理</div></div>
+      <div class="page-desc">此頁面用於管理系統角色與權限配置。您可以新增角色、編輯角色名稱與描述，並為每個角色分配相應的系統功能權限。</div>
+      <div class="card">
+        <div class="table-toolbar"><button class="btn btn-primary">＋ 新增</button></div>
+        <table>
+          <thead><tr><th>角色</th><th>描述</th><th>功能</th></tr></thead>
+          <tbody>
+            <tr><td>資產管理</td><td></td><td><button class="action-btn">✏</button><button class="action-btn">🗑</button></td></tr>
+            <tr><td>水位風控</td><td>監控資金水位及風控指標，設定水位警示，不接觸敏感個資。</td><td><button class="action-btn">✏</button><button class="action-btn">🗑</button></td></tr>
+            <tr><td>EDD經辦</td><td>自然人KYC Phase 3 CDD 特殊案件 + Phase 4 EDD 審核，可加入黑名單。</td><td><button class="action-btn">✏</button><button class="action-btn">🗑</button></td></tr>
+            <tr><td>虛擬貨幣出入金</td><td>加密貨幣充提審核</td><td><button class="action-btn">✏</button><button class="action-btn">🗑</button></td></tr>
+            <tr><td>法幣出金二審</td><td>台幣出金第二階段審核。</td><td><button class="action-btn">✏</button><button class="action-btn">🗑</button></td></tr>
+            <tr><td>法幣出金一審</td><td>台幣出金第一階段審核。</td><td><button class="action-btn">✏</button><button class="action-btn">🗑</button></td></tr>
+            <tr><td>EDD主管</td><td>最終審核決定權，加入/解除黑名單，姓名檢核主管覆核，AML 合規。</td><td><button class="action-btn">✏</button><button class="action-btn">🗑</button></td></tr>
+            <tr><td>電話照會人員</td><td>KYC 電話核實（唯讀查詢）</td><td><button class="action-btn">✏</button><button class="action-btn">🗑</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 帳號管理 -->
+    <div class="panel" id="panel-account">
+      <div class="breadcrumb"><span>首頁</span><span class="sep">›</span><span>管理者管理</span><span class="sep">›</span><span style="color:#222">帳號管理</span></div>
+      <div class="page-header"><div class="page-icon">👤</div><div class="page-title">帳號管理</div></div>
+      <div class="page-desc">此頁面用於管理後台管理員帳號，可新增帳號、分配角色、啟用或停用帳號，並查看帳號的最後登入紀錄。</div>
+      <div class="card">
+        <div class="filter-section">
+          <div class="filter-header"><span>≡ 篩選條件</span><span style="color:#aaa;font-size:12px">∧</span></div>
+          <div class="filter-grid">
+            <div class="filter-item"><label>帳號</label><input type="text" placeholder=""></div>
+            <div class="filter-item"><label>姓名</label><input type="text" placeholder=""></div>
+            <div class="filter-item"><label>角色</label><select><option>全部</option><option>資產管理</option><option>水位風控</option><option>EDD經辦</option><option>EDD主管</option></select></div>
+            <div class="filter-item"><label>狀態</label><select><option>全部</option><option>啟用</option><option>停用</option></select></div>
+          </div>
+          <div class="filter-actions"><button class="btn">清空</button><button class="btn btn-primary">🔍 搜尋</button></div>
+        </div>
+        <div class="table-section">
+          <div class="table-toolbar"><button class="btn btn-primary">＋ 新增帳號</button></div>
+          <table>
+            <thead><tr><th>帳號</th><th>姓名</th><th>角色</th><th>狀態</th><th>最後登入</th><th>功能</th></tr></thead>
+            <tbody>
+              <tr><td>admin01</td><td>張○○</td><td>EDD主管</td><td><span class="badge badge-active">啟用</span></td><td>2024-06-01 09:30</td><td><button class="action-btn">✏</button><button class="action-btn">🗑</button></td></tr>
+              <tr><td>admin02</td><td>林○○</td><td>法幣出金二審</td><td><span class="badge badge-active">啟用</span></td><td>2024-06-01 10:15</td><td><button class="action-btn">✏</button><button class="action-btn">🗑</button></td></tr>
+              <tr><td>admin03</td><td>王○○</td><td>虛擬貨幣出入金</td><td><span class="badge badge-active">啟用</span></td><td>2024-06-01 08:45</td><td><button class="action-btn">✏</button><button class="action-btn">🗑</button></td></tr>
+              <tr><td>admin04</td><td>陳○○</td><td>水位風控</td><td><span class="badge badge-inactive">停用</span></td><td>2024-05-20 14:00</td><td><button class="action-btn">✏</button><button class="action-btn">🗑</button></td></tr>
+              <tr><td>admin05</td><td>李○○</td><td>EDD經辦</td><td><span class="badge badge-active">啟用</span></td><td>2024-06-01 11:00</td><td><button class="action-btn">✏</button><button class="action-btn">🗑</button></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 系統日誌 -->
+    <div class="panel" id="panel-log">
+      <div class="breadcrumb"><span>首頁</span><span class="sep">›</span><span>管理者管理</span><span class="sep">›</span><span style="color:#222">系統日誌</span></div>
+      <div class="page-header"><div class="page-icon">📄</div><div class="page-title">系統日誌</div></div>
+      <div class="page-desc">此頁面記錄所有後台管理員的操作紀錄，包含登入、審核、設定變更等操作，用於稽核與追蹤。</div>
+      <div class="card">
+        <div class="filter-section">
+          <div class="filter-header"><span>≡ 篩選條件</span><span style="color:#aaa;font-size:12px">∧</span></div>
+          <div class="filter-grid">
+            <div class="filter-item"><label>操作帳號</label><input type="text" placeholder=""></div>
+            <div class="filter-item"><label>操作類型</label><select><option>全部</option><option>登入</option><option>審核</option><option>設定變更</option><option>匯出</option></select></div>
+            <div class="filter-item"><label>日期（起）</label><input type="date"></div>
+            <div class="filter-item"><label>日期（迄）</label><input type="date"></div>
+          </div>
+          <div class="filter-actions"><button class="btn">清空</button><button class="btn btn-primary">🔍 搜尋</button></div>
+        </div>
+        <div class="table-section">
+          <div class="table-toolbar"><button class="btn btn-excel">📊 導出Excel</button></div>
+          <table>
+            <thead><tr><th>時間</th><th>操作帳號</th><th>操作類型</th><th>IP 位址</th><th>詳情</th></tr></thead>
+            <tbody>
+              <tr><td>2024-06-01 09:30:12</td><td>admin01</td><td><span class="badge badge-info">登入</span></td><td>203.65.xxx.xxx</td><td>登入成功</td></tr>
+              <tr><td>2024-06-01 09:45:33</td><td>admin01</td><td><span class="badge badge-active">審核</span></td><td>203.65.xxx.xxx</td><td>通過用戶 U100045 KYC Phase 2 審核</td></tr>
+              <tr><td>2024-06-01 10:02:05</td><td>admin02</td><td><span class="badge badge-info">登入</span></td><td>118.163.xxx.xxx</td><td>登入成功</td></tr>
+              <tr><td>2024-06-01 10:20:18</td><td>admin02</td><td><span class="badge badge-active">審核</span></td><td>118.163.xxx.xxx</td><td>通過出金申請 WD-20240601-003</td></tr>
+              <tr><td>2024-06-01 11:15:44</td><td>admin01</td><td>設定變更</td><td>203.65.xxx.xxx</td><td>修改法幣出金單日上限為 500,000</td></tr>
+              <tr><td>2024-06-01 14:30:00</td><td>admin03</td><td>匯出</td><td>59.125.xxx.xxx</td><td>匯出交易紀錄 Excel（2024-06-01）</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 平台法幣資產 -->
+    <div class="panel" id="panel-fiat">
+      <div class="breadcrumb"><span>首頁</span><span class="sep">›</span><span>管理者管理</span><span class="sep">›</span><span style="color:#222">平台法幣資產</span></div>
+      <div class="page-header"><div class="page-icon">💲</div><div class="page-title">平台法幣資產</div></div>
+      <div class="page-desc">此頁面顯示平台持有的法幣資產總覽，包含各幣種的可用餘額、凍結金額及資產變動紀錄。</div>
+      <div class="card">
+        <table>
+          <thead><tr><th>幣種</th><th>可用餘額</th><th>凍結金額（審核中）</th><th>總計</th><th>最後更新</th></tr></thead>
+          <tbody>
+            <tr><td>TWD（台幣）</td><td style="color:#2e9e5b;font-weight:600">125,430,000</td><td style="color:#F5A623">8,750,000</td><td style="font-weight:600">134,180,000</td><td>2024-06-01 16:00</td></tr>
+            <tr><td>USD（美元）</td><td style="color:#2e9e5b;font-weight:600">1,250,000</td><td style="color:#F5A623">85,000</td><td style="font-weight:600">1,335,000</td><td>2024-06-01 16:00</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 平台手續費資產 -->
+    <div class="panel" id="panel-fee">
+      <div class="breadcrumb"><span>首頁</span><span class="sep">›</span><span>管理者管理</span><span class="sep">›</span><span style="color:#222">平台手續費資產</span></div>
+      <div class="page-header"><div class="page-icon">💱</div><div class="page-title">平台手續費資產</div></div>
+      <div class="page-desc">此頁面顯示平台累計收取的手續費資產，包含各幣種的手續費累計、已提領及待提領金額。</div>
+      <div class="card">
+        <div class="table-toolbar"><button class="btn btn-primary">提領手續費</button></div>
+        <table>
+          <thead><tr><th>幣種</th><th>累計手續費</th><th>已提領</th><th>待提領</th><th>最後更新</th></tr></thead>
+          <tbody>
+            <tr><td>TWD</td><td>4,280,000</td><td>3,000,000</td><td style="color:#2e9e5b;font-weight:600">1,280,000</td><td>2024-06-01 16:00</td></tr>
+            <tr><td>BTC</td><td>2.58430</td><td>2.00000</td><td style="color:#2e9e5b;font-weight:600">0.58430</td><td>2024-06-01 16:00</td></tr>
+            <tr><td>ETH</td><td>18.4200</td><td>15.0000</td><td style="color:#2e9e5b;font-weight:600">3.4200</td><td>2024-06-01 16:00</td></tr>
+            <tr><td>USDT</td><td>128,450</td><td>100,000</td><td style="color:#2e9e5b;font-weight:600">28,450</td><td>2024-06-01 16:00</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- end .main -->
+</div><!-- end .layout -->
+
+<script>
+  const subItems = document.querySelectorAll('.nav-sub-item[data-panel]');
+  subItems.forEach(item => {
+    item.addEventListener('click', () => {
+      // update sidebar active
+      subItems.forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+      // show panel
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      document.getElementById('panel-' + item.dataset.panel).classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>
